@@ -16,6 +16,7 @@ desktop.ini
 
 # Legacy reference project
 rat/
+docs/
 
 # IntelliJ related
 *.iml
