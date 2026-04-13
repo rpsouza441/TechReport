@@ -40,7 +40,7 @@ class _TechReportAppState extends State<TechReportApp> {
             scaffoldBackgroundColor: const Color(0xFFF4F7F5),
             useMaterial3: true,
           ),
-          home: LocalSessionShell(viewModel: viewModel),
+          home: LocalSessionShell(viewModel: viewModel, scope: widget.scope),
         );
       },
     );
@@ -48,16 +48,20 @@ class _TechReportAppState extends State<TechReportApp> {
 }
 
 class LocalSessionShell extends StatelessWidget {
-  const LocalSessionShell({super.key, required this.viewModel});
+  const LocalSessionShell({
+    super.key,
+    required this.viewModel,
+    required this.scope,
+  });
 
   final AppSessionViewModel viewModel;
+
+  final AppScope scope;
 
   @override
   Widget build(BuildContext context) {
     if (viewModel.isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     switch (viewModel.status) {
@@ -66,7 +70,10 @@ class LocalSessionShell extends StatelessWidget {
       case AppSessionStatus.locked:
         return LocalUnlockScreen(viewModel: viewModel);
       case AppSessionStatus.unlocked:
-        return LocalHomeScreen(viewModel: viewModel);
+        return LocalHomeScreen(
+          viewModel: viewModel,
+          ratRepository: scope.ratRepository,
+        );
     }
   }
 }

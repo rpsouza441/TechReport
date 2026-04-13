@@ -1,5 +1,4 @@
 import 'package:techreport/features/local_auth/domain/repositories/pin_secret_repository.dart';
-import 'package:techreport/shared/infra/security/local_pin_secret_store.dart';
 
 import '../entities/sessao_local.dart';
 import '../repositories/sessao_local_repository.dart';

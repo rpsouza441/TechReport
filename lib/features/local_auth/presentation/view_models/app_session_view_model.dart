@@ -6,11 +6,7 @@ import '../../domain/usecases/complete_local_onboarding.dart';
 import '../../domain/usecases/lock_local_session.dart';
 import '../../domain/usecases/unlock_local_session.dart';
 
-enum AppSessionStatus {
-  onboardingRequired,
-  locked,
-  unlocked,
-}
+enum AppSessionStatus { onboardingRequired, locked, unlocked }
 
 class AppSessionViewModel extends ChangeNotifier {
   AppSessionViewModel({
@@ -18,10 +14,10 @@ class AppSessionViewModel extends ChangeNotifier {
     required CompleteLocalOnboarding completeLocalOnboarding,
     required LockLocalSession lockLocalSession,
     required UnlockLocalSession unlockLocalSession,
-  })  : _bootstrapLocalSession = bootstrapLocalSession,
-        _completeLocalOnboarding = completeLocalOnboarding,
-        _lockLocalSession = lockLocalSession,
-        _unlockLocalSession = unlockLocalSession;
+  }) : _bootstrapLocalSession = bootstrapLocalSession,
+       _completeLocalOnboarding = completeLocalOnboarding,
+       _lockLocalSession = lockLocalSession,
+       _unlockLocalSession = unlockLocalSession;
 
   final BootstrapLocalSession _bootstrapLocalSession;
   final CompleteLocalOnboarding _completeLocalOnboarding;
