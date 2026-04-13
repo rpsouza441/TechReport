@@ -15,8 +15,8 @@ Thumbs.db
 desktop.ini
 
 # Legacy reference project
-rat/
-docs/
+/rat/
+/docs/
 
 # IntelliJ related
 *.iml
