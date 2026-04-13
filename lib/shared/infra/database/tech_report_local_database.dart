@@ -36,7 +36,24 @@ class SessaoLocals extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [TecnicoLocals, SessaoLocals])
+class Rats extends Table {
+  TextColumn get id => text()();
+  TextColumn get authorId => text()();
+  TextColumn get ownerType => text()();
+  TextColumn get numero => text()();
+  TextColumn get clienteNome => text()();
+  TextColumn get descricao => text()();
+  TextColumn get status => text()();
+  TextColumn get syncStatus => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [TecnicoLocals, SessaoLocals, Rats])
 class TechReportLocalDatabase extends _$TechReportLocalDatabase {
   TechReportLocalDatabase()
     : super(
@@ -47,5 +64,17 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
       );
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async {
+      await m.createAll();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(rats);
+      }
+    },
+  );
 }

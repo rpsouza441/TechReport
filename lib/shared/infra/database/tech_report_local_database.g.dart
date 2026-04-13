@@ -1349,12 +1349,672 @@ class SessaoLocalsCompanion extends UpdateCompanion<SessaoLocal> {
   }
 }
 
+class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RatsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _authorIdMeta = const VerificationMeta(
+    'authorId',
+  );
+  @override
+  late final GeneratedColumn<String> authorId = GeneratedColumn<String>(
+    'author_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerTypeMeta = const VerificationMeta(
+    'ownerType',
+  );
+  @override
+  late final GeneratedColumn<String> ownerType = GeneratedColumn<String>(
+    'owner_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numeroMeta = const VerificationMeta('numero');
+  @override
+  late final GeneratedColumn<String> numero = GeneratedColumn<String>(
+    'numero',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clienteNomeMeta = const VerificationMeta(
+    'clienteNome',
+  );
+  @override
+  late final GeneratedColumn<String> clienteNome = GeneratedColumn<String>(
+    'cliente_nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descricaoMeta = const VerificationMeta(
+    'descricao',
+  );
+  @override
+  late final GeneratedColumn<String> descricao = GeneratedColumn<String>(
+    'descricao',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    authorId,
+    ownerType,
+    numero,
+    clienteNome,
+    descricao,
+    status,
+    syncStatus,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'rats';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Rat> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('author_id')) {
+      context.handle(
+        _authorIdMeta,
+        authorId.isAcceptableOrUnknown(data['author_id']!, _authorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_authorIdMeta);
+    }
+    if (data.containsKey('owner_type')) {
+      context.handle(
+        _ownerTypeMeta,
+        ownerType.isAcceptableOrUnknown(data['owner_type']!, _ownerTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerTypeMeta);
+    }
+    if (data.containsKey('numero')) {
+      context.handle(
+        _numeroMeta,
+        numero.isAcceptableOrUnknown(data['numero']!, _numeroMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numeroMeta);
+    }
+    if (data.containsKey('cliente_nome')) {
+      context.handle(
+        _clienteNomeMeta,
+        clienteNome.isAcceptableOrUnknown(
+          data['cliente_nome']!,
+          _clienteNomeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_clienteNomeMeta);
+    }
+    if (data.containsKey('descricao')) {
+      context.handle(
+        _descricaoMeta,
+        descricao.isAcceptableOrUnknown(data['descricao']!, _descricaoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_descricaoMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_syncStatusMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Rat map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Rat(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      authorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}author_id'],
+      )!,
+      ownerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_type'],
+      )!,
+      numero: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}numero'],
+      )!,
+      clienteNome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cliente_nome'],
+      )!,
+      descricao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}descricao'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $RatsTable createAlias(String alias) {
+    return $RatsTable(attachedDatabase, alias);
+  }
+}
+
+class Rat extends DataClass implements Insertable<Rat> {
+  final String id;
+  final String authorId;
+  final String ownerType;
+  final String numero;
+  final String clienteNome;
+  final String descricao;
+  final String status;
+  final String syncStatus;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const Rat({
+    required this.id,
+    required this.authorId,
+    required this.ownerType,
+    required this.numero,
+    required this.clienteNome,
+    required this.descricao,
+    required this.status,
+    required this.syncStatus,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['author_id'] = Variable<String>(authorId);
+    map['owner_type'] = Variable<String>(ownerType);
+    map['numero'] = Variable<String>(numero);
+    map['cliente_nome'] = Variable<String>(clienteNome);
+    map['descricao'] = Variable<String>(descricao);
+    map['status'] = Variable<String>(status);
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  RatsCompanion toCompanion(bool nullToAbsent) {
+    return RatsCompanion(
+      id: Value(id),
+      authorId: Value(authorId),
+      ownerType: Value(ownerType),
+      numero: Value(numero),
+      clienteNome: Value(clienteNome),
+      descricao: Value(descricao),
+      status: Value(status),
+      syncStatus: Value(syncStatus),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Rat.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Rat(
+      id: serializer.fromJson<String>(json['id']),
+      authorId: serializer.fromJson<String>(json['authorId']),
+      ownerType: serializer.fromJson<String>(json['ownerType']),
+      numero: serializer.fromJson<String>(json['numero']),
+      clienteNome: serializer.fromJson<String>(json['clienteNome']),
+      descricao: serializer.fromJson<String>(json['descricao']),
+      status: serializer.fromJson<String>(json['status']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'authorId': serializer.toJson<String>(authorId),
+      'ownerType': serializer.toJson<String>(ownerType),
+      'numero': serializer.toJson<String>(numero),
+      'clienteNome': serializer.toJson<String>(clienteNome),
+      'descricao': serializer.toJson<String>(descricao),
+      'status': serializer.toJson<String>(status),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Rat copyWith({
+    String? id,
+    String? authorId,
+    String? ownerType,
+    String? numero,
+    String? clienteNome,
+    String? descricao,
+    String? status,
+    String? syncStatus,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Rat(
+    id: id ?? this.id,
+    authorId: authorId ?? this.authorId,
+    ownerType: ownerType ?? this.ownerType,
+    numero: numero ?? this.numero,
+    clienteNome: clienteNome ?? this.clienteNome,
+    descricao: descricao ?? this.descricao,
+    status: status ?? this.status,
+    syncStatus: syncStatus ?? this.syncStatus,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Rat copyWithCompanion(RatsCompanion data) {
+    return Rat(
+      id: data.id.present ? data.id.value : this.id,
+      authorId: data.authorId.present ? data.authorId.value : this.authorId,
+      ownerType: data.ownerType.present ? data.ownerType.value : this.ownerType,
+      numero: data.numero.present ? data.numero.value : this.numero,
+      clienteNome: data.clienteNome.present
+          ? data.clienteNome.value
+          : this.clienteNome,
+      descricao: data.descricao.present ? data.descricao.value : this.descricao,
+      status: data.status.present ? data.status.value : this.status,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Rat(')
+          ..write('id: $id, ')
+          ..write('authorId: $authorId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('numero: $numero, ')
+          ..write('clienteNome: $clienteNome, ')
+          ..write('descricao: $descricao, ')
+          ..write('status: $status, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    authorId,
+    ownerType,
+    numero,
+    clienteNome,
+    descricao,
+    status,
+    syncStatus,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Rat &&
+          other.id == this.id &&
+          other.authorId == this.authorId &&
+          other.ownerType == this.ownerType &&
+          other.numero == this.numero &&
+          other.clienteNome == this.clienteNome &&
+          other.descricao == this.descricao &&
+          other.status == this.status &&
+          other.syncStatus == this.syncStatus &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class RatsCompanion extends UpdateCompanion<Rat> {
+  final Value<String> id;
+  final Value<String> authorId;
+  final Value<String> ownerType;
+  final Value<String> numero;
+  final Value<String> clienteNome;
+  final Value<String> descricao;
+  final Value<String> status;
+  final Value<String> syncStatus;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const RatsCompanion({
+    this.id = const Value.absent(),
+    this.authorId = const Value.absent(),
+    this.ownerType = const Value.absent(),
+    this.numero = const Value.absent(),
+    this.clienteNome = const Value.absent(),
+    this.descricao = const Value.absent(),
+    this.status = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RatsCompanion.insert({
+    required String id,
+    required String authorId,
+    required String ownerType,
+    required String numero,
+    required String clienteNome,
+    required String descricao,
+    required String status,
+    required String syncStatus,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       authorId = Value(authorId),
+       ownerType = Value(ownerType),
+       numero = Value(numero),
+       clienteNome = Value(clienteNome),
+       descricao = Value(descricao),
+       status = Value(status),
+       syncStatus = Value(syncStatus),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Rat> custom({
+    Expression<String>? id,
+    Expression<String>? authorId,
+    Expression<String>? ownerType,
+    Expression<String>? numero,
+    Expression<String>? clienteNome,
+    Expression<String>? descricao,
+    Expression<String>? status,
+    Expression<String>? syncStatus,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (authorId != null) 'author_id': authorId,
+      if (ownerType != null) 'owner_type': ownerType,
+      if (numero != null) 'numero': numero,
+      if (clienteNome != null) 'cliente_nome': clienteNome,
+      if (descricao != null) 'descricao': descricao,
+      if (status != null) 'status': status,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RatsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? authorId,
+    Value<String>? ownerType,
+    Value<String>? numero,
+    Value<String>? clienteNome,
+    Value<String>? descricao,
+    Value<String>? status,
+    Value<String>? syncStatus,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return RatsCompanion(
+      id: id ?? this.id,
+      authorId: authorId ?? this.authorId,
+      ownerType: ownerType ?? this.ownerType,
+      numero: numero ?? this.numero,
+      clienteNome: clienteNome ?? this.clienteNome,
+      descricao: descricao ?? this.descricao,
+      status: status ?? this.status,
+      syncStatus: syncStatus ?? this.syncStatus,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (authorId.present) {
+      map['author_id'] = Variable<String>(authorId.value);
+    }
+    if (ownerType.present) {
+      map['owner_type'] = Variable<String>(ownerType.value);
+    }
+    if (numero.present) {
+      map['numero'] = Variable<String>(numero.value);
+    }
+    if (clienteNome.present) {
+      map['cliente_nome'] = Variable<String>(clienteNome.value);
+    }
+    if (descricao.present) {
+      map['descricao'] = Variable<String>(descricao.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RatsCompanion(')
+          ..write('id: $id, ')
+          ..write('authorId: $authorId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('numero: $numero, ')
+          ..write('clienteNome: $clienteNome, ')
+          ..write('descricao: $descricao, ')
+          ..write('status: $status, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$TechReportLocalDatabase extends GeneratedDatabase {
   _$TechReportLocalDatabase(QueryExecutor e) : super(e);
   $TechReportLocalDatabaseManager get managers =>
       $TechReportLocalDatabaseManager(this);
   late final $TecnicoLocalsTable tecnicoLocals = $TecnicoLocalsTable(this);
   late final $SessaoLocalsTable sessaoLocals = $SessaoLocalsTable(this);
+  late final $RatsTable rats = $RatsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1362,6 +2022,7 @@ abstract class _$TechReportLocalDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     tecnicoLocals,
     sessaoLocals,
+    rats,
   ];
 }
 
@@ -2014,6 +2675,318 @@ typedef $$SessaoLocalsTableProcessedTableManager =
       SessaoLocal,
       PrefetchHooks Function()
     >;
+typedef $$RatsTableCreateCompanionBuilder =
+    RatsCompanion Function({
+      required String id,
+      required String authorId,
+      required String ownerType,
+      required String numero,
+      required String clienteNome,
+      required String descricao,
+      required String status,
+      required String syncStatus,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$RatsTableUpdateCompanionBuilder =
+    RatsCompanion Function({
+      Value<String> id,
+      Value<String> authorId,
+      Value<String> ownerType,
+      Value<String> numero,
+      Value<String> clienteNome,
+      Value<String> descricao,
+      Value<String> status,
+      Value<String> syncStatus,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$RatsTableFilterComposer
+    extends Composer<_$TechReportLocalDatabase, $RatsTable> {
+  $$RatsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authorId => $composableBuilder(
+    column: $table.authorId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get numero => $composableBuilder(
+    column: $table.numero,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clienteNome => $composableBuilder(
+    column: $table.clienteNome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get descricao => $composableBuilder(
+    column: $table.descricao,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RatsTableOrderingComposer
+    extends Composer<_$TechReportLocalDatabase, $RatsTable> {
+  $$RatsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authorId => $composableBuilder(
+    column: $table.authorId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get numero => $composableBuilder(
+    column: $table.numero,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clienteNome => $composableBuilder(
+    column: $table.clienteNome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get descricao => $composableBuilder(
+    column: $table.descricao,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RatsTableAnnotationComposer
+    extends Composer<_$TechReportLocalDatabase, $RatsTable> {
+  $$RatsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get authorId =>
+      $composableBuilder(column: $table.authorId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerType =>
+      $composableBuilder(column: $table.ownerType, builder: (column) => column);
+
+  GeneratedColumn<String> get numero =>
+      $composableBuilder(column: $table.numero, builder: (column) => column);
+
+  GeneratedColumn<String> get clienteNome => $composableBuilder(
+    column: $table.clienteNome,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get descricao =>
+      $composableBuilder(column: $table.descricao, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$RatsTableTableManager
+    extends
+        RootTableManager<
+          _$TechReportLocalDatabase,
+          $RatsTable,
+          Rat,
+          $$RatsTableFilterComposer,
+          $$RatsTableOrderingComposer,
+          $$RatsTableAnnotationComposer,
+          $$RatsTableCreateCompanionBuilder,
+          $$RatsTableUpdateCompanionBuilder,
+          (Rat, BaseReferences<_$TechReportLocalDatabase, $RatsTable, Rat>),
+          Rat,
+          PrefetchHooks Function()
+        > {
+  $$RatsTableTableManager(_$TechReportLocalDatabase db, $RatsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RatsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RatsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RatsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> authorId = const Value.absent(),
+                Value<String> ownerType = const Value.absent(),
+                Value<String> numero = const Value.absent(),
+                Value<String> clienteNome = const Value.absent(),
+                Value<String> descricao = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RatsCompanion(
+                id: id,
+                authorId: authorId,
+                ownerType: ownerType,
+                numero: numero,
+                clienteNome: clienteNome,
+                descricao: descricao,
+                status: status,
+                syncStatus: syncStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String authorId,
+                required String ownerType,
+                required String numero,
+                required String clienteNome,
+                required String descricao,
+                required String status,
+                required String syncStatus,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RatsCompanion.insert(
+                id: id,
+                authorId: authorId,
+                ownerType: ownerType,
+                numero: numero,
+                clienteNome: clienteNome,
+                descricao: descricao,
+                status: status,
+                syncStatus: syncStatus,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RatsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$TechReportLocalDatabase,
+      $RatsTable,
+      Rat,
+      $$RatsTableFilterComposer,
+      $$RatsTableOrderingComposer,
+      $$RatsTableAnnotationComposer,
+      $$RatsTableCreateCompanionBuilder,
+      $$RatsTableUpdateCompanionBuilder,
+      (Rat, BaseReferences<_$TechReportLocalDatabase, $RatsTable, Rat>),
+      Rat,
+      PrefetchHooks Function()
+    >;
 
 class $TechReportLocalDatabaseManager {
   final _$TechReportLocalDatabase _db;
@@ -2022,4 +2995,5 @@ class $TechReportLocalDatabaseManager {
       $$TecnicoLocalsTableTableManager(_db, _db.tecnicoLocals);
   $$SessaoLocalsTableTableManager get sessaoLocals =>
       $$SessaoLocalsTableTableManager(_db, _db.sessaoLocals);
+  $$RatsTableTableManager get rats => $$RatsTableTableManager(_db, _db.rats);
 }
