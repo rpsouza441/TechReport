@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/features/rat/domain/repositories/drift_rat_repository.dart';
+import 'package:techreport/features/rat/presentation/screens/rat_form_screen.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_form_view_model.dart';
+import 'package:techreport/shared/infra/database/tech_report_local_database.dart';
 
 import '../view_models/app_session_view_model.dart';
 
@@ -44,6 +48,24 @@ class LocalHomeScreen extends StatelessWidget {
                       'decidir entre onboarding, unlock e area liberada sem '
                       'encostar em backend, RAT ou sync.',
                       style: theme.textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () async {
+                        final database = TechReportLocalDatabase();
+                        final ratRepository = DriftRatRepository(database);
+
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RatFormScreen(
+                              viewModel: RatFormViewModel(
+                                ratRepository: ratRepository,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Novo RAT'),
                     ),
                     const SizedBox(height: 20),
                     const _StatusChip(label: 'Modo local'),
