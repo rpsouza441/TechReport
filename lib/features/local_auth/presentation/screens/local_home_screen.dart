@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart' as domain;
-import 'package:techreport/features/rat/data/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_form_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_form_view_model.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';

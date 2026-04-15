@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:techreport/features/rat/data/repositories/rat_repository.dart';
 
 import '../../domain/entities/rat.dart';
+import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
 import '../../presentation/view_models/rat_list_view_model.dart';
 import 'rat_form_screen.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/rat.dart';
-import '../../data/repositories/rat_repository.dart';
+import '../../domain/repositories/rat_repository.dart';
 
 class RatFormViewModel extends ChangeNotifier {
   RatFormViewModel({required RatRepository ratRepository, Rat? initialRat})

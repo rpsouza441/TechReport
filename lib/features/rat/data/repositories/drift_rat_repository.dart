@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../../shared/infra/database/tech_report_local_database.dart';
 import '../../domain/entities/rat.dart' as domain;
-import 'rat_repository.dart';
+import '../../domain/repositories/rat_repository.dart';
 
 class DriftRatRepository implements RatRepository {
   DriftRatRepository(this._database);

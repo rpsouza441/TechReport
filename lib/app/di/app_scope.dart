@@ -1,7 +1,7 @@
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
-import 'package:techreport/features/rat/data/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/shared/infra/security/local_pin_secret_store.dart';
 
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
