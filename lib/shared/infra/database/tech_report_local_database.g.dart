@@ -2008,6 +2008,474 @@ class RatsCompanion extends UpdateCompanion<Rat> {
   }
 }
 
+class $AssinaturasTable extends Assinaturas
+    with TableInfo<$AssinaturasTable, Assinatura> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AssinaturasTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ratIdMeta = const VerificationMeta('ratId');
+  @override
+  late final GeneratedColumn<String> ratId = GeneratedColumn<String>(
+    'rat_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _storageModeMeta = const VerificationMeta(
+    'storageMode',
+  );
+  @override
+  late final GeneratedColumn<String> storageMode = GeneratedColumn<String>(
+    'storage_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assetRefMeta = const VerificationMeta(
+    'assetRef',
+  );
+  @override
+  late final GeneratedColumn<String> assetRef = GeneratedColumn<String>(
+    'asset_ref',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ratId,
+    storageMode,
+    assetRef,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'assinaturas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Assinatura> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('rat_id')) {
+      context.handle(
+        _ratIdMeta,
+        ratId.isAcceptableOrUnknown(data['rat_id']!, _ratIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratIdMeta);
+    }
+    if (data.containsKey('storage_mode')) {
+      context.handle(
+        _storageModeMeta,
+        storageMode.isAcceptableOrUnknown(
+          data['storage_mode']!,
+          _storageModeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_storageModeMeta);
+    }
+    if (data.containsKey('asset_ref')) {
+      context.handle(
+        _assetRefMeta,
+        assetRef.isAcceptableOrUnknown(data['asset_ref']!, _assetRefMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_assetRefMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Assinatura map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Assinatura(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ratId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rat_id'],
+      )!,
+      storageMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}storage_mode'],
+      )!,
+      assetRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}asset_ref'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $AssinaturasTable createAlias(String alias) {
+    return $AssinaturasTable(attachedDatabase, alias);
+  }
+}
+
+class Assinatura extends DataClass implements Insertable<Assinatura> {
+  final String id;
+  final String ratId;
+  final String storageMode;
+  final String assetRef;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const Assinatura({
+    required this.id,
+    required this.ratId,
+    required this.storageMode,
+    required this.assetRef,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['rat_id'] = Variable<String>(ratId);
+    map['storage_mode'] = Variable<String>(storageMode);
+    map['asset_ref'] = Variable<String>(assetRef);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  AssinaturasCompanion toCompanion(bool nullToAbsent) {
+    return AssinaturasCompanion(
+      id: Value(id),
+      ratId: Value(ratId),
+      storageMode: Value(storageMode),
+      assetRef: Value(assetRef),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Assinatura.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Assinatura(
+      id: serializer.fromJson<String>(json['id']),
+      ratId: serializer.fromJson<String>(json['ratId']),
+      storageMode: serializer.fromJson<String>(json['storageMode']),
+      assetRef: serializer.fromJson<String>(json['assetRef']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ratId': serializer.toJson<String>(ratId),
+      'storageMode': serializer.toJson<String>(storageMode),
+      'assetRef': serializer.toJson<String>(assetRef),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Assinatura copyWith({
+    String? id,
+    String? ratId,
+    String? storageMode,
+    String? assetRef,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Assinatura(
+    id: id ?? this.id,
+    ratId: ratId ?? this.ratId,
+    storageMode: storageMode ?? this.storageMode,
+    assetRef: assetRef ?? this.assetRef,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Assinatura copyWithCompanion(AssinaturasCompanion data) {
+    return Assinatura(
+      id: data.id.present ? data.id.value : this.id,
+      ratId: data.ratId.present ? data.ratId.value : this.ratId,
+      storageMode: data.storageMode.present
+          ? data.storageMode.value
+          : this.storageMode,
+      assetRef: data.assetRef.present ? data.assetRef.value : this.assetRef,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Assinatura(')
+          ..write('id: $id, ')
+          ..write('ratId: $ratId, ')
+          ..write('storageMode: $storageMode, ')
+          ..write('assetRef: $assetRef, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ratId,
+    storageMode,
+    assetRef,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Assinatura &&
+          other.id == this.id &&
+          other.ratId == this.ratId &&
+          other.storageMode == this.storageMode &&
+          other.assetRef == this.assetRef &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
+  final Value<String> id;
+  final Value<String> ratId;
+  final Value<String> storageMode;
+  final Value<String> assetRef;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const AssinaturasCompanion({
+    this.id = const Value.absent(),
+    this.ratId = const Value.absent(),
+    this.storageMode = const Value.absent(),
+    this.assetRef = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AssinaturasCompanion.insert({
+    required String id,
+    required String ratId,
+    required String storageMode,
+    required String assetRef,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ratId = Value(ratId),
+       storageMode = Value(storageMode),
+       assetRef = Value(assetRef),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Assinatura> custom({
+    Expression<String>? id,
+    Expression<String>? ratId,
+    Expression<String>? storageMode,
+    Expression<String>? assetRef,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ratId != null) 'rat_id': ratId,
+      if (storageMode != null) 'storage_mode': storageMode,
+      if (assetRef != null) 'asset_ref': assetRef,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AssinaturasCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ratId,
+    Value<String>? storageMode,
+    Value<String>? assetRef,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return AssinaturasCompanion(
+      id: id ?? this.id,
+      ratId: ratId ?? this.ratId,
+      storageMode: storageMode ?? this.storageMode,
+      assetRef: assetRef ?? this.assetRef,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ratId.present) {
+      map['rat_id'] = Variable<String>(ratId.value);
+    }
+    if (storageMode.present) {
+      map['storage_mode'] = Variable<String>(storageMode.value);
+    }
+    if (assetRef.present) {
+      map['asset_ref'] = Variable<String>(assetRef.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssinaturasCompanion(')
+          ..write('id: $id, ')
+          ..write('ratId: $ratId, ')
+          ..write('storageMode: $storageMode, ')
+          ..write('assetRef: $assetRef, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$TechReportLocalDatabase extends GeneratedDatabase {
   _$TechReportLocalDatabase(QueryExecutor e) : super(e);
   $TechReportLocalDatabaseManager get managers =>
@@ -2015,6 +2483,7 @@ abstract class _$TechReportLocalDatabase extends GeneratedDatabase {
   late final $TecnicoLocalsTable tecnicoLocals = $TecnicoLocalsTable(this);
   late final $SessaoLocalsTable sessaoLocals = $SessaoLocalsTable(this);
   late final $RatsTable rats = $RatsTable(this);
+  late final $AssinaturasTable assinaturas = $AssinaturasTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2023,6 +2492,7 @@ abstract class _$TechReportLocalDatabase extends GeneratedDatabase {
     tecnicoLocals,
     sessaoLocals,
     rats,
+    assinaturas,
   ];
 }
 
@@ -2987,6 +3457,256 @@ typedef $$RatsTableProcessedTableManager =
       Rat,
       PrefetchHooks Function()
     >;
+typedef $$AssinaturasTableCreateCompanionBuilder =
+    AssinaturasCompanion Function({
+      required String id,
+      required String ratId,
+      required String storageMode,
+      required String assetRef,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$AssinaturasTableUpdateCompanionBuilder =
+    AssinaturasCompanion Function({
+      Value<String> id,
+      Value<String> ratId,
+      Value<String> storageMode,
+      Value<String> assetRef,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$AssinaturasTableFilterComposer
+    extends Composer<_$TechReportLocalDatabase, $AssinaturasTable> {
+  $$AssinaturasTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ratId => $composableBuilder(
+    column: $table.ratId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get storageMode => $composableBuilder(
+    column: $table.storageMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assetRef => $composableBuilder(
+    column: $table.assetRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AssinaturasTableOrderingComposer
+    extends Composer<_$TechReportLocalDatabase, $AssinaturasTable> {
+  $$AssinaturasTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ratId => $composableBuilder(
+    column: $table.ratId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get storageMode => $composableBuilder(
+    column: $table.storageMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assetRef => $composableBuilder(
+    column: $table.assetRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AssinaturasTableAnnotationComposer
+    extends Composer<_$TechReportLocalDatabase, $AssinaturasTable> {
+  $$AssinaturasTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ratId =>
+      $composableBuilder(column: $table.ratId, builder: (column) => column);
+
+  GeneratedColumn<String> get storageMode => $composableBuilder(
+    column: $table.storageMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assetRef =>
+      $composableBuilder(column: $table.assetRef, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$AssinaturasTableTableManager
+    extends
+        RootTableManager<
+          _$TechReportLocalDatabase,
+          $AssinaturasTable,
+          Assinatura,
+          $$AssinaturasTableFilterComposer,
+          $$AssinaturasTableOrderingComposer,
+          $$AssinaturasTableAnnotationComposer,
+          $$AssinaturasTableCreateCompanionBuilder,
+          $$AssinaturasTableUpdateCompanionBuilder,
+          (
+            Assinatura,
+            BaseReferences<
+              _$TechReportLocalDatabase,
+              $AssinaturasTable,
+              Assinatura
+            >,
+          ),
+          Assinatura,
+          PrefetchHooks Function()
+        > {
+  $$AssinaturasTableTableManager(
+    _$TechReportLocalDatabase db,
+    $AssinaturasTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AssinaturasTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AssinaturasTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AssinaturasTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ratId = const Value.absent(),
+                Value<String> storageMode = const Value.absent(),
+                Value<String> assetRef = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AssinaturasCompanion(
+                id: id,
+                ratId: ratId,
+                storageMode: storageMode,
+                assetRef: assetRef,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ratId,
+                required String storageMode,
+                required String assetRef,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AssinaturasCompanion.insert(
+                id: id,
+                ratId: ratId,
+                storageMode: storageMode,
+                assetRef: assetRef,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AssinaturasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$TechReportLocalDatabase,
+      $AssinaturasTable,
+      Assinatura,
+      $$AssinaturasTableFilterComposer,
+      $$AssinaturasTableOrderingComposer,
+      $$AssinaturasTableAnnotationComposer,
+      $$AssinaturasTableCreateCompanionBuilder,
+      $$AssinaturasTableUpdateCompanionBuilder,
+      (
+        Assinatura,
+        BaseReferences<
+          _$TechReportLocalDatabase,
+          $AssinaturasTable,
+          Assinatura
+        >,
+      ),
+      Assinatura,
+      PrefetchHooks Function()
+    >;
 
 class $TechReportLocalDatabaseManager {
   final _$TechReportLocalDatabase _db;
@@ -2996,4 +3716,6 @@ class $TechReportLocalDatabaseManager {
   $$SessaoLocalsTableTableManager get sessaoLocals =>
       $$SessaoLocalsTableTableManager(_db, _db.sessaoLocals);
   $$RatsTableTableManager get rats => $$RatsTableTableManager(_db, _db.rats);
+  $$AssinaturasTableTableManager get assinaturas =>
+      $$AssinaturasTableTableManager(_db, _db.assinaturas);
 }
