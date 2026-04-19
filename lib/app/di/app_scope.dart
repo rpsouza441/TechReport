@@ -1,7 +1,12 @@
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
+import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
+import 'package:techreport/features/signature/data/repositories/drift_assinatura_repository.dart';
+import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
+import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/shared/infra/security/local_pin_secret_store.dart';
 
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
@@ -16,8 +21,12 @@ import '../../shared/infra/database/tech_report_local_database.dart';
 class AppScope {
   AppScope({
     required this.database,
+    required this.assinaturaRepository,
+    required this.localSignatureAssetStore,
+    required this.ratPdfShareService,
     required this.ratRepository,
     required this.sessaoLocalRepository,
+    required this.shareRatLocally,
     required this.tecnicoLocalRepository,
     required this.appSessionViewModel,
   });
@@ -28,10 +37,23 @@ class AppScope {
     final tecnicoLocalRepository = DriftTecnicoLocalRepository(database);
     final sessaoLocalRepository = DriftSessaoLocalRepository(database);
     final ratRepository = DriftRatRepository(database);
+    final assinaturaRepository = DriftAssinaturaRepository(database);
+    final localSignatureAssetStore = LocalSignatureAssetStore();
+    final shareRatLocally = ShareRatLocally(
+      ratRepository: ratRepository,
+      assinaturaRepository: assinaturaRepository,
+    );
+    final ratPdfShareService = RatPdfShareService(
+      localSignatureAssetStore: localSignatureAssetStore,
+    );
 
     return AppScope(
       database: database,
+      assinaturaRepository: assinaturaRepository,
+      localSignatureAssetStore: localSignatureAssetStore,
+      ratPdfShareService: ratPdfShareService,
       sessaoLocalRepository: sessaoLocalRepository,
+      shareRatLocally: shareRatLocally,
       tecnicoLocalRepository: tecnicoLocalRepository,
       ratRepository: ratRepository,
       appSessionViewModel: AppSessionViewModel(
@@ -51,7 +73,11 @@ class AppScope {
   }
 
   final TechReportLocalDatabase database;
+  final AssinaturaRepository assinaturaRepository;
+  final LocalSignatureAssetStore localSignatureAssetStore;
+  final RatPdfShareService ratPdfShareService;
   final SessaoLocalRepository sessaoLocalRepository;
+  final ShareRatLocally shareRatLocally;
   final TecnicoLocalRepository tecnicoLocalRepository;
   final RatRepository ratRepository;
   final AppSessionViewModel appSessionViewModel;

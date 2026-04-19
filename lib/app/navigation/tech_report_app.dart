@@ -72,7 +72,11 @@ class LocalSessionShell extends StatelessWidget {
       case AppSessionStatus.unlocked:
         return LocalHomeScreen(
           viewModel: viewModel,
+          assinaturaRepository: scope.assinaturaRepository,
+          localSignatureAssetStore: scope.localSignatureAssetStore,
+          ratPdfShareService: scope.ratPdfShareService,
           ratRepository: scope.ratRepository,
+          shareRatLocally: scope.shareRatLocally,
         );
     }
   }

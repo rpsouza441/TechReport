@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart' as domain;
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_form_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_form_view_model.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
+import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
+import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 
 import '../view_models/app_session_view_model.dart';
 
 class LocalHomeScreen extends StatefulWidget {
   const LocalHomeScreen({
     super.key,
+    required this.assinaturaRepository,
+    required this.localSignatureAssetStore,
+    required this.ratPdfShareService,
     required this.viewModel,
     required this.ratRepository,
+    required this.shareRatLocally,
   });
 
+  final AssinaturaRepository assinaturaRepository;
+  final LocalSignatureAssetStore localSignatureAssetStore;
+  final RatPdfShareService ratPdfShareService;
   final AppSessionViewModel viewModel;
-
   final RatRepository ratRepository;
+  final ShareRatLocally shareRatLocally;
 
   @override
   State<LocalHomeScreen> createState() => _LocalHomeScreenState();
@@ -29,7 +40,10 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
   void initState() {
     super.initState();
 
-    _ratListViewModel = RatListViewModel(ratRepository: widget.ratRepository);
+    _ratListViewModel = RatListViewModel(
+      assinaturaRepository: widget.assinaturaRepository,
+      ratRepository: widget.ratRepository,
+    );
     _ratListViewModel.load();
   }
 
@@ -107,11 +121,26 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final rat = _ratListViewModel.rats[index];
+                            final hasSignature = _ratListViewModel.hasSignature(
+                              rat.id,
+                            );
                             return Card(
                               child: ListTile(
-                                title: Text(rat.clienteNome),
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(rat.clienteNome)),
+                                    if (hasSignature) ...[
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.draw,
+                                        size: 18,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ],
+                                  ],
+                                ),
                                 subtitle: Text(
-                                  '${rat.numero} • ${rat.descricao}',
+                                  rat.descricao,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -148,7 +177,13 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => RatFormScreen(
-          viewModel: RatFormViewModel(ratRepository: widget.ratRepository),
+          viewModel: RatFormViewModel(
+            assinaturaRepository: widget.assinaturaRepository,
+            localSignatureAssetStore: widget.localSignatureAssetStore,
+            ratPdfShareService: widget.ratPdfShareService,
+            ratRepository: widget.ratRepository,
+            shareRatLocally: widget.shareRatLocally,
+          ),
         ),
       ),
     );
@@ -163,7 +198,11 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
       MaterialPageRoute(
         builder: (_) => RatFormScreen(
           viewModel: RatFormViewModel(
+            assinaturaRepository: widget.assinaturaRepository,
+            localSignatureAssetStore: widget.localSignatureAssetStore,
+            ratPdfShareService: widget.ratPdfShareService,
             ratRepository: widget.ratRepository,
+            shareRatLocally: widget.shareRatLocally,
             initialRat: rat,
           ),
         ),
