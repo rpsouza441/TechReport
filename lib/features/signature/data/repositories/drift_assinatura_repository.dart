@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
 
-import 'package:techreport/features/signature/entities/assinatura.dart'
+import 'package:techreport/features/signature/domain/entities/assinatura.dart'
     as domain;
-import 'package:techreport/features/signature/repositories/assinatura_repository.dart';
+import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/shared/infra/database/tech_report_local_database.dart';
 
 class DriftAssinaturaRepository implements AssinaturaRepository {
