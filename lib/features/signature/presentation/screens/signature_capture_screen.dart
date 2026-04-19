@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -29,8 +30,13 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Peca para o cliente assinar no quadro abaixo.',
+                'Pe\u00e7a para o cliente assinar no quadro abaixo.',
                 style: theme.textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Ao virar o telefone, deixe o lado esquerdo como baixo.',
+                style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -49,24 +55,60 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
                           constraints.maxHeight,
                         );
 
-                        return GestureDetector(
-                          onPanStart: (details) {
-                            setState(() {
-                              _strokes.add([details.localPosition]);
-                            });
-                          },
-                          onPanUpdate: (details) {
-                            setState(() {
-                              if (_strokes.isEmpty) {
-                                _strokes.add([]);
-                              }
-                              _strokes.last.add(details.localPosition);
-                            });
-                          },
-                          child: CustomPaint(
-                            painter: _SignaturePainter(_strokes),
-                            child: const SizedBox.expand(),
-                          ),
+                        return Stack(
+                          children: [
+                            GestureDetector(
+                              onPanStart: (details) {
+                                setState(() {
+                                  _strokes.add([details.localPosition]);
+                                });
+                              },
+                              onPanUpdate: (details) {
+                                setState(() {
+                                  if (_strokes.isEmpty) {
+                                    _strokes.add([]);
+                                  }
+                                  _strokes.last.add(details.localPosition);
+                                });
+                              },
+                              child: CustomPaint(
+                                painter: _SignaturePainter(_strokes),
+                                child: const SizedBox.expand(),
+                              ),
+                            ),
+                            Positioned(
+                              left: 8,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: RotatedBox(
+                                  quarterTurns: 1,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      child: Text(
+                                        'BAIXO DA ASSINATURA',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onPrimaryContainer,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -116,14 +158,17 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
     final canvas = Canvas(recorder);
     final painter = _SignaturePainter(_strokes);
     final size = _canvasSize == Size.zero ? const Size(800, 400) : _canvasSize;
+    final rotatedSize = Size(size.height, size.width);
 
     canvas.drawColor(Colors.white, BlendMode.src);
+    canvas.translate(0, rotatedSize.height);
+    canvas.rotate(-math.pi / 2);
     painter.paint(canvas, size);
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(
-      size.width.round(),
-      size.height.round(),
+      rotatedSize.width.round(),
+      rotatedSize.height.round(),
     );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
