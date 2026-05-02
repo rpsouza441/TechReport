@@ -9,6 +9,12 @@ import 'package:techreport/features/signature/data/services/local_signature_asse
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/shared/infra/security/local_pin_secret_store.dart';
 
+import 'package:techreport/features/company_auth/data/repositories/local_remote_endpoint_repository.dart';
+import 'package:techreport/features/company_auth/data/repositories/local_remote_session_repository.dart';
+import 'package:techreport/features/company_auth/data/repositories/supabase_auth_repository.dart';
+import 'package:techreport/features/company_auth/data/services/flutter_secure_token_store.dart';
+import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
+
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
 import '../../features/local_auth/domain/repositories/tecnico_local_repository.dart';
 import '../../features/local_auth/domain/usecases/bootstrap_local_session.dart';
@@ -29,6 +35,11 @@ class AppScope {
     required this.shareRatLocally,
     required this.tecnicoLocalRepository,
     required this.appSessionViewModel,
+    required this.remoteEndpointRepository,
+    required this.supabaseClientFactory,
+    required this.secureTokenStore,
+    required this.remoteSessionRepository,
+    required this.authRepository,
   });
 
   factory AppScope.create() {
@@ -45,6 +56,18 @@ class AppScope {
     );
     final ratPdfShareService = RatPdfShareService(
       localSignatureAssetStore: localSignatureAssetStore,
+    );
+    final remoteEndpointRepository = LocalRemoteEndpointRepository();
+
+    final supabaseClientFactory = SupabaseClientFactory(
+      endpointRepository: remoteEndpointRepository,
+    );
+    final secureTokenStore = FlutterSecureTokenStore();
+    final remoteSessionRepository = LocalRemoteSessionRepository();
+    final authRepository = SupabaseAuthRepository(
+      clientFactory: supabaseClientFactory,
+      tokenStore: secureTokenStore,
+      remoteSessionRepository: remoteSessionRepository,
     );
 
     return AppScope(
@@ -69,6 +92,11 @@ class AppScope {
           pinSecretRepository: pinSecretRepository,
         ),
       ),
+      remoteEndpointRepository: remoteEndpointRepository,
+      supabaseClientFactory: supabaseClientFactory,
+      secureTokenStore: secureTokenStore,
+      remoteSessionRepository: remoteSessionRepository,
+      authRepository: authRepository,
     );
   }
 
@@ -81,6 +109,11 @@ class AppScope {
   final TecnicoLocalRepository tecnicoLocalRepository;
   final RatRepository ratRepository;
   final AppSessionViewModel appSessionViewModel;
+  final LocalRemoteEndpointRepository remoteEndpointRepository;
+  final SupabaseClientFactory supabaseClientFactory;
+  final FlutterSecureTokenStore secureTokenStore;
+  final LocalRemoteSessionRepository remoteSessionRepository;
+  final SupabaseAuthRepository authRepository;
 
   Future<void> dispose() async {
     await database.close();
