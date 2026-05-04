@@ -24,9 +24,19 @@ A direcao tecnica atual prioriza:
 - `lib/`: codigo-fonte do app Flutter
 - `android/`, `ios/`, `web/`, `windows/`, `linux/`, `macos/`: plataformas suportadas pelo projeto
 - `test/`: testes automatizados
+- `documentacao/`: documentacao publica do projeto
 - `rat/`: projeto legado copiado apenas como referencia funcional e historica
 
 O diretorio `rat/` nao faz parte do novo produto e esta ignorado no Git.
+
+## Documentacao
+
+Para entender o projeto de forma limpa, comece por:
+
+- [`documentacao/README.md`](documentacao/README.md)
+- [`documentacao/visao-geral.md`](documentacao/visao-geral.md)
+- [`documentacao/arquitetura.md`](documentacao/arquitetura.md)
+- [`documentacao/configuracao-supabase.md`](documentacao/configuracao-supabase.md)
 
 ## Estado atual
 

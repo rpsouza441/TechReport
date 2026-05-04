@@ -11,4 +11,8 @@ class SelectAppMode {
       AppModePreference(lastMode: mode, updatedAt: DateTime.now()),
     );
   }
+
+  Future<void> clear() async {
+    await _appModeRepository.clearPreference();
+  }
 }

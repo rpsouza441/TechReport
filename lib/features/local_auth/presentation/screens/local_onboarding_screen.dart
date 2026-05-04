@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import '../view_models/app_session_view_model.dart';
 
 class LocalOnboardingScreen extends StatefulWidget {
-  const LocalOnboardingScreen({super.key, required this.viewModel});
+  const LocalOnboardingScreen({
+    super.key,
+    required this.viewModel,
+    this.onBackToModeChoice,
+  });
 
   final AppSessionViewModel viewModel;
+  final Future<void> Function()? onBackToModeChoice;
 
   @override
   State<LocalOnboardingScreen> createState() => _LocalOnboardingScreenState();
@@ -64,17 +69,13 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
                         const SizedBox(height: 24),
                         TextFormField(
                           controller: _nomeController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nome',
-                          ),
+                          decoration: const InputDecoration(labelText: 'Nome'),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                          ),
+                          decoration: const InputDecoration(labelText: 'Email'),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -141,6 +142,15 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
                               : _handleSubmit,
                           child: const Text('Concluir onboarding'),
                         ),
+                        if (widget.onBackToModeChoice != null) ...[
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: widget.viewModel.isLoading
+                                ? null
+                                : widget.onBackToModeChoice,
+                            child: const Text('Voltar para escolha de modo'),
+                          ),
+                        ],
                       ],
                     ),
                   ),

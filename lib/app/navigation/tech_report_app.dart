@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
+import '../../features/company_auth/presentation/screens/company_home_screen.dart';
+import '../../features/company_auth/presentation/screens/company_sign_in_screen.dart';
+import '../../features/company_auth/presentation/screens/remote_server_config_screen.dart';
+import '../../features/company_auth/presentation/view_models/app_mode_choice_view_model.dart';
+import '../../features/company_auth/presentation/view_models/company_sign_in_view_model.dart';
+import '../../features/company_auth/presentation/view_models/remote_server_config_view_model.dart';
 import '../../features/local_auth/presentation/screens/local_home_screen.dart';
 import '../../features/local_auth/presentation/screens/local_onboarding_screen.dart';
 import '../../features/local_auth/presentation/screens/local_unlock_screen.dart';
-import '../../features/local_auth/presentation/view_models/app_session_view_model.dart';
 import '../di/app_scope.dart';
+import 'app_bootstrap_view_model.dart';
 
 class TechReportApp extends StatefulWidget {
   const TechReportApp({super.key, required this.scope});
@@ -16,18 +23,25 @@ class TechReportApp extends StatefulWidget {
 }
 
 class _TechReportAppState extends State<TechReportApp> {
-  AppSessionViewModel get viewModel => widget.scope.appSessionViewModel;
+  late final AppBootstrapViewModel bootstrapViewModel;
 
   @override
   void initState() {
     super.initState();
-    viewModel.bootstrap();
+
+    bootstrapViewModel = AppBootstrapViewModel(
+      localSessionViewModel: widget.scope.appSessionViewModel,
+      bootstrapCompanySession: widget.scope.bootstrapCompanySession,
+      selectAppMode: widget.scope.selectAppMode,
+    );
+
+    bootstrapViewModel.bootstrap();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: viewModel,
+      animation: bootstrapViewModel,
       builder: (context, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -40,43 +54,93 @@ class _TechReportAppState extends State<TechReportApp> {
             scaffoldBackgroundColor: const Color(0xFFF4F7F5),
             useMaterial3: true,
           ),
-          home: LocalSessionShell(viewModel: viewModel, scope: widget.scope),
+          home: AppShell(
+            bootstrapViewModel: bootstrapViewModel,
+            scope: widget.scope,
+          ),
         );
       },
     );
   }
 }
 
-class LocalSessionShell extends StatelessWidget {
-  const LocalSessionShell({
+class AppShell extends StatelessWidget {
+  const AppShell({
     super.key,
-    required this.viewModel,
+    required this.bootstrapViewModel,
     required this.scope,
   });
 
-  final AppSessionViewModel viewModel;
-
+  final AppBootstrapViewModel bootstrapViewModel;
   final AppScope scope;
 
   @override
   Widget build(BuildContext context) {
-    if (viewModel.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    switch (bootstrapViewModel.status) {
+      case AppBootstrapStatus.loading:
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    switch (viewModel.status) {
-      case AppSessionStatus.onboardingRequired:
-        return LocalOnboardingScreen(viewModel: viewModel);
-      case AppSessionStatus.locked:
-        return LocalUnlockScreen(viewModel: viewModel);
-      case AppSessionStatus.unlocked:
+      case AppBootstrapStatus.modeChoiceRequired:
+        return AppModeChoiceScreen(
+          viewModel: AppModeChoiceViewModel(selectAppMode: scope.selectAppMode),
+          onCompanySelected: bootstrapViewModel.requireRemoteEndpoint,
+          onLocalSelected: bootstrapViewModel.chooseLocal,
+        );
+
+      case AppBootstrapStatus.localOnboarding:
+        return LocalOnboardingScreen(
+          viewModel: scope.appSessionViewModel,
+          onBackToModeChoice: bootstrapViewModel.requireModeChoice,
+        );
+
+      case AppBootstrapStatus.localLocked:
+        return LocalUnlockScreen(viewModel: scope.appSessionViewModel);
+
+      case AppBootstrapStatus.localUnlocked:
         return LocalHomeScreen(
-          viewModel: viewModel,
+          viewModel: scope.appSessionViewModel,
           assinaturaRepository: scope.assinaturaRepository,
           localSignatureAssetStore: scope.localSignatureAssetStore,
           ratPdfShareService: scope.ratPdfShareService,
           ratRepository: scope.ratRepository,
           shareRatLocally: scope.shareRatLocally,
+        );
+
+      case AppBootstrapStatus.remoteEndpointRequired:
+        return RemoteServerConfigScreen(
+          viewModel: RemoteServerConfigViewModel(
+            remoteEndpointRepository: scope.remoteEndpointRepository,
+          ),
+          onSaved: bootstrapViewModel.requireRemoteLogin,
+          onCancel: bootstrapViewModel.chooseLocal,
+        );
+
+      case AppBootstrapStatus.remoteLoginRequired:
+        return CompanySignInScreen(
+          viewModel: CompanySignInViewModel(signInCompany: scope.signInCompany),
+          onSignedIn: bootstrapViewModel.unlockCompany,
+          onCancel: bootstrapViewModel.requireRemoteEndpoint,
+        );
+
+      case AppBootstrapStatus.companyUnlocked:
+        final session = bootstrapViewModel.remoteSession;
+
+        if (session == null) {
+          return CompanySignInScreen(
+            viewModel: CompanySignInViewModel(
+              signInCompany: scope.signInCompany,
+            ),
+            onSignedIn: bootstrapViewModel.unlockCompany,
+            onCancel: bootstrapViewModel.requireRemoteEndpoint,
+          );
+        }
+
+        return CompanyHomeScreen(
+          session: session,
+          onSignOut: () async {
+            await scope.signOutCompany();
+            await bootstrapViewModel.bootstrap();
+          },
         );
     }
   }

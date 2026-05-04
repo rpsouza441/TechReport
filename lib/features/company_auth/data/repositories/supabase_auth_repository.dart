@@ -20,17 +20,21 @@ class SupabaseAuthRepository implements AuthRepository {
   final RemoteSessionRepository _remoteSessionRepository;
 
   @override
-  @override
   Future<SessaoRemota> signIn({
     required String email,
     required String password,
   }) async {
     final client = await requireClient();
 
-    final response = await client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    final AuthResponse response;
+    try {
+      response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } on AuthApiException catch (e) {
+      throw mapAuthException(e);
+    }
 
     final session = response.session;
     if (session == null) {
@@ -49,12 +53,16 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     }
 
+    final remoteSession = await buildRemoteSession(
+      client: client,
+      session: session,
+      user: user,
+    );
+
     await _tokenStore.saveTokens(
       accessToken: session.accessToken,
       refreshToken: refreshToken,
     );
-
-    final remoteSession = buildRemoteSession(session: session, user: user);
 
     await _remoteSessionRepository.saveSession(remoteSession);
 
@@ -101,7 +109,8 @@ class SupabaseAuthRepository implements AuthRepository {
       refreshToken: newRefreshToken,
     );
 
-    final restoredSession = buildRemoteSession(
+    final restoredSession = await buildRemoteSession(
+      client: client,
       session: session,
       user: user,
       previousSession: savedSession,
@@ -140,7 +149,8 @@ class SupabaseAuthRepository implements AuthRepository {
       refreshToken: refreshToken,
     );
 
-    final refreshedSession = buildRemoteSession(
+    final refreshedSession = await buildRemoteSession(
+      client: client,
       session: session,
       user: user,
       previousSession: savedSession,
@@ -172,17 +182,18 @@ class SupabaseAuthRepository implements AuthRepository {
     return client;
   }
 
-  String requireMetadata(User user, String key) {
-    final value = user.appMetadata[key];
-
-    if (value is String && value.isNotEmpty) {
-      return value;
+  RemoteAuthException mapAuthException(AuthApiException exception) {
+    if (exception.code == 'invalid_credentials') {
+      return const RemoteAuthException('Email ou senha invalidos.');
     }
 
-    throw RemoteAuthException('Metadata remota obrigatoria ausente: $key.');
+    return const RemoteAuthException(
+      'Nao foi possivel entrar. Confira os dados e tente novamente.',
+    );
   }
 
-  SessaoRemota buildRemoteSession({
+  Future<SessaoRemota> buildRemoteSession({
+    required SupabaseClient client,
     required Session session,
     required User user,
     SessaoRemota? previousSession,
@@ -192,21 +203,60 @@ class SupabaseAuthRepository implements AuthRepository {
         ? now
         : DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
 
-    return SessaoRemota(
-      id: previousSession?.id ?? session.accessToken.hashCode.toString(),
-      empresaId:
-          previousSession?.empresaId ?? requireMetadata(user, 'empresaId'),
-      usuarioId: user.id,
-      tecnicoId:
-          previousSession?.tecnicoId ?? requireMetadata(user, 'tecnicoId'),
-      accessTokenRef: SecureTokenStore.accessTokenRef,
-      refreshTokenRef: SecureTokenStore.refreshTokenRef,
-      endpointRef: previousSession?.endpointRef ?? 'active',
-      expiresAt: expiresAt,
-      lastValidatedAt: now,
-      offlineAccessUntil: now.add(const Duration(days: 7)),
-      createdAt: previousSession?.createdAt ?? now,
-      updatedAt: now,
-    );
+    return _fetchTecnicoProfile(client: client, user: user).then((profile) {
+      return SessaoRemota(
+        id: previousSession?.id ?? session.accessToken.hashCode.toString(),
+        empresaId: profile.empresaId,
+        usuarioId: user.id,
+        tecnicoId: profile.tecnicoId,
+        accessTokenRef: SecureTokenStore.accessTokenRef,
+        refreshTokenRef: SecureTokenStore.refreshTokenRef,
+        endpointRef: previousSession?.endpointRef ?? 'active',
+        expiresAt: expiresAt,
+        lastValidatedAt: now,
+        offlineAccessUntil: now.add(const Duration(days: 7)),
+        createdAt: previousSession?.createdAt ?? now,
+        updatedAt: now,
+      );
+    });
   }
+
+  Future<_TecnicoProfile> _fetchTecnicoProfile({
+    required SupabaseClient client,
+    required User user,
+  }) async {
+    final profile = await client
+        .from('tecnicos')
+        .select('id, empresa_id')
+        .eq('user_id', user.id)
+        .eq('ativo', true)
+        .maybeSingle();
+
+    if (profile == null) {
+      throw const RemoteAuthException(
+        'Conta remota autenticada, mas nao vinculada a uma empresa TechReport.',
+      );
+    }
+
+    final empresaId = profile['empresa_id'];
+    final tecnicoId = profile['id'];
+
+    if (empresaId is! String ||
+        empresaId.isEmpty ||
+        tecnicoId is! String ||
+        tecnicoId.isEmpty) {
+      throw const RemoteAuthException(
+        'Cadastro remoto incompleto para este usuario.',
+      );
+    }
+
+    return _TecnicoProfile(empresaId: empresaId, tecnicoId: tecnicoId);
+  }
+}
+
+class _TecnicoProfile {
+  const _TecnicoProfile({required this.empresaId, required this.tecnicoId});
+
+  final String empresaId;
+  final String tecnicoId;
 }

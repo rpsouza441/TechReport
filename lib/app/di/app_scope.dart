@@ -15,6 +15,12 @@ import 'package:techreport/features/company_auth/data/repositories/supabase_auth
 import 'package:techreport/features/company_auth/data/services/flutter_secure_token_store.dart';
 import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
 
+import 'package:techreport/features/company_auth/data/repositories/local_app_mode_repository.dart';
+import 'package:techreport/features/company_auth/domain/usecases/bootstrap_company_session.dart';
+import 'package:techreport/features/company_auth/domain/usecases/select_app_mode.dart';
+import 'package:techreport/features/company_auth/domain/usecases/sign_in_company.dart';
+import 'package:techreport/features/company_auth/domain/usecases/sign_out_company.dart';
+
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
 import '../../features/local_auth/domain/repositories/tecnico_local_repository.dart';
 import '../../features/local_auth/domain/usecases/bootstrap_local_session.dart';
@@ -40,6 +46,11 @@ class AppScope {
     required this.secureTokenStore,
     required this.remoteSessionRepository,
     required this.authRepository,
+    required this.appModeRepository,
+    required this.selectAppMode,
+    required this.bootstrapCompanySession,
+    required this.signInCompany,
+    required this.signOutCompany,
   });
 
   factory AppScope.create() {
@@ -69,6 +80,24 @@ class AppScope {
       tokenStore: secureTokenStore,
       remoteSessionRepository: remoteSessionRepository,
     );
+    final appModeRepository = LocalAppModeRepository();
+    final selectAppMode = SelectAppMode(appModeRepository);
+
+    final bootstrapCompanySession = BootstrapCompanySession(
+      appModeRepository: appModeRepository,
+      authRepository: authRepository,
+    );
+    final signInCompany = SignInCompany(
+      authRepository: authRepository,
+      remoteSessionRepository: remoteSessionRepository,
+      appModeRepository: appModeRepository,
+    );
+
+    final signOutCompany = SignOutCompany(
+      authRepository: authRepository,
+      remoteSessionRepository: remoteSessionRepository,
+      appModeRepository: appModeRepository,
+    );
 
     return AppScope(
       database: database,
@@ -97,6 +126,11 @@ class AppScope {
       secureTokenStore: secureTokenStore,
       remoteSessionRepository: remoteSessionRepository,
       authRepository: authRepository,
+      appModeRepository: appModeRepository,
+      selectAppMode: selectAppMode,
+      bootstrapCompanySession: bootstrapCompanySession,
+      signInCompany: signInCompany,
+      signOutCompany: signOutCompany,
     );
   }
 
@@ -114,6 +148,11 @@ class AppScope {
   final FlutterSecureTokenStore secureTokenStore;
   final LocalRemoteSessionRepository remoteSessionRepository;
   final SupabaseAuthRepository authRepository;
+  final LocalAppModeRepository appModeRepository;
+  final SelectAppMode selectAppMode;
+  final BootstrapCompanySession bootstrapCompanySession;
+  final SignInCompany signInCompany;
+  final SignOutCompany signOutCompany;
 
   Future<void> dispose() async {
     await database.close();

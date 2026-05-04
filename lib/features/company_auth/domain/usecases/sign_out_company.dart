@@ -25,7 +25,7 @@ class SignOutCompany {
     } finally {
       await _remoteSessionRepository.deleteSession();
       await _appModeRepository.savePreference(
-        AppModePreference(lastMode: AppMode.local, updatedAt: DateTime.now()),
+        AppModePreference(lastMode: AppMode.company, updatedAt: DateTime.now()),
       );
     }
     if (remoteError != null) {
