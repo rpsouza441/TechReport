@@ -112,14 +112,14 @@ class AppShell extends StatelessWidget {
             remoteEndpointRepository: scope.remoteEndpointRepository,
           ),
           onSaved: bootstrapViewModel.requireRemoteLogin,
-          onCancel: bootstrapViewModel.chooseLocal,
+          onCancel: bootstrapViewModel.requireModeChoice,
         );
 
       case AppBootstrapStatus.remoteLoginRequired:
         return CompanySignInScreen(
           viewModel: CompanySignInViewModel(signInCompany: scope.signInCompany),
           onSignedIn: bootstrapViewModel.unlockCompany,
-          onCancel: bootstrapViewModel.requireRemoteEndpoint,
+          onCancel: bootstrapViewModel.requireModeChoice,
         );
 
       case AppBootstrapStatus.companyUnlocked:
@@ -131,7 +131,7 @@ class AppShell extends StatelessWidget {
               signInCompany: scope.signInCompany,
             ),
             onSignedIn: bootstrapViewModel.unlockCompany,
-            onCancel: bootstrapViewModel.requireRemoteEndpoint,
+            onCancel: bootstrapViewModel.requireModeChoice,
           );
         }
 
