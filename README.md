@@ -1,33 +1,36 @@
 # TechReport
 
-TechReport e a reconstrucao de um aplicativo de relatorios de atendimento tecnico.
+TechReport e a reconstrucao de um aplicativo Flutter para Relatorios de
+Atendimento Tecnico `RAT`.
 
-O projeto nasce como uma nova base Flutter, com foco em reduzir o acoplamento do app antigo, melhorar a experiencia visual e preparar a evolucao para um backend mais robusto.
+O produto e local-first e possui dois modos:
 
-## Objetivo
+- `local`: uso individual do tecnico, com persistencia no dispositivo,
+  assinatura e compartilhamento local/PDF.
+- `empresa`: autenticacao remota, isolamento por empresa, Supabase e
+  sincronizacao progressiva.
 
-O produto esta sendo pensado em dois modos:
+## Direcao Tecnica
 
-- local: uso individual do tecnico, com persistencia no dispositivo, assinatura e compartilhamento por email
-- empresa: autenticacao remota, sincronizacao e isolamento de dados por empresa
+- Flutter como app principal.
+- Drift/SQLite para persistencia local.
+- Supabase como backend remoto oficial do MVP.
+- RLS e policies para isolamento remoto.
+- Arquitetura por camadas: presentation, domain, data/infra.
+- Nenhuma `SERVICE_ROLE_KEY` no app.
+- Migrations Supabase aplicadas fora do Flutter.
 
-A direcao tecnica atual prioriza:
+Backend proprio fica apenas como possibilidade futura.
 
-- Flutter como frontend
-- arquitetura mais limpa e desacoplada
-- persistencia local first
-- backend proprio no modo empresa
-- SQL no servidor, preferencialmente Postgres
+## Estrutura Do Repositorio
 
-## Estrutura do repositorio
-
-- `lib/`: codigo-fonte do app Flutter
-- `android/`, `ios/`, `web/`, `windows/`, `linux/`, `macos/`: plataformas suportadas pelo projeto
-- `test/`: testes automatizados
-- `documentacao/`: documentacao publica do projeto
-- `rat/`: projeto legado copiado apenas como referencia funcional e historica
-
-O diretorio `rat/` nao faz parte do novo produto e esta ignorado no Git.
+- `lib/`: codigo-fonte do app Flutter.
+- `supabase/migrations/`: schema remoto versionado.
+- `supabase/seed.example.sql`: seed seguro com placeholders.
+- `documentacao/`: documentacao publica do projeto.
+- `docs/`: sprints, decisoes, contratos, prompts e referencias internas.
+- `android/`, `ios/`, `web/`, `windows/`, `linux/`, `macos/`: plataformas do
+  projeto Flutter.
 
 ## Documentacao
 
@@ -36,22 +39,29 @@ Para entender o projeto de forma limpa, comece por:
 - [`documentacao/README.md`](documentacao/README.md)
 - [`documentacao/visao-geral.md`](documentacao/visao-geral.md)
 - [`documentacao/arquitetura.md`](documentacao/arquitetura.md)
-- [`documentacao/configuracao-supabase.md`](documentacao/configuracao-supabase.md)
+- [`documentacao/estado-do-projeto.md`](documentacao/estado-do-projeto.md)
 
-## Estado atual
+Para retomar desenvolvimento por sprint:
 
-Neste momento, o repositorio contem a base Flutter do novo produto, o fluxo
-local-first e a entrada inicial do modo empresa com configuracao de servidor,
-login remoto via Supabase e sessao remota separada da sessao local.
+- [`docs/README.md`](docs/README.md)
+- [`docs/sprint6/README.md`](docs/sprint6/README.md)
+- [`docs/sprint6/passos.md`](docs/sprint6/passos.md)
 
-As proximas prioridades sao:
+## Estado Atual
 
-1. validar isolamento de dados por RLS
-2. manter o modo local funcionando sem backend
-3. preparar sincronizacao futura de RATs
-4. evoluir permissoes e administracao do modo empresa
+Sprint 5 foi fechada funcionalmente em 2026-05-12:
 
-## Como rodar
+- modo local existe;
+- modo empresa autentica via Supabase;
+- sessao remota nao expoe tokens puros no dominio;
+- RLS basica foi validada;
+- sync MVP de RAT existe;
+- tecnico comum e gerente possuem escopos diferentes.
+
+Proxima frente: Sprint 6 - conformidade do produto base, com RAT completo, PDF,
+schema local/remoto e Metric Slate nas telas tocadas.
+
+## Como Rodar
 
 ```bash
 flutter pub get
@@ -60,6 +70,9 @@ flutter run
 
 ## Observacoes
 
-- O app antigo servira como referencia de fluxo e regras de negocio, nao como base arquitetural.
-- A reconstrucao deve reaproveitar o dominio e os casos de uso, mas nao o acoplamento antigo ao Firebase.
-- O foco inicial e fazer bem o modo local antes de avancar para sincronizacao e backend.
+- O modo local deve continuar funcionando sem backend.
+- O app nunca deve aplicar migrations Supabase em runtime.
+- O app nunca deve conter credenciais administrativas.
+- `docs/prompt.md` e o alvo canonico do produto.
+- `docs/prompt2.md` guia a continuidade pos-sprints.
+

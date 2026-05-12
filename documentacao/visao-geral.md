@@ -1,15 +1,17 @@
 # Visao Geral
 
-TechReport e um aplicativo Flutter para criar relatorios de atendimento
-tecnico.
+TechReport e um aplicativo Flutter para criar Relatorios de Atendimento Tecnico
+`RAT`.
 
-O projeto foi reconstruido com foco em:
+O projeto esta sendo reconstruido com foco em:
 
 - uso local-first;
 - registro de RATs no dispositivo;
 - captura de assinatura;
 - compartilhamento de relatorios;
-- preparacao para modo empresa com autenticacao remota e sincronizacao futura.
+- modo empresa com Supabase;
+- isolamento por empresa;
+- sincronizacao progressiva.
 
 ## Modos De Uso
 
@@ -22,14 +24,14 @@ assinar e compartilhar relatorios localmente.
 
 ### Modo Empresa
 
-O modo empresa adiciona uma instancia remota, inicialmente usando Supabase.
+O modo empresa usa Supabase como backend remoto do MVP.
 
-Neste modo, a empresa configura um servidor, o usuario entra com email e senha
-remotos e o app prepara uma sessao para recursos corporativos futuros, como
-sincronizacao, usuarios da empresa e permissoes.
+Neste modo, a empresa configura uma instancia Supabase, o usuario entra com
+email e senha remotos e o app sincroniza RATs de forma local-first conforme a
+sessao e as permissoes remotas.
 
-Na etapa atual, o modo empresa cobre a base de configuracao e autenticacao. A
-sincronizacao completa de RATs fica para uma etapa posterior.
+Na etapa atual, o modo empresa ja cobre configuracao, login remoto, sessao
+remota, sync basico de RAT e isolamento por RLS para tecnico comum e gerente.
 
 ## Principios
 
@@ -39,3 +41,6 @@ sincronizacao completa de RATs fica para uma etapa posterior.
 - O schema remoto deve ser preparado fora do app.
 - O app Flutter usa apenas configuracao publica do servidor e APIs permitidas
   pelas policies do backend.
+- Supabase e o backend remoto oficial do MVP.
+- Backend proprio fica apenas como possibilidade futura.
+
