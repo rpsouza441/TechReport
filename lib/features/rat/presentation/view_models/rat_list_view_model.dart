@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 
 import '../../domain/entities/rat.dart';
@@ -8,11 +9,14 @@ class RatListViewModel extends ChangeNotifier {
   RatListViewModel({
     required AssinaturaRepository assinaturaRepository,
     required RatRepository ratRepository,
+    required RatListScope scope,
   }) : _assinaturaRepository = assinaturaRepository,
-       _ratRepository = ratRepository;
+       _ratRepository = ratRepository,
+       _scope = scope;
 
   final AssinaturaRepository _assinaturaRepository;
   final RatRepository _ratRepository;
+  final RatListScope _scope;
 
   List<Rat> _rats = [];
   Set<String> _signedRatIds = {};
@@ -34,12 +38,24 @@ class RatListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _rats = await _ratRepository.listAll();
+      switch (_scope.type) {
+        case RatListScopeType.local:
+          _rats = await _ratRepository.listLocal();
+        case RatListScopeType.companyTechnician:
+          _rats = await _ratRepository.listCompanyForTechnician(
+            empresaId: _scope.empresaId!,
+            tecnicoId: _scope.tecnicoId!,
+          );
+        case RatListScopeType.companyManager:
+          _rats = await _ratRepository.listCompanyForManager(
+            empresaId: _scope.empresaId!,
+          );
+      }
+
       _signedRatIds = await _loadSignedRatIds(_rats);
     } catch (_) {
       _errorMessage = 'Nao foi possivel carregar os RATs.';
     }
-
     _isLoading = false;
     notifyListeners();
   }

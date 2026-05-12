@@ -3,10 +3,19 @@ import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_l
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/repositories/remote_rat_repository.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/repositories/drift_assinatura_repository.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
+import 'package:techreport/features/sync/data/repositories/drift_sync_queue_repository.dart';
+import 'package:techreport/features/rat/data/repositories/supabase_remote_rat_repository.dart';
+import 'package:techreport/features/sync/data/repositories/local_sync_checkpoint_repository.dart';
+import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
+import 'package:techreport/features/sync/domain/repositories/sync_checkpoint_repository.dart';
+import 'package:techreport/features/sync/domain/repositories/sync_queue_repository.dart';
+import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
+import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
 import 'package:techreport/shared/infra/security/local_pin_secret_store.dart';
 
 import 'package:techreport/features/company_auth/data/repositories/local_remote_endpoint_repository.dart';
@@ -43,6 +52,10 @@ class AppScope {
     required this.appSessionViewModel,
     required this.remoteEndpointRepository,
     required this.supabaseClientFactory,
+    required this.syncQueueRepository,
+    required this.remoteRatRepository,
+    required this.enqueueRatSync,
+    required this.processSyncQueue,
     required this.secureTokenStore,
     required this.remoteSessionRepository,
     required this.authRepository,
@@ -51,6 +64,8 @@ class AppScope {
     required this.bootstrapCompanySession,
     required this.signInCompany,
     required this.signOutCompany,
+    required this.syncCheckpointRepository,
+    required this.downloadRemoteRats,
   });
 
   factory AppScope.create() {
@@ -69,11 +84,27 @@ class AppScope {
       localSignatureAssetStore: localSignatureAssetStore,
     );
     final remoteEndpointRepository = LocalRemoteEndpointRepository();
+    final secureTokenStore = FlutterSecureTokenStore();
 
     final supabaseClientFactory = SupabaseClientFactory(
       endpointRepository: remoteEndpointRepository,
+      tokenStore: secureTokenStore,
     );
-    final secureTokenStore = FlutterSecureTokenStore();
+    final syncQueueRepository = DriftSyncQueueRepository(database);
+    final remoteRatRepository = SupabaseRemoteRatRepository(
+      clientFactory: supabaseClientFactory,
+    );
+    final enqueueRatSync = EnqueueRatSync(queueRepository: syncQueueRepository);
+    final syncCheckpointRepository = LocalSyncCheckpointRepository();
+    final downloadRemoteRats = DownloadRemoteRats(
+      remoteRatRepository: remoteRatRepository,
+      ratRepository: ratRepository,
+      checkpointRepository: syncCheckpointRepository,
+    );
+    final processSyncQueue = ProcessSyncQueue(
+      queueRepository: syncQueueRepository,
+      remoteRatRepository: remoteRatRepository,
+    );
     final remoteSessionRepository = LocalRemoteSessionRepository();
     final authRepository = SupabaseAuthRepository(
       clientFactory: supabaseClientFactory,
@@ -123,6 +154,12 @@ class AppScope {
       ),
       remoteEndpointRepository: remoteEndpointRepository,
       supabaseClientFactory: supabaseClientFactory,
+      syncQueueRepository: syncQueueRepository,
+      syncCheckpointRepository: syncCheckpointRepository,
+      downloadRemoteRats: downloadRemoteRats,
+      remoteRatRepository: remoteRatRepository,
+      enqueueRatSync: enqueueRatSync,
+      processSyncQueue: processSyncQueue,
       secureTokenStore: secureTokenStore,
       remoteSessionRepository: remoteSessionRepository,
       authRepository: authRepository,
@@ -145,6 +182,10 @@ class AppScope {
   final AppSessionViewModel appSessionViewModel;
   final LocalRemoteEndpointRepository remoteEndpointRepository;
   final SupabaseClientFactory supabaseClientFactory;
+  final SyncQueueRepository syncQueueRepository;
+  final RemoteRatRepository remoteRatRepository;
+  final EnqueueRatSync enqueueRatSync;
+  final ProcessSyncQueue processSyncQueue;
   final FlutterSecureTokenStore secureTokenStore;
   final LocalRemoteSessionRepository remoteSessionRepository;
   final SupabaseAuthRepository authRepository;
@@ -153,6 +194,8 @@ class AppScope {
   final BootstrapCompanySession bootstrapCompanySession;
   final SignInCompany signInCompany;
   final SignOutCompany signOutCompany;
+  final SyncCheckpointRepository syncCheckpointRepository;
+  final DownloadRemoteRats downloadRemoteRats;
 
   Future<void> dispose() async {
     await database.close();

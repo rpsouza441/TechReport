@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/features/rat/presentation/screens/rat_list_screen.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
 
 import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
-import '../../features/company_auth/presentation/screens/company_home_screen.dart';
 import '../../features/company_auth/presentation/screens/company_sign_in_screen.dart';
 import '../../features/company_auth/presentation/screens/remote_server_config_screen.dart';
 import '../../features/company_auth/presentation/view_models/app_mode_choice_view_model.dart';
@@ -135,11 +137,31 @@ class AppShell extends StatelessWidget {
           );
         }
 
-        return CompanyHomeScreen(
-          session: session,
+        final ratListScope = session.isGerente
+            ? RatListScope.companyManager(empresaId: session.empresaId)
+            : RatListScope.companyTechnician(
+                empresaId: session.empresaId,
+                tecnicoId: session.tecnicoId,
+              );
+
+        return RatListScreen(
+          viewModel: RatListViewModel(
+            assinaturaRepository: scope.assinaturaRepository,
+            ratRepository: scope.ratRepository,
+            scope: ratListScope,
+          ),
+          assinaturaRepository: scope.assinaturaRepository,
+          localSignatureAssetStore: scope.localSignatureAssetStore,
+          ratPdfShareService: scope.ratPdfShareService,
+          ratRepository: scope.ratRepository,
+          shareRatLocally: scope.shareRatLocally,
+          remoteSession: session,
+          enqueueRatSync: scope.enqueueRatSync,
+          processSyncQueue: scope.processSyncQueue,
+          downloadRemoteRats: scope.downloadRemoteRats,
           onSignOut: () async {
             await scope.signOutCompany();
-            await bootstrapViewModel.bootstrap();
+            bootstrapViewModel.requireRemoteLogin();
           },
         );
     }

@@ -2,12 +2,15 @@ enum RatStatus { draft, finalizado, enviado, arquivado }
 
 enum RatSyncStatus { localOnly, pendingSync, synced, syncError }
 
-enum RatOwnerType { localTecnico }
+enum RatOwnerType { localTecnico, companyTecnico }
 
 class Rat {
   const Rat({
     required this.id,
     required this.authorId,
+    this.empresaId,
+    this.usuarioId,
+    this.tecnicoId,
     required this.ownerType,
     required this.numero,
     required this.clienteNome,
@@ -21,6 +24,9 @@ class Rat {
 
   final String id;
   final String authorId;
+  final String? empresaId;
+  final String? usuarioId;
+  final String? tecnicoId;
   final RatOwnerType ownerType;
   final String numero;
   final String clienteNome;
@@ -42,6 +48,9 @@ class Rat {
   Rat copyWith({
     String? id,
     String? authorId,
+    String? empresaId,
+    String? usuarioId,
+    String? tecnicoId,
     RatOwnerType? ownerType,
     String? numero,
     String? clienteNome,
@@ -55,6 +64,9 @@ class Rat {
     return Rat(
       id: id ?? this.id,
       authorId: authorId ?? this.authorId,
+      empresaId: empresaId ?? this.empresaId,
+      usuarioId: usuarioId ?? this.usuarioId,
+      tecnicoId: tecnicoId ?? this.tecnicoId,
       ownerType: ownerType ?? this.ownerType,
       numero: numero ?? this.numero,
       clienteNome: clienteNome ?? this.clienteNome,
@@ -78,6 +90,9 @@ class Rat {
     return other is Rat &&
         other.id == id &&
         other.authorId == authorId &&
+        other.empresaId == empresaId &&
+        other.usuarioId == usuarioId &&
+        other.tecnicoId == tecnicoId &&
         other.ownerType == ownerType &&
         other.numero == numero &&
         other.clienteNome == clienteNome &&
@@ -93,6 +108,9 @@ class Rat {
   int get hashCode => Object.hash(
     id,
     authorId,
+    empresaId,
+    usuarioId,
+    tecnicoId,
     ownerType,
     numero,
     clienteNome,

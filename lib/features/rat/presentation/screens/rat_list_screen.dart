@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
+import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
+import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
+import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
 
 import '../../domain/entities/rat.dart';
 import '../../domain/repositories/rat_repository.dart';
@@ -19,6 +23,11 @@ class RatListScreen extends StatefulWidget {
     required this.viewModel,
     required this.ratRepository,
     required this.shareRatLocally,
+    this.remoteSession,
+    this.enqueueRatSync,
+    this.processSyncQueue,
+    this.downloadRemoteRats,
+    this.onSignOut,
   });
 
   final AssinaturaRepository assinaturaRepository;
@@ -27,12 +36,19 @@ class RatListScreen extends StatefulWidget {
   final RatListViewModel viewModel;
   final RatRepository ratRepository;
   final ShareRatLocally shareRatLocally;
+  final SessaoRemota? remoteSession;
+  final EnqueueRatSync? enqueueRatSync;
+  final ProcessSyncQueue? processSyncQueue;
+  final DownloadRemoteRats? downloadRemoteRats;
+  final Future<void> Function()? onSignOut;
 
   @override
   State<RatListScreen> createState() => _RatListScreenState();
 }
 
 class _RatListScreenState extends State<RatListScreen> {
+  bool _isSigningOut = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +61,23 @@ class _RatListScreenState extends State<RatListScreen> {
       animation: widget.viewModel,
       builder: (context, _) {
         return Scaffold(
-          appBar: AppBar(title: const Text('RATs')),
+          appBar: AppBar(
+            title: const Text('RATs'),
+            actions: [
+              if (widget.remoteSession != null)
+                IconButton(
+                  onPressed: _syncNow,
+                  icon: const Icon(Icons.sync),
+                  tooltip: 'Sincronizar',
+                ),
+              if (widget.remoteSession != null)
+                IconButton(
+                  onPressed: _isSigningOut ? null : _signOut,
+                  icon: const Icon(Icons.logout),
+                  tooltip: 'Sair',
+                ),
+            ],
+          ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: _openCreate,
             icon: const Icon(Icons.add),
@@ -90,7 +122,22 @@ class _RatListScreenState extends State<RatListScreen> {
                         ],
                       ),
                       subtitle: Text(rat.descricao),
-                      trailing: Text(rat.status.name),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(rat.status.name),
+                          const SizedBox(height: 4),
+                          Text(
+                            _syncLabel(rat.syncStatus),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: _syncColor(context, rat.syncStatus),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
                       onTap: () => _openEdit(rat),
                     ),
                   );
@@ -113,6 +160,10 @@ class _RatListScreenState extends State<RatListScreen> {
             ratPdfShareService: widget.ratPdfShareService,
             ratRepository: widget.ratRepository,
             shareRatLocally: widget.shareRatLocally,
+            remoteSession: widget.remoteSession,
+            enqueueRatSync: widget.enqueueRatSync,
+            processSyncQueue: widget.processSyncQueue,
+            downloadRemoteRats: widget.downloadRemoteRats,
           ),
         ),
       ),
@@ -134,6 +185,10 @@ class _RatListScreenState extends State<RatListScreen> {
             ratRepository: widget.ratRepository,
             shareRatLocally: widget.shareRatLocally,
             initialRat: rat,
+            remoteSession: widget.remoteSession,
+            enqueueRatSync: widget.enqueueRatSync,
+            processSyncQueue: widget.processSyncQueue,
+            downloadRemoteRats: widget.downloadRemoteRats,
           ),
         ),
       ),
@@ -141,6 +196,65 @@ class _RatListScreenState extends State<RatListScreen> {
 
     if (result == true) {
       await widget.viewModel.load();
+    }
+  }
+
+  Future<void> _syncNow() async {
+    final session = widget.remoteSession;
+    final processSyncQueue = widget.processSyncQueue;
+    final downloadRemoteRats = widget.downloadRemoteRats;
+
+    if (session == null || processSyncQueue == null) {
+      return;
+    }
+
+    await processSyncQueue.call(
+      empresaId: session.empresaId,
+      usuarioId: session.usuarioId,
+      retryFailed: true,
+    );
+    await downloadRemoteRats?.call(empresaId: session.empresaId);
+    await widget.viewModel.load();
+  }
+
+  Future<void> _signOut() async {
+    final onSignOut = widget.onSignOut;
+    if (onSignOut == null) {
+      return;
+    }
+
+    setState(() {
+      _isSigningOut = true;
+    });
+
+    await onSignOut();
+  }
+
+  Color _syncColor(BuildContext context, RatSyncStatus status) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    switch (status) {
+      case RatSyncStatus.localOnly:
+        return colorScheme.outline;
+      case RatSyncStatus.pendingSync:
+        return colorScheme.tertiary;
+      case RatSyncStatus.synced:
+        return colorScheme.primary;
+      case RatSyncStatus.syncError:
+        return colorScheme.error;
+    }
+  }
+
+  String _syncLabel(RatSyncStatus status) {
+    switch (status) {
+      case RatSyncStatus.localOnly:
+        return 'Local';
+      case RatSyncStatus.pendingSync:
+        return 'Pendente';
+      case RatSyncStatus.synced:
+        return 'Sincronizado';
+      case RatSyncStatus.syncError:
+        return 'Erro de sync';
     }
   }
 }

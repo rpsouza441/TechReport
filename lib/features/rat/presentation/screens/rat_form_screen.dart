@@ -60,6 +60,18 @@ class _RatFormScreenState extends State<RatFormScreen> {
                     ? 'Editar RAT'
                     : 'Novo RAT',
               ),
+              actions: [
+                if (widget.viewModel.canDelete)
+                  IconButton(
+                    onPressed:
+                        widget.viewModel.isSubmitting ||
+                            widget.viewModel.isSharing
+                        ? null
+                        : _handleDelete,
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Excluir RAT',
+                  ),
+              ],
             ),
             body: SafeArea(
               child: SingleChildScrollView(
@@ -69,12 +81,14 @@ class _RatFormScreenState extends State<RatFormScreen> {
                   children: [
                     TextField(
                       controller: _clienteController,
+                      enabled: widget.viewModel.canEdit,
                       decoration: const InputDecoration(labelText: 'Cliente'),
                       onChanged: widget.viewModel.setClienteNome,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _descricaoController,
+                      enabled: widget.viewModel.canEdit,
                       maxLines: 5,
                       decoration: const InputDecoration(
                         labelText: 'Descri\u00e7\u00e3o',
@@ -92,11 +106,13 @@ class _RatFormScreenState extends State<RatFormScreen> {
                           child: Text(status.name),
                         );
                       }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          widget.viewModel.setStatus(value);
-                        }
-                      },
+                      onChanged: widget.viewModel.canEdit
+                          ? (value) {
+                              if (value != null) {
+                                widget.viewModel.setStatus(value);
+                              }
+                            }
+                          : null,
                     ),
                     if (widget.viewModel.errorMessage != null) ...[
                       const SizedBox(height: 16),
@@ -114,7 +130,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: widget.viewModel.isSubmitting
+                        onPressed:
+                            widget.viewModel.isSubmitting ||
+                                !widget.viewModel.canEdit
                             ? null
                             : _handleSignature,
                         icon: const Icon(Icons.draw),
@@ -131,7 +149,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
                       child: OutlinedButton.icon(
                         onPressed:
                             widget.viewModel.isSubmitting ||
-                                widget.viewModel.isSharing
+                                widget.viewModel.isSharing ||
+                                !widget.viewModel.canEdit
                             ? null
                             : _handleSharePdf,
                         icon: const Icon(Icons.picture_as_pdf_outlined),
@@ -148,7 +167,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
                       child: FilledButton(
                         onPressed:
                             widget.viewModel.isSubmitting ||
-                                widget.viewModel.isSharing
+                                widget.viewModel.isSharing ||
+                                !widget.viewModel.canEdit
                             ? null
                             : _handleSubmit,
                         child: Text(
@@ -254,6 +274,48 @@ class _RatFormScreenState extends State<RatFormScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text('PDF pronto para envio.')));
     }
+  }
+
+  Future<void> _handleDelete() async {
+    final shouldDelete = await _confirmDeleteRat();
+    if (!shouldDelete || !mounted) {
+      return;
+    }
+
+    final deleted = await widget.viewModel.deleteRat();
+    if (!mounted) {
+      return;
+    }
+
+    if (deleted) {
+      _closeForm(result: true);
+    }
+  }
+
+  Future<bool> _confirmDeleteRat() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir RAT?'),
+          content: const Text(
+            'Este RAT sera removido da lista. Em modo empresa, a exclusao sera sincronizada.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   void _closeForm({bool? result}) {

@@ -5,6 +5,7 @@ import 'package:techreport/features/rat/domain/repositories/rat_repository.dart'
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_form_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_form_view_model.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
@@ -43,6 +44,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
     _ratListViewModel = RatListViewModel(
       assinaturaRepository: widget.assinaturaRepository,
       ratRepository: widget.ratRepository,
+      scope: const RatListScope.local(),
     );
     _ratListViewModel.load();
   }

@@ -128,9 +128,16 @@ class SupabaseAuthRepository implements AuthRepository {
       return null;
     }
 
+    final savedRefreshToken = await _tokenStore.readRefreshToken();
+    if (savedRefreshToken == null || savedRefreshToken.isEmpty) {
+      await _remoteSessionRepository.deleteSession();
+      await _tokenStore.clearTokens();
+      return null;
+    }
+
     final client = await requireClient();
 
-    final response = await client.auth.refreshSession();
+    final response = await client.auth.setSession(savedRefreshToken);
 
     final session = response.session;
     final user = response.user;
@@ -164,7 +171,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     try {
-      final client = await _clientFactory.tryCreateClient();
+      final client = await _clientFactory.tryCreateAuthenticatedClient();
       await client?.auth.signOut();
     } finally {
       await _tokenStore.clearTokens();
@@ -209,6 +216,7 @@ class SupabaseAuthRepository implements AuthRepository {
         empresaId: profile.empresaId,
         usuarioId: user.id,
         tecnicoId: profile.tecnicoId,
+        papel: profile.papel,
         accessTokenRef: SecureTokenStore.accessTokenRef,
         refreshTokenRef: SecureTokenStore.refreshTokenRef,
         endpointRef: previousSession?.endpointRef ?? 'active',
@@ -227,7 +235,7 @@ class SupabaseAuthRepository implements AuthRepository {
   }) async {
     final profile = await client
         .from('tecnicos')
-        .select('id, empresa_id')
+        .select('id, empresa_id, papel')
         .eq('user_id', user.id)
         .eq('ativo', true)
         .maybeSingle();
@@ -240,23 +248,46 @@ class SupabaseAuthRepository implements AuthRepository {
 
     final empresaId = profile['empresa_id'];
     final tecnicoId = profile['id'];
+    final papel = profile['papel'];
 
     if (empresaId is! String ||
         empresaId.isEmpty ||
         tecnicoId is! String ||
-        tecnicoId.isEmpty) {
+        tecnicoId.isEmpty ||
+        papel is! String ||
+        papel.isEmpty) {
       throw const RemoteAuthException(
         'Cadastro remoto incompleto para este usuario.',
       );
     }
 
-    return _TecnicoProfile(empresaId: empresaId, tecnicoId: tecnicoId);
+    return _TecnicoProfile(
+      empresaId: empresaId,
+      tecnicoId: tecnicoId,
+      papel: _toPapel(papel),
+    );
+  }
+
+  SessaoRemotaPapel _toPapel(String value) {
+    switch (value) {
+      case 'gerente':
+        return SessaoRemotaPapel.gerente;
+      case 'tecnico':
+        return SessaoRemotaPapel.tecnico;
+      default:
+        return SessaoRemotaPapel.tecnico;
+    }
   }
 }
 
 class _TecnicoProfile {
-  const _TecnicoProfile({required this.empresaId, required this.tecnicoId});
+  const _TecnicoProfile({
+    required this.empresaId,
+    required this.tecnicoId,
+    required this.papel,
+  });
 
   final String empresaId;
   final String tecnicoId;
+  final SessaoRemotaPapel papel;
 }

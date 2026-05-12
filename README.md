@@ -40,14 +40,16 @@ Para entender o projeto de forma limpa, comece por:
 
 ## Estado atual
 
-Neste momento, o repositorio contem a base inicial criada com Flutter e sera evoluido aos poucos para o novo produto.
+Neste momento, o repositorio contem a base Flutter do novo produto, o fluxo
+local-first e a entrada inicial do modo empresa com configuracao de servidor,
+login remoto via Supabase e sessao remota separada da sessao local.
 
-As prioridades iniciais sao:
+As proximas prioridades sao:
 
-1. definir o dominio do app
-2. estruturar o MVP local
-3. reconstruir as telas principais com uma base moderna
-4. preparar a futura entrada do modo empresa
+1. validar isolamento de dados por RLS
+2. manter o modo local funcionando sem backend
+3. preparar sincronizacao futura de RATs
+4. evoluir permissoes e administracao do modo empresa
 
 ## Como rodar
 

@@ -86,6 +86,7 @@ class AppBootstrapViewModel extends ChangeNotifier {
   }
 
   void requireRemoteLogin() {
+    remoteSession = null;
     status = AppBootstrapStatus.remoteLoginRequired;
     notifyListeners();
   }

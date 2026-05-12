@@ -39,6 +39,9 @@ class SessaoLocals extends Table {
 class Rats extends Table {
   TextColumn get id => text()();
   TextColumn get authorId => text()();
+  TextColumn get empresaId => text().nullable()();
+  TextColumn get usuarioId => text().nullable()();
+  TextColumn get tecnicoId => text().nullable()();
   TextColumn get ownerType => text()();
   TextColumn get numero => text()();
   TextColumn get clienteNome => text()();
@@ -66,18 +69,39 @@ class Assinaturas extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [TecnicoLocals, SessaoLocals, Rats, Assinaturas])
+class SyncQueueItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get empresaId => text()();
+  TextColumn get usuarioId => text()();
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+  TextColumn get operation => text()();
+  TextColumn get payload => text()();
+  TextColumn get status => text()();
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  TextColumn get lastError => text().nullable()();
+  DateTimeColumn get nextAttemptAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [TecnicoLocals, SessaoLocals, Rats, Assinaturas, SyncQueueItems],
+)
 class TechReportLocalDatabase extends _$TechReportLocalDatabase {
   TechReportLocalDatabase()
     : super(
         driftDatabase(
-          name: 'tech_report_local.sqlite',
+          name: 'tech_report_local',
           native: const DriftNativeOptions(),
         ),
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -90,6 +114,14 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
       }
       if (from < 3) {
         await m.createTable(assinaturas);
+      }
+      if (from < 4) {
+        await m.createTable(syncQueueItems);
+      }
+      if (from < 5) {
+        await m.addColumn(rats, rats.empresaId);
+        await m.addColumn(rats, rats.usuarioId);
+        await m.addColumn(rats, rats.tecnicoId);
       }
     },
   );

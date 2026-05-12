@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 
+// TODO: Reavaliar como dashboard do modo empresa na Sprint 6.
 class CompanyHomeScreen extends StatelessWidget {
   const CompanyHomeScreen({
     super.key,
