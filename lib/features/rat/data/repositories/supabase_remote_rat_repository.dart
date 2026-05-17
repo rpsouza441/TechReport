@@ -64,7 +64,17 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
         ownerType: RatOwnerType.companyTecnico,
         numero: row['numero'] as String,
         clienteNome: row['cliente_nome'] as String,
+        responsavelRecebimento: row['responsavel_recebimento'] as String?,
+        dataVisita: _parseDate(row['data_visita']),
+        horarioInicioAtendimento: row['horario_inicio_atendimento'] as String?,
+        horarioTerminoAtendimento:
+            row['horario_termino_atendimento'] as String?,
         descricao: row['descricao'] as String,
+        equipamentoMovimentoTipo: _toEquipamentoMovimentoTipo(
+          row['equipamento_movimento_tipo'],
+        ),
+        equipamentoDescricao: row['equipamento_descricao'] as String?,
+        equipamentoObservacao: row['equipamento_observacao'] as String?,
         status: RatStatus.values.byName(row['status'] as String),
         syncStatus: RatSyncStatus.synced,
         createdAt: DateTime.parse(row['criado_em_dispositivo'] as String),
@@ -93,5 +103,30 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
     }
 
     return decoded;
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value is! String || value.isEmpty) {
+      return null;
+    }
+
+    return DateTime.parse(value);
+  }
+
+  EquipamentoMovimentoTipo? _toEquipamentoMovimentoTipo(dynamic value) {
+    switch (value) {
+      case null:
+        return null;
+      case 'nenhum':
+        return EquipamentoMovimentoTipo.nenhum;
+      case 'retirada_para_reparo':
+        return EquipamentoMovimentoTipo.retiradaParaReparo;
+      case 'entrega_pos_reparo':
+        return EquipamentoMovimentoTipo.entregaPosReparo;
+      case 'entrega_pos_compra':
+        return EquipamentoMovimentoTipo.entregaPosCompra;
+      default:
+        throw ArgumentError('EquipamentoMovimentoTipo remoto invalido: $value');
+    }
   }
 }

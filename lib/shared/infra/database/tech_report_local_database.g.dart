@@ -1438,6 +1438,50 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _responsavelRecebimentoMeta =
+      const VerificationMeta('responsavelRecebimento');
+  @override
+  late final GeneratedColumn<String> responsavelRecebimento =
+      GeneratedColumn<String>(
+        'responsavel_recebimento',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _dataVisitaMeta = const VerificationMeta(
+    'dataVisita',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataVisita = GeneratedColumn<DateTime>(
+    'data_visita',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _horarioInicioAtendimentoMeta =
+      const VerificationMeta('horarioInicioAtendimento');
+  @override
+  late final GeneratedColumn<String> horarioInicioAtendimento =
+      GeneratedColumn<String>(
+        'horario_inicio_atendimento',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _horarioTerminoAtendimentoMeta =
+      const VerificationMeta('horarioTerminoAtendimento');
+  @override
+  late final GeneratedColumn<String> horarioTerminoAtendimento =
+      GeneratedColumn<String>(
+        'horario_termino_atendimento',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _descricaoMeta = const VerificationMeta(
     'descricao',
   );
@@ -1449,6 +1493,39 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _equipamentoMovimentoTipoMeta =
+      const VerificationMeta('equipamentoMovimentoTipo');
+  @override
+  late final GeneratedColumn<String> equipamentoMovimentoTipo =
+      GeneratedColumn<String>(
+        'equipamento_movimento_tipo',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _equipamentoDescricaoMeta =
+      const VerificationMeta('equipamentoDescricao');
+  @override
+  late final GeneratedColumn<String> equipamentoDescricao =
+      GeneratedColumn<String>(
+        'equipamento_descricao',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _equipamentoObservacaoMeta =
+      const VerificationMeta('equipamentoObservacao');
+  @override
+  late final GeneratedColumn<String> equipamentoObservacao =
+      GeneratedColumn<String>(
+        'equipamento_observacao',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -1512,7 +1589,14 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     ownerType,
     numero,
     clienteNome,
+    responsavelRecebimento,
+    dataVisita,
+    horarioInicioAtendimento,
+    horarioTerminoAtendimento,
     descricao,
+    equipamentoMovimentoTipo,
+    equipamentoDescricao,
+    equipamentoObservacao,
     status,
     syncStatus,
     createdAt,
@@ -1589,6 +1673,39 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     } else if (isInserting) {
       context.missing(_clienteNomeMeta);
     }
+    if (data.containsKey('responsavel_recebimento')) {
+      context.handle(
+        _responsavelRecebimentoMeta,
+        responsavelRecebimento.isAcceptableOrUnknown(
+          data['responsavel_recebimento']!,
+          _responsavelRecebimentoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('data_visita')) {
+      context.handle(
+        _dataVisitaMeta,
+        dataVisita.isAcceptableOrUnknown(data['data_visita']!, _dataVisitaMeta),
+      );
+    }
+    if (data.containsKey('horario_inicio_atendimento')) {
+      context.handle(
+        _horarioInicioAtendimentoMeta,
+        horarioInicioAtendimento.isAcceptableOrUnknown(
+          data['horario_inicio_atendimento']!,
+          _horarioInicioAtendimentoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('horario_termino_atendimento')) {
+      context.handle(
+        _horarioTerminoAtendimentoMeta,
+        horarioTerminoAtendimento.isAcceptableOrUnknown(
+          data['horario_termino_atendimento']!,
+          _horarioTerminoAtendimentoMeta,
+        ),
+      );
+    }
     if (data.containsKey('descricao')) {
       context.handle(
         _descricaoMeta,
@@ -1596,6 +1713,33 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
       );
     } else if (isInserting) {
       context.missing(_descricaoMeta);
+    }
+    if (data.containsKey('equipamento_movimento_tipo')) {
+      context.handle(
+        _equipamentoMovimentoTipoMeta,
+        equipamentoMovimentoTipo.isAcceptableOrUnknown(
+          data['equipamento_movimento_tipo']!,
+          _equipamentoMovimentoTipoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('equipamento_descricao')) {
+      context.handle(
+        _equipamentoDescricaoMeta,
+        equipamentoDescricao.isAcceptableOrUnknown(
+          data['equipamento_descricao']!,
+          _equipamentoDescricaoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('equipamento_observacao')) {
+      context.handle(
+        _equipamentoObservacaoMeta,
+        equipamentoObservacao.isAcceptableOrUnknown(
+          data['equipamento_observacao']!,
+          _equipamentoObservacaoMeta,
+        ),
+      );
     }
     if (data.containsKey('status')) {
       context.handle(
@@ -1676,10 +1820,38 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
         DriftSqlType.string,
         data['${effectivePrefix}cliente_nome'],
       )!,
+      responsavelRecebimento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}responsavel_recebimento'],
+      ),
+      dataVisita: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_visita'],
+      ),
+      horarioInicioAtendimento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}horario_inicio_atendimento'],
+      ),
+      horarioTerminoAtendimento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}horario_termino_atendimento'],
+      ),
       descricao: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}descricao'],
       )!,
+      equipamentoMovimentoTipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}equipamento_movimento_tipo'],
+      ),
+      equipamentoDescricao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}equipamento_descricao'],
+      ),
+      equipamentoObservacao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}equipamento_observacao'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1718,7 +1890,14 @@ class Rat extends DataClass implements Insertable<Rat> {
   final String ownerType;
   final String numero;
   final String clienteNome;
+  final String? responsavelRecebimento;
+  final DateTime? dataVisita;
+  final String? horarioInicioAtendimento;
+  final String? horarioTerminoAtendimento;
   final String descricao;
+  final String? equipamentoMovimentoTipo;
+  final String? equipamentoDescricao;
+  final String? equipamentoObservacao;
   final String status;
   final String syncStatus;
   final DateTime createdAt;
@@ -1733,7 +1912,14 @@ class Rat extends DataClass implements Insertable<Rat> {
     required this.ownerType,
     required this.numero,
     required this.clienteNome,
+    this.responsavelRecebimento,
+    this.dataVisita,
+    this.horarioInicioAtendimento,
+    this.horarioTerminoAtendimento,
     required this.descricao,
+    this.equipamentoMovimentoTipo,
+    this.equipamentoDescricao,
+    this.equipamentoObservacao,
     required this.status,
     required this.syncStatus,
     required this.createdAt,
@@ -1757,7 +1943,34 @@ class Rat extends DataClass implements Insertable<Rat> {
     map['owner_type'] = Variable<String>(ownerType);
     map['numero'] = Variable<String>(numero);
     map['cliente_nome'] = Variable<String>(clienteNome);
+    if (!nullToAbsent || responsavelRecebimento != null) {
+      map['responsavel_recebimento'] = Variable<String>(responsavelRecebimento);
+    }
+    if (!nullToAbsent || dataVisita != null) {
+      map['data_visita'] = Variable<DateTime>(dataVisita);
+    }
+    if (!nullToAbsent || horarioInicioAtendimento != null) {
+      map['horario_inicio_atendimento'] = Variable<String>(
+        horarioInicioAtendimento,
+      );
+    }
+    if (!nullToAbsent || horarioTerminoAtendimento != null) {
+      map['horario_termino_atendimento'] = Variable<String>(
+        horarioTerminoAtendimento,
+      );
+    }
     map['descricao'] = Variable<String>(descricao);
+    if (!nullToAbsent || equipamentoMovimentoTipo != null) {
+      map['equipamento_movimento_tipo'] = Variable<String>(
+        equipamentoMovimentoTipo,
+      );
+    }
+    if (!nullToAbsent || equipamentoDescricao != null) {
+      map['equipamento_descricao'] = Variable<String>(equipamentoDescricao);
+    }
+    if (!nullToAbsent || equipamentoObservacao != null) {
+      map['equipamento_observacao'] = Variable<String>(equipamentoObservacao);
+    }
     map['status'] = Variable<String>(status);
     map['sync_status'] = Variable<String>(syncStatus);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -1784,7 +1997,29 @@ class Rat extends DataClass implements Insertable<Rat> {
       ownerType: Value(ownerType),
       numero: Value(numero),
       clienteNome: Value(clienteNome),
+      responsavelRecebimento: responsavelRecebimento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responsavelRecebimento),
+      dataVisita: dataVisita == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataVisita),
+      horarioInicioAtendimento: horarioInicioAtendimento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(horarioInicioAtendimento),
+      horarioTerminoAtendimento:
+          horarioTerminoAtendimento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(horarioTerminoAtendimento),
       descricao: Value(descricao),
+      equipamentoMovimentoTipo: equipamentoMovimentoTipo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equipamentoMovimentoTipo),
+      equipamentoDescricao: equipamentoDescricao == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equipamentoDescricao),
+      equipamentoObservacao: equipamentoObservacao == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equipamentoObservacao),
       status: Value(status),
       syncStatus: Value(syncStatus),
       createdAt: Value(createdAt),
@@ -1809,7 +2044,26 @@ class Rat extends DataClass implements Insertable<Rat> {
       ownerType: serializer.fromJson<String>(json['ownerType']),
       numero: serializer.fromJson<String>(json['numero']),
       clienteNome: serializer.fromJson<String>(json['clienteNome']),
+      responsavelRecebimento: serializer.fromJson<String?>(
+        json['responsavelRecebimento'],
+      ),
+      dataVisita: serializer.fromJson<DateTime?>(json['dataVisita']),
+      horarioInicioAtendimento: serializer.fromJson<String?>(
+        json['horarioInicioAtendimento'],
+      ),
+      horarioTerminoAtendimento: serializer.fromJson<String?>(
+        json['horarioTerminoAtendimento'],
+      ),
       descricao: serializer.fromJson<String>(json['descricao']),
+      equipamentoMovimentoTipo: serializer.fromJson<String?>(
+        json['equipamentoMovimentoTipo'],
+      ),
+      equipamentoDescricao: serializer.fromJson<String?>(
+        json['equipamentoDescricao'],
+      ),
+      equipamentoObservacao: serializer.fromJson<String?>(
+        json['equipamentoObservacao'],
+      ),
       status: serializer.fromJson<String>(json['status']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -1829,7 +2083,24 @@ class Rat extends DataClass implements Insertable<Rat> {
       'ownerType': serializer.toJson<String>(ownerType),
       'numero': serializer.toJson<String>(numero),
       'clienteNome': serializer.toJson<String>(clienteNome),
+      'responsavelRecebimento': serializer.toJson<String?>(
+        responsavelRecebimento,
+      ),
+      'dataVisita': serializer.toJson<DateTime?>(dataVisita),
+      'horarioInicioAtendimento': serializer.toJson<String?>(
+        horarioInicioAtendimento,
+      ),
+      'horarioTerminoAtendimento': serializer.toJson<String?>(
+        horarioTerminoAtendimento,
+      ),
       'descricao': serializer.toJson<String>(descricao),
+      'equipamentoMovimentoTipo': serializer.toJson<String?>(
+        equipamentoMovimentoTipo,
+      ),
+      'equipamentoDescricao': serializer.toJson<String?>(equipamentoDescricao),
+      'equipamentoObservacao': serializer.toJson<String?>(
+        equipamentoObservacao,
+      ),
       'status': serializer.toJson<String>(status),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -1847,7 +2118,14 @@ class Rat extends DataClass implements Insertable<Rat> {
     String? ownerType,
     String? numero,
     String? clienteNome,
+    Value<String?> responsavelRecebimento = const Value.absent(),
+    Value<DateTime?> dataVisita = const Value.absent(),
+    Value<String?> horarioInicioAtendimento = const Value.absent(),
+    Value<String?> horarioTerminoAtendimento = const Value.absent(),
     String? descricao,
+    Value<String?> equipamentoMovimentoTipo = const Value.absent(),
+    Value<String?> equipamentoDescricao = const Value.absent(),
+    Value<String?> equipamentoObservacao = const Value.absent(),
     String? status,
     String? syncStatus,
     DateTime? createdAt,
@@ -1862,7 +2140,26 @@ class Rat extends DataClass implements Insertable<Rat> {
     ownerType: ownerType ?? this.ownerType,
     numero: numero ?? this.numero,
     clienteNome: clienteNome ?? this.clienteNome,
+    responsavelRecebimento: responsavelRecebimento.present
+        ? responsavelRecebimento.value
+        : this.responsavelRecebimento,
+    dataVisita: dataVisita.present ? dataVisita.value : this.dataVisita,
+    horarioInicioAtendimento: horarioInicioAtendimento.present
+        ? horarioInicioAtendimento.value
+        : this.horarioInicioAtendimento,
+    horarioTerminoAtendimento: horarioTerminoAtendimento.present
+        ? horarioTerminoAtendimento.value
+        : this.horarioTerminoAtendimento,
     descricao: descricao ?? this.descricao,
+    equipamentoMovimentoTipo: equipamentoMovimentoTipo.present
+        ? equipamentoMovimentoTipo.value
+        : this.equipamentoMovimentoTipo,
+    equipamentoDescricao: equipamentoDescricao.present
+        ? equipamentoDescricao.value
+        : this.equipamentoDescricao,
+    equipamentoObservacao: equipamentoObservacao.present
+        ? equipamentoObservacao.value
+        : this.equipamentoObservacao,
     status: status ?? this.status,
     syncStatus: syncStatus ?? this.syncStatus,
     createdAt: createdAt ?? this.createdAt,
@@ -1881,7 +2178,28 @@ class Rat extends DataClass implements Insertable<Rat> {
       clienteNome: data.clienteNome.present
           ? data.clienteNome.value
           : this.clienteNome,
+      responsavelRecebimento: data.responsavelRecebimento.present
+          ? data.responsavelRecebimento.value
+          : this.responsavelRecebimento,
+      dataVisita: data.dataVisita.present
+          ? data.dataVisita.value
+          : this.dataVisita,
+      horarioInicioAtendimento: data.horarioInicioAtendimento.present
+          ? data.horarioInicioAtendimento.value
+          : this.horarioInicioAtendimento,
+      horarioTerminoAtendimento: data.horarioTerminoAtendimento.present
+          ? data.horarioTerminoAtendimento.value
+          : this.horarioTerminoAtendimento,
       descricao: data.descricao.present ? data.descricao.value : this.descricao,
+      equipamentoMovimentoTipo: data.equipamentoMovimentoTipo.present
+          ? data.equipamentoMovimentoTipo.value
+          : this.equipamentoMovimentoTipo,
+      equipamentoDescricao: data.equipamentoDescricao.present
+          ? data.equipamentoDescricao.value
+          : this.equipamentoDescricao,
+      equipamentoObservacao: data.equipamentoObservacao.present
+          ? data.equipamentoObservacao.value
+          : this.equipamentoObservacao,
       status: data.status.present ? data.status.value : this.status,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
@@ -1903,7 +2221,14 @@ class Rat extends DataClass implements Insertable<Rat> {
           ..write('ownerType: $ownerType, ')
           ..write('numero: $numero, ')
           ..write('clienteNome: $clienteNome, ')
+          ..write('responsavelRecebimento: $responsavelRecebimento, ')
+          ..write('dataVisita: $dataVisita, ')
+          ..write('horarioInicioAtendimento: $horarioInicioAtendimento, ')
+          ..write('horarioTerminoAtendimento: $horarioTerminoAtendimento, ')
           ..write('descricao: $descricao, ')
+          ..write('equipamentoMovimentoTipo: $equipamentoMovimentoTipo, ')
+          ..write('equipamentoDescricao: $equipamentoDescricao, ')
+          ..write('equipamentoObservacao: $equipamentoObservacao, ')
           ..write('status: $status, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
@@ -1914,7 +2239,7 @@ class Rat extends DataClass implements Insertable<Rat> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     authorId,
     empresaId,
@@ -1923,13 +2248,20 @@ class Rat extends DataClass implements Insertable<Rat> {
     ownerType,
     numero,
     clienteNome,
+    responsavelRecebimento,
+    dataVisita,
+    horarioInicioAtendimento,
+    horarioTerminoAtendimento,
     descricao,
+    equipamentoMovimentoTipo,
+    equipamentoDescricao,
+    equipamentoObservacao,
     status,
     syncStatus,
     createdAt,
     updatedAt,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1942,7 +2274,14 @@ class Rat extends DataClass implements Insertable<Rat> {
           other.ownerType == this.ownerType &&
           other.numero == this.numero &&
           other.clienteNome == this.clienteNome &&
+          other.responsavelRecebimento == this.responsavelRecebimento &&
+          other.dataVisita == this.dataVisita &&
+          other.horarioInicioAtendimento == this.horarioInicioAtendimento &&
+          other.horarioTerminoAtendimento == this.horarioTerminoAtendimento &&
           other.descricao == this.descricao &&
+          other.equipamentoMovimentoTipo == this.equipamentoMovimentoTipo &&
+          other.equipamentoDescricao == this.equipamentoDescricao &&
+          other.equipamentoObservacao == this.equipamentoObservacao &&
           other.status == this.status &&
           other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
@@ -1959,7 +2298,14 @@ class RatsCompanion extends UpdateCompanion<Rat> {
   final Value<String> ownerType;
   final Value<String> numero;
   final Value<String> clienteNome;
+  final Value<String?> responsavelRecebimento;
+  final Value<DateTime?> dataVisita;
+  final Value<String?> horarioInicioAtendimento;
+  final Value<String?> horarioTerminoAtendimento;
   final Value<String> descricao;
+  final Value<String?> equipamentoMovimentoTipo;
+  final Value<String?> equipamentoDescricao;
+  final Value<String?> equipamentoObservacao;
   final Value<String> status;
   final Value<String> syncStatus;
   final Value<DateTime> createdAt;
@@ -1975,7 +2321,14 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     this.ownerType = const Value.absent(),
     this.numero = const Value.absent(),
     this.clienteNome = const Value.absent(),
+    this.responsavelRecebimento = const Value.absent(),
+    this.dataVisita = const Value.absent(),
+    this.horarioInicioAtendimento = const Value.absent(),
+    this.horarioTerminoAtendimento = const Value.absent(),
     this.descricao = const Value.absent(),
+    this.equipamentoMovimentoTipo = const Value.absent(),
+    this.equipamentoDescricao = const Value.absent(),
+    this.equipamentoObservacao = const Value.absent(),
     this.status = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1992,7 +2345,14 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     required String ownerType,
     required String numero,
     required String clienteNome,
+    this.responsavelRecebimento = const Value.absent(),
+    this.dataVisita = const Value.absent(),
+    this.horarioInicioAtendimento = const Value.absent(),
+    this.horarioTerminoAtendimento = const Value.absent(),
     required String descricao,
+    this.equipamentoMovimentoTipo = const Value.absent(),
+    this.equipamentoDescricao = const Value.absent(),
+    this.equipamentoObservacao = const Value.absent(),
     required String status,
     required String syncStatus,
     required DateTime createdAt,
@@ -2018,7 +2378,14 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     Expression<String>? ownerType,
     Expression<String>? numero,
     Expression<String>? clienteNome,
+    Expression<String>? responsavelRecebimento,
+    Expression<DateTime>? dataVisita,
+    Expression<String>? horarioInicioAtendimento,
+    Expression<String>? horarioTerminoAtendimento,
     Expression<String>? descricao,
+    Expression<String>? equipamentoMovimentoTipo,
+    Expression<String>? equipamentoDescricao,
+    Expression<String>? equipamentoObservacao,
     Expression<String>? status,
     Expression<String>? syncStatus,
     Expression<DateTime>? createdAt,
@@ -2035,7 +2402,20 @@ class RatsCompanion extends UpdateCompanion<Rat> {
       if (ownerType != null) 'owner_type': ownerType,
       if (numero != null) 'numero': numero,
       if (clienteNome != null) 'cliente_nome': clienteNome,
+      if (responsavelRecebimento != null)
+        'responsavel_recebimento': responsavelRecebimento,
+      if (dataVisita != null) 'data_visita': dataVisita,
+      if (horarioInicioAtendimento != null)
+        'horario_inicio_atendimento': horarioInicioAtendimento,
+      if (horarioTerminoAtendimento != null)
+        'horario_termino_atendimento': horarioTerminoAtendimento,
       if (descricao != null) 'descricao': descricao,
+      if (equipamentoMovimentoTipo != null)
+        'equipamento_movimento_tipo': equipamentoMovimentoTipo,
+      if (equipamentoDescricao != null)
+        'equipamento_descricao': equipamentoDescricao,
+      if (equipamentoObservacao != null)
+        'equipamento_observacao': equipamentoObservacao,
       if (status != null) 'status': status,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (createdAt != null) 'created_at': createdAt,
@@ -2054,7 +2434,14 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     Value<String>? ownerType,
     Value<String>? numero,
     Value<String>? clienteNome,
+    Value<String?>? responsavelRecebimento,
+    Value<DateTime?>? dataVisita,
+    Value<String?>? horarioInicioAtendimento,
+    Value<String?>? horarioTerminoAtendimento,
     Value<String>? descricao,
+    Value<String?>? equipamentoMovimentoTipo,
+    Value<String?>? equipamentoDescricao,
+    Value<String?>? equipamentoObservacao,
     Value<String>? status,
     Value<String>? syncStatus,
     Value<DateTime>? createdAt,
@@ -2071,7 +2458,19 @@ class RatsCompanion extends UpdateCompanion<Rat> {
       ownerType: ownerType ?? this.ownerType,
       numero: numero ?? this.numero,
       clienteNome: clienteNome ?? this.clienteNome,
+      responsavelRecebimento:
+          responsavelRecebimento ?? this.responsavelRecebimento,
+      dataVisita: dataVisita ?? this.dataVisita,
+      horarioInicioAtendimento:
+          horarioInicioAtendimento ?? this.horarioInicioAtendimento,
+      horarioTerminoAtendimento:
+          horarioTerminoAtendimento ?? this.horarioTerminoAtendimento,
       descricao: descricao ?? this.descricao,
+      equipamentoMovimentoTipo:
+          equipamentoMovimentoTipo ?? this.equipamentoMovimentoTipo,
+      equipamentoDescricao: equipamentoDescricao ?? this.equipamentoDescricao,
+      equipamentoObservacao:
+          equipamentoObservacao ?? this.equipamentoObservacao,
       status: status ?? this.status,
       syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
@@ -2108,8 +2507,41 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     if (clienteNome.present) {
       map['cliente_nome'] = Variable<String>(clienteNome.value);
     }
+    if (responsavelRecebimento.present) {
+      map['responsavel_recebimento'] = Variable<String>(
+        responsavelRecebimento.value,
+      );
+    }
+    if (dataVisita.present) {
+      map['data_visita'] = Variable<DateTime>(dataVisita.value);
+    }
+    if (horarioInicioAtendimento.present) {
+      map['horario_inicio_atendimento'] = Variable<String>(
+        horarioInicioAtendimento.value,
+      );
+    }
+    if (horarioTerminoAtendimento.present) {
+      map['horario_termino_atendimento'] = Variable<String>(
+        horarioTerminoAtendimento.value,
+      );
+    }
     if (descricao.present) {
       map['descricao'] = Variable<String>(descricao.value);
+    }
+    if (equipamentoMovimentoTipo.present) {
+      map['equipamento_movimento_tipo'] = Variable<String>(
+        equipamentoMovimentoTipo.value,
+      );
+    }
+    if (equipamentoDescricao.present) {
+      map['equipamento_descricao'] = Variable<String>(
+        equipamentoDescricao.value,
+      );
+    }
+    if (equipamentoObservacao.present) {
+      map['equipamento_observacao'] = Variable<String>(
+        equipamentoObservacao.value,
+      );
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
@@ -2143,7 +2575,14 @@ class RatsCompanion extends UpdateCompanion<Rat> {
           ..write('ownerType: $ownerType, ')
           ..write('numero: $numero, ')
           ..write('clienteNome: $clienteNome, ')
+          ..write('responsavelRecebimento: $responsavelRecebimento, ')
+          ..write('dataVisita: $dataVisita, ')
+          ..write('horarioInicioAtendimento: $horarioInicioAtendimento, ')
+          ..write('horarioTerminoAtendimento: $horarioTerminoAtendimento, ')
           ..write('descricao: $descricao, ')
+          ..write('equipamentoMovimentoTipo: $equipamentoMovimentoTipo, ')
+          ..write('equipamentoDescricao: $equipamentoDescricao, ')
+          ..write('equipamentoObservacao: $equipamentoObservacao, ')
           ..write('status: $status, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
@@ -4064,7 +4503,14 @@ typedef $$RatsTableCreateCompanionBuilder =
       required String ownerType,
       required String numero,
       required String clienteNome,
+      Value<String?> responsavelRecebimento,
+      Value<DateTime?> dataVisita,
+      Value<String?> horarioInicioAtendimento,
+      Value<String?> horarioTerminoAtendimento,
       required String descricao,
+      Value<String?> equipamentoMovimentoTipo,
+      Value<String?> equipamentoDescricao,
+      Value<String?> equipamentoObservacao,
       required String status,
       required String syncStatus,
       required DateTime createdAt,
@@ -4082,7 +4528,14 @@ typedef $$RatsTableUpdateCompanionBuilder =
       Value<String> ownerType,
       Value<String> numero,
       Value<String> clienteNome,
+      Value<String?> responsavelRecebimento,
+      Value<DateTime?> dataVisita,
+      Value<String?> horarioInicioAtendimento,
+      Value<String?> horarioTerminoAtendimento,
       Value<String> descricao,
+      Value<String?> equipamentoMovimentoTipo,
+      Value<String?> equipamentoDescricao,
+      Value<String?> equipamentoObservacao,
       Value<String> status,
       Value<String> syncStatus,
       Value<DateTime> createdAt,
@@ -4140,8 +4593,43 @@ class $$RatsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get responsavelRecebimento => $composableBuilder(
+    column: $table.responsavelRecebimento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataVisita => $composableBuilder(
+    column: $table.dataVisita,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get horarioInicioAtendimento => $composableBuilder(
+    column: $table.horarioInicioAtendimento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get horarioTerminoAtendimento => $composableBuilder(
+    column: $table.horarioTerminoAtendimento,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get descricao => $composableBuilder(
     column: $table.descricao,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get equipamentoMovimentoTipo => $composableBuilder(
+    column: $table.equipamentoMovimentoTipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get equipamentoDescricao => $composableBuilder(
+    column: $table.equipamentoDescricao,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get equipamentoObservacao => $composableBuilder(
+    column: $table.equipamentoObservacao,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4220,8 +4708,43 @@ class $$RatsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get responsavelRecebimento => $composableBuilder(
+    column: $table.responsavelRecebimento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataVisita => $composableBuilder(
+    column: $table.dataVisita,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get horarioInicioAtendimento => $composableBuilder(
+    column: $table.horarioInicioAtendimento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get horarioTerminoAtendimento => $composableBuilder(
+    column: $table.horarioTerminoAtendimento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get descricao => $composableBuilder(
     column: $table.descricao,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get equipamentoMovimentoTipo => $composableBuilder(
+    column: $table.equipamentoMovimentoTipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get equipamentoDescricao => $composableBuilder(
+    column: $table.equipamentoDescricao,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get equipamentoObservacao => $composableBuilder(
+    column: $table.equipamentoObservacao,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4286,8 +4809,43 @@ class $$RatsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get responsavelRecebimento => $composableBuilder(
+    column: $table.responsavelRecebimento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dataVisita => $composableBuilder(
+    column: $table.dataVisita,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get horarioInicioAtendimento => $composableBuilder(
+    column: $table.horarioInicioAtendimento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get horarioTerminoAtendimento => $composableBuilder(
+    column: $table.horarioTerminoAtendimento,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get descricao =>
       $composableBuilder(column: $table.descricao, builder: (column) => column);
+
+  GeneratedColumn<String> get equipamentoMovimentoTipo => $composableBuilder(
+    column: $table.equipamentoMovimentoTipo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get equipamentoDescricao => $composableBuilder(
+    column: $table.equipamentoDescricao,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get equipamentoObservacao => $composableBuilder(
+    column: $table.equipamentoObservacao,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -4343,7 +4901,14 @@ class $$RatsTableTableManager
                 Value<String> ownerType = const Value.absent(),
                 Value<String> numero = const Value.absent(),
                 Value<String> clienteNome = const Value.absent(),
+                Value<String?> responsavelRecebimento = const Value.absent(),
+                Value<DateTime?> dataVisita = const Value.absent(),
+                Value<String?> horarioInicioAtendimento = const Value.absent(),
+                Value<String?> horarioTerminoAtendimento = const Value.absent(),
                 Value<String> descricao = const Value.absent(),
+                Value<String?> equipamentoMovimentoTipo = const Value.absent(),
+                Value<String?> equipamentoDescricao = const Value.absent(),
+                Value<String?> equipamentoObservacao = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -4359,7 +4924,14 @@ class $$RatsTableTableManager
                 ownerType: ownerType,
                 numero: numero,
                 clienteNome: clienteNome,
+                responsavelRecebimento: responsavelRecebimento,
+                dataVisita: dataVisita,
+                horarioInicioAtendimento: horarioInicioAtendimento,
+                horarioTerminoAtendimento: horarioTerminoAtendimento,
                 descricao: descricao,
+                equipamentoMovimentoTipo: equipamentoMovimentoTipo,
+                equipamentoDescricao: equipamentoDescricao,
+                equipamentoObservacao: equipamentoObservacao,
                 status: status,
                 syncStatus: syncStatus,
                 createdAt: createdAt,
@@ -4377,7 +4949,14 @@ class $$RatsTableTableManager
                 required String ownerType,
                 required String numero,
                 required String clienteNome,
+                Value<String?> responsavelRecebimento = const Value.absent(),
+                Value<DateTime?> dataVisita = const Value.absent(),
+                Value<String?> horarioInicioAtendimento = const Value.absent(),
+                Value<String?> horarioTerminoAtendimento = const Value.absent(),
                 required String descricao,
+                Value<String?> equipamentoMovimentoTipo = const Value.absent(),
+                Value<String?> equipamentoDescricao = const Value.absent(),
+                Value<String?> equipamentoObservacao = const Value.absent(),
                 required String status,
                 required String syncStatus,
                 required DateTime createdAt,
@@ -4393,7 +4972,14 @@ class $$RatsTableTableManager
                 ownerType: ownerType,
                 numero: numero,
                 clienteNome: clienteNome,
+                responsavelRecebimento: responsavelRecebimento,
+                dataVisita: dataVisita,
+                horarioInicioAtendimento: horarioInicioAtendimento,
+                horarioTerminoAtendimento: horarioTerminoAtendimento,
                 descricao: descricao,
+                equipamentoMovimentoTipo: equipamentoMovimentoTipo,
+                equipamentoDescricao: equipamentoDescricao,
+                equipamentoObservacao: equipamentoObservacao,
                 status: status,
                 syncStatus: syncStatus,
                 createdAt: createdAt,

@@ -4,6 +4,13 @@ enum RatSyncStatus { localOnly, pendingSync, synced, syncError }
 
 enum RatOwnerType { localTecnico, companyTecnico }
 
+enum EquipamentoMovimentoTipo {
+  nenhum,
+  retiradaParaReparo,
+  entregaPosReparo,
+  entregaPosCompra,
+}
+
 class Rat {
   const Rat({
     required this.id,
@@ -14,7 +21,14 @@ class Rat {
     required this.ownerType,
     required this.numero,
     required this.clienteNome,
+    this.responsavelRecebimento,
+    this.dataVisita,
+    this.horarioInicioAtendimento,
+    this.horarioTerminoAtendimento,
     required this.descricao,
+    this.equipamentoMovimentoTipo,
+    this.equipamentoDescricao,
+    this.equipamentoObservacao,
     required this.status,
     required this.syncStatus,
     required this.createdAt,
@@ -30,7 +44,14 @@ class Rat {
   final RatOwnerType ownerType;
   final String numero;
   final String clienteNome;
+  final String? responsavelRecebimento;
+  final DateTime? dataVisita;
+  final String? horarioInicioAtendimento;
+  final String? horarioTerminoAtendimento;
   final String descricao;
+  final EquipamentoMovimentoTipo? equipamentoMovimentoTipo;
+  final String? equipamentoDescricao;
+  final String? equipamentoObservacao;
   final RatStatus status;
   final RatSyncStatus syncStatus;
   final DateTime createdAt;
@@ -54,7 +75,14 @@ class Rat {
     RatOwnerType? ownerType,
     String? numero,
     String? clienteNome,
+    Object? responsavelRecebimento = _sentinel,
+    Object? dataVisita = _sentinel,
+    Object? horarioInicioAtendimento = _sentinel,
+    Object? horarioTerminoAtendimento = _sentinel,
     String? descricao,
+    Object? equipamentoMovimentoTipo = _sentinel,
+    Object? equipamentoDescricao = _sentinel,
+    Object? equipamentoObservacao = _sentinel,
     RatStatus? status,
     RatSyncStatus? syncStatus,
     DateTime? createdAt,
@@ -70,7 +98,28 @@ class Rat {
       ownerType: ownerType ?? this.ownerType,
       numero: numero ?? this.numero,
       clienteNome: clienteNome ?? this.clienteNome,
+      responsavelRecebimento: responsavelRecebimento == _sentinel
+          ? this.responsavelRecebimento
+          : responsavelRecebimento as String?,
+      dataVisita: dataVisita == _sentinel
+          ? this.dataVisita
+          : dataVisita as DateTime?,
+      horarioInicioAtendimento: horarioInicioAtendimento == _sentinel
+          ? this.horarioInicioAtendimento
+          : horarioInicioAtendimento as String?,
+      horarioTerminoAtendimento: horarioTerminoAtendimento == _sentinel
+          ? this.horarioTerminoAtendimento
+          : horarioTerminoAtendimento as String?,
       descricao: descricao ?? this.descricao,
+      equipamentoMovimentoTipo: equipamentoMovimentoTipo == _sentinel
+          ? this.equipamentoMovimentoTipo
+          : equipamentoMovimentoTipo as EquipamentoMovimentoTipo?,
+      equipamentoDescricao: equipamentoDescricao == _sentinel
+          ? this.equipamentoDescricao
+          : equipamentoDescricao as String?,
+      equipamentoObservacao: equipamentoObservacao == _sentinel
+          ? this.equipamentoObservacao
+          : equipamentoObservacao as String?,
       status: status ?? this.status,
       syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
@@ -96,7 +145,14 @@ class Rat {
         other.ownerType == ownerType &&
         other.numero == numero &&
         other.clienteNome == clienteNome &&
+        other.responsavelRecebimento == responsavelRecebimento &&
+        other.dataVisita == dataVisita &&
+        other.horarioInicioAtendimento == horarioInicioAtendimento &&
+        other.horarioTerminoAtendimento == horarioTerminoAtendimento &&
         other.descricao == descricao &&
+        other.equipamentoMovimentoTipo == equipamentoMovimentoTipo &&
+        other.equipamentoDescricao == equipamentoDescricao &&
+        other.equipamentoObservacao == equipamentoObservacao &&
         other.status == status &&
         other.syncStatus == syncStatus &&
         other.createdAt == createdAt &&
@@ -105,7 +161,7 @@ class Rat {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     authorId,
     empresaId,
@@ -114,13 +170,20 @@ class Rat {
     ownerType,
     numero,
     clienteNome,
+    responsavelRecebimento,
+    dataVisita,
+    horarioInicioAtendimento,
+    horarioTerminoAtendimento,
     descricao,
+    equipamentoMovimentoTipo,
+    equipamentoDescricao,
+    equipamentoObservacao,
     status,
     syncStatus,
     createdAt,
     updatedAt,
     deletedAt,
-  );
+  ]);
 }
 
 const Object _sentinel = Object();

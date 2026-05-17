@@ -38,14 +38,47 @@ class ShareRatLocally {
     return '''
 RAT: ${rat.numero}
 Cliente: ${rat.clienteNome}
+Responsavel: ${rat.responsavelRecebimento ?? 'Nao informado'}
+Data da visita: ${_formatDate(rat.dataVisita)}
+Inicio: ${rat.horarioInicioAtendimento ?? 'Nao informado'}
+Termino: ${rat.horarioTerminoAtendimento ?? 'Nao informado'}
 Status: ${rat.status.name}
 Atualizado em: ${_formatDateTime(rat.updatedAt)}
 
-Descri\u00e7\u00e3o:
+Descricao:
 ${rat.descricao}
+
+Movimentacao de equipamento: ${_movimentoLabel(rat.equipamentoMovimentoTipo)}
+Equipamento: ${rat.equipamentoDescricao ?? 'Nao informado'}
+Observacao: ${rat.equipamentoObservacao ?? 'Nao informado'}
 
 Assinatura: ${assinatura == null ? 'nao capturada' : 'capturada'}
 ''';
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) {
+      return 'Nao informado';
+    }
+
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year}';
+  }
+
+  String _movimentoLabel(EquipamentoMovimentoTipo? tipo) {
+    switch (tipo) {
+      case null:
+        return 'Nao informado';
+      case EquipamentoMovimentoTipo.nenhum:
+        return 'Nenhuma movimentacao';
+      case EquipamentoMovimentoTipo.retiradaParaReparo:
+        return 'Retirada para reparo';
+      case EquipamentoMovimentoTipo.entregaPosReparo:
+        return 'Entrega pos-reparo';
+      case EquipamentoMovimentoTipo.entregaPosCompra:
+        return 'Entrega pos-compra';
+    }
   }
 
   String _formatDateTime(DateTime value) {

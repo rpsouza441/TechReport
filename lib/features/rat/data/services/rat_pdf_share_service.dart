@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
+import 'package:techreport/features/rat/domain/entities/rat.dart';
 
 class RatPdfShareService {
   RatPdfShareService({
@@ -37,6 +38,10 @@ class RatPdfShareService {
     final assinaturaImage = assinaturaBytes == null
         ? null
         : pw.MemoryImage(assinaturaBytes);
+    final rat = shareData.rat;
+    if (rat == null) {
+      throw StateError('RAT ausente para gerar PDF.');
+    }
 
     final pdf = pw.Document();
 
@@ -56,9 +61,40 @@ class RatPdfShareService {
               style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 24),
-            _sectionTitle('Dados do atendimento'),
+            _sectionTitle('Identificacao'),
             pw.SizedBox(height: 8),
-            pw.Text(shareData.body!),
+            _infoRow('RAT', rat.numero),
+            _infoRow('Cliente', rat.clienteNome),
+            _infoRow(
+              'Responsavel',
+              rat.responsavelRecebimento ?? 'Nao informado',
+            ),
+            _infoRow('Data da visita', _formatDate(rat.dataVisita)),
+            _infoRow(
+              'Horario',
+              '${rat.horarioInicioAtendimento ?? '--:--'} ate '
+                  '${rat.horarioTerminoAtendimento ?? '--:--'}',
+            ),
+            _infoRow('Status', rat.status.name),
+
+            pw.SizedBox(height: 18),
+            _sectionTitle('Descricao do atendimento'),
+            pw.SizedBox(height: 8),
+            pw.Text(rat.descricao),
+
+            pw.SizedBox(height: 18),
+            _sectionTitle('Equipamento'),
+            pw.SizedBox(height: 8),
+            _infoRow(
+              'Movimentacao',
+              _movimentoLabel(rat.equipamentoMovimentoTipo),
+            ),
+            _infoRow('Descricao', rat.equipamentoDescricao ?? 'Nao informado'),
+            _infoRow(
+              'Observacao',
+              rat.equipamentoObservacao ?? 'Nao informado',
+            ),
+
             pw.SizedBox(height: 24),
             _sectionTitle('Assinatura'),
             pw.SizedBox(height: 8),
@@ -80,6 +116,50 @@ class RatPdfShareService {
     );
 
     return pdf.save();
+  }
+
+  pw.Widget _infoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 120,
+            child: pw.Text(
+              label,
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.Expanded(child: pw.Text(value)),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) {
+      return 'Nao informado';
+    }
+
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year}';
+  }
+
+  String _movimentoLabel(EquipamentoMovimentoTipo? tipo) {
+    switch (tipo) {
+      case null:
+        return 'Nao informado';
+      case EquipamentoMovimentoTipo.nenhum:
+        return 'Nenhuma movimentacao';
+      case EquipamentoMovimentoTipo.retiradaParaReparo:
+        return 'Retirada para reparo';
+      case EquipamentoMovimentoTipo.entregaPosReparo:
+        return 'Entrega pos-reparo';
+      case EquipamentoMovimentoTipo.entregaPosCompra:
+        return 'Entrega pos-compra';
+    }
   }
 
   pw.Widget _sectionTitle(String title) {

@@ -36,7 +36,16 @@ class RatFormViewModel extends ChangeNotifier {
        ratId = initialRat?.id ?? _newRatId(),
        numero = initialRat?.numero ?? _newRatNumber(),
        clienteNome = initialRat?.clienteNome ?? '',
+       responsavelRecebimento = initialRat?.responsavelRecebimento ?? '',
+       dataVisita = initialRat?.dataVisita,
+       horarioInicioAtendimento = initialRat?.horarioInicioAtendimento ?? '',
+       horarioTerminoAtendimento = initialRat?.horarioTerminoAtendimento ?? '',
        descricao = initialRat?.descricao ?? '',
+       equipamentoMovimentoTipo =
+           initialRat?.equipamentoMovimentoTipo ??
+           EquipamentoMovimentoTipo.nenhum,
+       equipamentoDescricao = initialRat?.equipamentoDescricao ?? '',
+       equipamentoObservacao = initialRat?.equipamentoObservacao ?? '',
        status = initialRat?.status ?? RatStatus.draft,
        _remoteSession = remoteSession,
        _processSyncQueue = processSyncQueue,
@@ -57,7 +66,14 @@ class RatFormViewModel extends ChangeNotifier {
   final String ratId;
   final String numero;
   String clienteNome;
+  String responsavelRecebimento;
+  DateTime? dataVisita;
+  String horarioInicioAtendimento;
+  String horarioTerminoAtendimento;
   String descricao;
+  EquipamentoMovimentoTipo equipamentoMovimentoTipo;
+  String equipamentoDescricao;
+  String equipamentoObservacao;
   RatStatus status;
 
   bool _isSubmitting = false;
@@ -110,8 +126,43 @@ class RatFormViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setResponsavelRecebimento(String value) {
+    responsavelRecebimento = value;
+    notifyListeners();
+  }
+
+  void setDataVisita(DateTime? value) {
+    dataVisita = value;
+    notifyListeners();
+  }
+
+  void setHorarioInicioAtendimento(String value) {
+    horarioInicioAtendimento = value;
+    notifyListeners();
+  }
+
+  void setHorarioTerminoAtendimento(String value) {
+    horarioTerminoAtendimento = value;
+    notifyListeners();
+  }
+
   void setDescricao(String value) {
     descricao = value;
+    notifyListeners();
+  }
+
+  void setEquipamentoMovimentoTipo(EquipamentoMovimentoTipo value) {
+    equipamentoMovimentoTipo = value;
+    notifyListeners();
+  }
+
+  void setEquipamentoDescricao(String value) {
+    equipamentoDescricao = value;
+    notifyListeners();
+  }
+
+  void setEquipamentoObservacao(String value) {
+    equipamentoObservacao = value;
     notifyListeners();
   }
 
@@ -125,8 +176,24 @@ class RatFormViewModel extends ChangeNotifier {
       return 'Informe o cliente.';
     }
 
+    if (responsavelRecebimento.trim().isEmpty) {
+      return 'Informe o responsavel pelo recebimento.';
+    }
+
+    if (dataVisita == null) {
+      return 'Informe a data da visita.';
+    }
+
+    if (!_isValidHour(horarioInicioAtendimento)) {
+      return 'Informe o horario de inicio no formato HH:mm.';
+    }
+
+    if (!_isValidHour(horarioTerminoAtendimento)) {
+      return 'Informe o horario de termino no formato HH:mm.';
+    }
+
     if (descricao.trim().isEmpty) {
-      return 'Informe a descri\u00e7\u00e3o.';
+      return 'Informe a descricao.';
     }
 
     return null;
@@ -187,7 +254,18 @@ class RatFormViewModel extends ChangeNotifier {
               : RatOwnerType.localTecnico),
       numero: numero,
       clienteNome: clienteNome.trim(),
+      responsavelRecebimento: responsavelRecebimento.trim(),
+      dataVisita: dataVisita,
+      horarioInicioAtendimento: horarioInicioAtendimento.trim(),
+      horarioTerminoAtendimento: horarioTerminoAtendimento.trim(),
       descricao: descricao.trim(),
+      equipamentoMovimentoTipo: equipamentoMovimentoTipo,
+      equipamentoDescricao: equipamentoDescricao.trim().isEmpty
+          ? null
+          : equipamentoDescricao.trim(),
+      equipamentoObservacao: equipamentoObservacao.trim().isEmpty
+          ? null
+          : equipamentoObservacao.trim(),
       status: status,
       syncStatus: isCompanyMode
           ? RatSyncStatus.pendingSync
@@ -349,4 +427,8 @@ String _newRatId() {
 
 String _newRatNumber() {
   return 'RAT-${DateTime.now().microsecondsSinceEpoch}';
+}
+
+bool _isValidHour(String value) {
+  return RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(value.trim());
 }

@@ -100,7 +100,16 @@ class DriftRatRepository implements RatRepository {
       ownerType: _toOwnerType(row.ownerType),
       numero: row.numero,
       clienteNome: row.clienteNome,
+      responsavelRecebimento: row.responsavelRecebimento,
+      dataVisita: row.dataVisita,
+      horarioInicioAtendimento: row.horarioInicioAtendimento,
+      horarioTerminoAtendimento: row.horarioTerminoAtendimento,
       descricao: row.descricao,
+      equipamentoMovimentoTipo: _toEquipamentoMovimentoTipo(
+        row.equipamentoMovimentoTipo,
+      ),
+      equipamentoDescricao: row.equipamentoDescricao,
+      equipamentoObservacao: row.equipamentoObservacao,
       status: _toStatus(row.status),
       syncStatus: _toSyncStatus(row.syncStatus),
       createdAt: row.createdAt,
@@ -119,13 +128,37 @@ class DriftRatRepository implements RatRepository {
       ownerType: Value(entity.ownerType.name),
       numero: Value(entity.numero),
       clienteNome: Value(entity.clienteNome),
+      responsavelRecebimento: Value(entity.responsavelRecebimento),
+      dataVisita: Value(entity.dataVisita),
+      horarioInicioAtendimento: Value(entity.horarioInicioAtendimento),
+      horarioTerminoAtendimento: Value(entity.horarioTerminoAtendimento),
       descricao: Value(entity.descricao),
+      equipamentoMovimentoTipo: Value(entity.equipamentoMovimentoTipo?.name),
+      equipamentoDescricao: Value(entity.equipamentoDescricao),
+      equipamentoObservacao: Value(entity.equipamentoObservacao),
       status: Value(entity.status.name),
       syncStatus: Value(entity.syncStatus.name),
       createdAt: Value(entity.createdAt),
       updatedAt: Value(entity.updatedAt),
       deletedAt: Value(entity.deletedAt),
     );
+  }
+
+  domain.EquipamentoMovimentoTipo? _toEquipamentoMovimentoTipo(String? value) {
+    switch (value) {
+      case null:
+        return null;
+      case 'nenhum':
+        return domain.EquipamentoMovimentoTipo.nenhum;
+      case 'retiradaParaReparo':
+        return domain.EquipamentoMovimentoTipo.retiradaParaReparo;
+      case 'entregaPosReparo':
+        return domain.EquipamentoMovimentoTipo.entregaPosReparo;
+      case 'entregaPosCompra':
+        return domain.EquipamentoMovimentoTipo.entregaPosCompra;
+      default:
+        throw ArgumentError('EquipamentoMovimentoTipo invalido: $value');
+    }
   }
 
   domain.RatStatus _toStatus(String value) {
