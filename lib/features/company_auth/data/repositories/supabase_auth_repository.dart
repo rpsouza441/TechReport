@@ -90,7 +90,14 @@ class SupabaseAuthRepository implements AuthRepository {
 
     final client = await requireClient();
 
-    final response = await client.auth.setSession(refreshToken);
+    final AuthResponse response;
+    try {
+      response = await client.auth.setSession(refreshToken);
+    } on AuthApiException {
+      await _remoteSessionRepository.deleteSession();
+      await _tokenStore.clearTokens();
+      return null;
+    }
 
     final session = response.session;
     final user = response.user;
@@ -137,7 +144,14 @@ class SupabaseAuthRepository implements AuthRepository {
 
     final client = await requireClient();
 
-    final response = await client.auth.setSession(savedRefreshToken);
+    final AuthResponse response;
+    try {
+      response = await client.auth.setSession(savedRefreshToken);
+    } on AuthApiException {
+      await _remoteSessionRepository.deleteSession();
+      await _tokenStore.clearTokens();
+      return null;
+    }
 
     final session = response.session;
     final user = response.user;

@@ -7,6 +7,7 @@ import 'package:techreport/features/local_auth/presentation/view_models/app_sess
 
 enum AppBootstrapStatus {
   loading,
+  failed,
   modeChoiceRequired,
   localOnboarding,
   localLocked,
@@ -31,35 +32,47 @@ class AppBootstrapViewModel extends ChangeNotifier {
 
   AppBootstrapStatus status = AppBootstrapStatus.loading;
   SessaoRemota? remoteSession;
+  String? errorMessage;
 
   Future<void> bootstrap() async {
     status = AppBootstrapStatus.loading;
+    errorMessage = null;
     notifyListeners();
 
-    await _localSessionViewModel.bootstrap();
+    try {
+      await _localSessionViewModel.bootstrap().timeout(
+        const Duration(seconds: 8),
+      );
 
-    final companyBootstrap = await _bootstrapCompanySession();
+      final companyBootstrap = await _bootstrapCompanySession().timeout(
+        const Duration(seconds: 8),
+      );
 
-    switch (companyBootstrap.status) {
-      case CompanyBootstrapStatus.modeChoiceRequired:
-        status = AppBootstrapStatus.modeChoiceRequired;
-        notifyListeners();
-        return;
-      case CompanyBootstrapStatus.localMode:
-        _syncLocalStatus();
-        return;
-      case CompanyBootstrapStatus.endpointRequired:
-        requireRemoteEndpoint();
-        return;
-      case CompanyBootstrapStatus.loginRequired:
-        requireRemoteLogin();
-        return;
-      case CompanyBootstrapStatus.sessionReady:
-      case CompanyBootstrapStatus.offlineAllowed:
-        remoteSession = companyBootstrap.session;
-        status = AppBootstrapStatus.companyUnlocked;
-        notifyListeners();
-        return;
+      switch (companyBootstrap.status) {
+        case CompanyBootstrapStatus.modeChoiceRequired:
+          status = AppBootstrapStatus.modeChoiceRequired;
+          notifyListeners();
+          return;
+        case CompanyBootstrapStatus.localMode:
+          _syncLocalStatus();
+          return;
+        case CompanyBootstrapStatus.endpointRequired:
+          requireRemoteEndpoint();
+          return;
+        case CompanyBootstrapStatus.loginRequired:
+          requireRemoteLogin();
+          return;
+        case CompanyBootstrapStatus.sessionReady:
+        case CompanyBootstrapStatus.offlineAllowed:
+          remoteSession = companyBootstrap.session;
+          status = AppBootstrapStatus.companyUnlocked;
+          notifyListeners();
+          return;
+      }
+    } catch (error) {
+      status = AppBootstrapStatus.failed;
+      errorMessage = 'Falha ao iniciar o app: $error';
+      notifyListeners();
     }
   }
 

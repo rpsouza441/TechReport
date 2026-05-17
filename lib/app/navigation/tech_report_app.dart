@@ -77,6 +77,15 @@ class AppShell extends StatelessWidget {
       case AppBootstrapStatus.loading:
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
+      case AppBootstrapStatus.failed:
+        return _BootstrapFailureScreen(
+          message:
+              bootstrapViewModel.errorMessage ??
+              'Nao foi possivel iniciar o app.',
+          onRetry: bootstrapViewModel.bootstrap,
+          onResetMode: bootstrapViewModel.requireModeChoice,
+        );
+
       case AppBootstrapStatus.modeChoiceRequired:
         return AppModeChoiceScreen(
           viewModel: AppModeChoiceViewModel(selectAppMode: scope.selectAppMode),
@@ -160,5 +169,59 @@ class AppShell extends StatelessWidget {
           },
         );
     }
+  }
+}
+
+class _BootstrapFailureScreen extends StatelessWidget {
+  const _BootstrapFailureScreen({
+    required this.message,
+    required this.onRetry,
+    required this.onResetMode,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+  final VoidCallback onResetMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Falha ao iniciar',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(message, textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: onRetry,
+                  child: const Text('Tentar novamente'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: onResetMode,
+                  child: const Text('Voltar para escolha de modo'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

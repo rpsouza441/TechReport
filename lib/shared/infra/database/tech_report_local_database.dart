@@ -125,20 +125,62 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
       if (from < 4) {
         await m.createTable(syncQueueItems);
       }
-      if (from < 5) {
-        await m.addColumn(rats, rats.empresaId);
-        await m.addColumn(rats, rats.usuarioId);
-        await m.addColumn(rats, rats.tecnicoId);
+      if (from >= 2 && from < 5) {
+        await _addRatColumnIfMissing(m, 'empresa_id', rats.empresaId);
+        await _addRatColumnIfMissing(m, 'usuario_id', rats.usuarioId);
+        await _addRatColumnIfMissing(m, 'tecnico_id', rats.tecnicoId);
       }
-      if (from < 6) {
-        await m.addColumn(rats, rats.responsavelRecebimento);
-        await m.addColumn(rats, rats.dataVisita);
-        await m.addColumn(rats, rats.horarioInicioAtendimento);
-        await m.addColumn(rats, rats.horarioTerminoAtendimento);
-        await m.addColumn(rats, rats.equipamentoMovimentoTipo);
-        await m.addColumn(rats, rats.equipamentoDescricao);
-        await m.addColumn(rats, rats.equipamentoObservacao);
+      if (from >= 2 && from < 6) {
+        await _addRatColumnIfMissing(
+          m,
+          'responsavel_recebimento',
+          rats.responsavelRecebimento,
+        );
+        await _addRatColumnIfMissing(m, 'data_visita', rats.dataVisita);
+        await _addRatColumnIfMissing(
+          m,
+          'horario_inicio_atendimento',
+          rats.horarioInicioAtendimento,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'horario_termino_atendimento',
+          rats.horarioTerminoAtendimento,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'equipamento_movimento_tipo',
+          rats.equipamentoMovimentoTipo,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'equipamento_descricao',
+          rats.equipamentoDescricao,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'equipamento_observacao',
+          rats.equipamentoObservacao,
+        );
       }
     },
   );
+
+  Future<void> _addRatColumnIfMissing(
+    Migrator migrator,
+    String columnName,
+    GeneratedColumn column,
+  ) async {
+    final exists = await _ratsHasColumn(columnName);
+    if (exists) {
+      return;
+    }
+
+    await migrator.addColumn(rats, column);
+  }
+
+  Future<bool> _ratsHasColumn(String columnName) async {
+    final rows = await customSelect('PRAGMA table_info(rats)').get();
+    return rows.any((row) => row.data['name'] == columnName);
+  }
 }
