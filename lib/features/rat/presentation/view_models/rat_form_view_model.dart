@@ -256,8 +256,8 @@ class RatFormViewModel extends ChangeNotifier {
       clienteNome: clienteNome.trim(),
       responsavelRecebimento: responsavelRecebimento.trim(),
       dataVisita: dataVisita,
-      horarioInicioAtendimento: horarioInicioAtendimento.trim(),
-      horarioTerminoAtendimento: horarioTerminoAtendimento.trim(),
+      horarioInicioAtendimento: _normalizeHour(horarioInicioAtendimento)!,
+      horarioTerminoAtendimento: _normalizeHour(horarioTerminoAtendimento)!,
       descricao: descricao.trim(),
       equipamentoMovimentoTipo: equipamentoMovimentoTipo,
       equipamentoDescricao: equipamentoDescricao.trim().isEmpty
@@ -430,5 +430,26 @@ String _newRatNumber() {
 }
 
 bool _isValidHour(String value) {
-  return RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(value.trim());
+  return _normalizeHour(value) != null;
+}
+
+String? _normalizeHour(String value) {
+  final digits = value.replaceAll(RegExp(r'\D'), '');
+  if (digits.length != 4) {
+    return null;
+  }
+
+  final hour = int.tryParse(digits.substring(0, 2));
+  final minute = int.tryParse(digits.substring(2, 4));
+
+  if (hour == null || minute == null) {
+    return null;
+  }
+
+  if (hour > 23 || minute > 59) {
+    return null;
+  }
+
+  return '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
 }

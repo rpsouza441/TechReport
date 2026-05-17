@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class MetricSlateTextField extends StatelessWidget {
   const MetricSlateTextField({
@@ -8,6 +9,7 @@ class MetricSlateTextField extends StatelessWidget {
     this.enabled = true,
     this.maxLines = 1,
     this.keyboardType,
+    this.inputFormatters,
     this.onChanged,
   });
 
@@ -16,6 +18,7 @@ class MetricSlateTextField extends StatelessWidget {
   final bool enabled;
   final int maxLines;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
 
   @override
@@ -25,6 +28,7 @@ class MetricSlateTextField extends StatelessWidget {
       enabled: enabled,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         alignLabelWithHint: maxLines > 1,

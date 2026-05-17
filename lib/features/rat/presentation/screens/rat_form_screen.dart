@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'
+    show TextEditingValue, TextInputFormatter;
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 
@@ -135,7 +137,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
                           child: MetricSlateTextField(
                             controller: _inicioController,
                             enabled: widget.viewModel.canEdit,
-                            keyboardType: TextInputType.datetime,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: const [_HourTextInputFormatter()],
                             label: 'Inicio (HH:mm)',
                             onChanged:
                                 widget.viewModel.setHorarioInicioAtendimento,
@@ -146,7 +149,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
                           child: MetricSlateTextField(
                             controller: _terminoController,
                             enabled: widget.viewModel.canEdit,
-                            keyboardType: TextInputType.datetime,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: const [_HourTextInputFormatter()],
                             label: 'Termino (HH:mm)',
                             onChanged:
                                 widget.viewModel.setHorarioTerminoAtendimento,
@@ -537,6 +541,30 @@ class _SignatureStatusCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HourTextInputFormatter extends TextInputFormatter {
+  const _HourTextInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limitedDigits = digits.length > 4 ? digits.substring(0, 4) : digits;
+
+    final text = switch (limitedDigits.length) {
+      0 => '',
+      <= 2 => limitedDigits,
+      _ => '${limitedDigits.substring(0, 2)}:${limitedDigits.substring(2)}',
+    };
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }
