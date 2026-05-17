@@ -45,7 +45,14 @@ class Rats extends Table {
   TextColumn get ownerType => text()();
   TextColumn get numero => text()();
   TextColumn get clienteNome => text()();
+  TextColumn get responsavelRecebimento => text().nullable()();
+  DateTimeColumn get dataVisita => dateTime().nullable()();
+  TextColumn get horarioInicioAtendimento => text().nullable()();
+  TextColumn get horarioTerminoAtendimento => text().nullable()();
   TextColumn get descricao => text()();
+  TextColumn get equipamentoMovimentoTipo => text().nullable()();
+  TextColumn get equipamentoDescricao => text().nullable()();
+  TextColumn get equipamentoObservacao => text().nullable()();
   TextColumn get status => text()();
   TextColumn get syncStatus => text()();
   DateTimeColumn get createdAt => dateTime()();
@@ -101,7 +108,7 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
       );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -122,6 +129,15 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
         await m.addColumn(rats, rats.empresaId);
         await m.addColumn(rats, rats.usuarioId);
         await m.addColumn(rats, rats.tecnicoId);
+      }
+      if (from < 6) {
+        await m.addColumn(rats, rats.responsavelRecebimento);
+        await m.addColumn(rats, rats.dataVisita);
+        await m.addColumn(rats, rats.horarioInicioAtendimento);
+        await m.addColumn(rats, rats.horarioTerminoAtendimento);
+        await m.addColumn(rats, rats.equipamentoMovimentoTipo);
+        await m.addColumn(rats, rats.equipamentoDescricao);
+        await m.addColumn(rats, rats.equipamentoObservacao);
       }
     },
   );

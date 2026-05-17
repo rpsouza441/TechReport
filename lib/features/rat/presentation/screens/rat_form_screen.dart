@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
+import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 
 import '../../domain/entities/rat.dart';
 import '../view_models/rat_form_view_model.dart';
@@ -18,6 +19,11 @@ class RatFormScreen extends StatefulWidget {
 class _RatFormScreenState extends State<RatFormScreen> {
   late final TextEditingController _clienteController;
   late final TextEditingController _descricaoController;
+  late final TextEditingController _responsavelController;
+  late final TextEditingController _inicioController;
+  late final TextEditingController _terminoController;
+  late final TextEditingController _equipamentoController;
+  late final TextEditingController _equipamentoObservacaoController;
   bool _allowPop = false;
 
   @override
@@ -29,6 +35,21 @@ class _RatFormScreenState extends State<RatFormScreen> {
     _descricaoController = TextEditingController(
       text: widget.viewModel.descricao,
     );
+    _responsavelController = TextEditingController(
+      text: widget.viewModel.responsavelRecebimento,
+    );
+    _inicioController = TextEditingController(
+      text: widget.viewModel.horarioInicioAtendimento,
+    );
+    _terminoController = TextEditingController(
+      text: widget.viewModel.horarioTerminoAtendimento,
+    );
+    _equipamentoController = TextEditingController(
+      text: widget.viewModel.equipamentoDescricao,
+    );
+    _equipamentoObservacaoController = TextEditingController(
+      text: widget.viewModel.equipamentoObservacao,
+    );
     widget.viewModel.loadSignatureStatus();
   }
 
@@ -36,6 +57,11 @@ class _RatFormScreenState extends State<RatFormScreen> {
   void dispose() {
     _clienteController.dispose();
     _descricaoController.dispose();
+    _responsavelController.dispose();
+    _inicioController.dispose();
+    _terminoController.dispose();
+    _equipamentoController.dispose();
+    _equipamentoObservacaoController.dispose();
     super.dispose();
   }
 
@@ -79,22 +105,99 @@ class _RatFormScreenState extends State<RatFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(
+                    MetricSlateTextField(
                       controller: _clienteController,
                       enabled: widget.viewModel.canEdit,
-                      decoration: const InputDecoration(labelText: 'Cliente'),
+                      label: 'Cliente',
                       onChanged: widget.viewModel.setClienteNome,
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    MetricSlateTextField(
+                      controller: _responsavelController,
+                      enabled: widget.viewModel.canEdit,
+                      label: 'Responsavel pelo recebimento',
+                      onChanged: widget.viewModel.setResponsavelRecebimento,
+                    ),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: widget.viewModel.canEdit ? _pickDataVisita : null,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Data da visita',
+                        ),
+                        child: Text(_formatDate(widget.viewModel.dataVisita)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: MetricSlateTextField(
+                            controller: _inicioController,
+                            enabled: widget.viewModel.canEdit,
+                            keyboardType: TextInputType.datetime,
+                            label: 'Inicio (HH:mm)',
+                            onChanged:
+                                widget.viewModel.setHorarioInicioAtendimento,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: MetricSlateTextField(
+                            controller: _terminoController,
+                            enabled: widget.viewModel.canEdit,
+                            keyboardType: TextInputType.datetime,
+                            label: 'Termino (HH:mm)',
+                            onChanged:
+                                widget.viewModel.setHorarioTerminoAtendimento,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    MetricSlateTextField(
                       controller: _descricaoController,
                       enabled: widget.viewModel.canEdit,
                       maxLines: 5,
-                      decoration: const InputDecoration(
-                        labelText: 'Descri\u00e7\u00e3o',
-                        alignLabelWithHint: true,
-                      ),
+                      label: 'Descri\u00e7\u00e3o',
                       onChanged: widget.viewModel.setDescricao,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<EquipamentoMovimentoTipo>(
+                      initialValue: widget.viewModel.equipamentoMovimentoTipo,
+                      decoration: const InputDecoration(
+                        labelText: 'Movimentacao de equipamento',
+                      ),
+                      items: EquipamentoMovimentoTipo.values.map((tipo) {
+                        return DropdownMenuItem(
+                          value: tipo,
+                          child: Text(_movimentoLabel(tipo)),
+                        );
+                      }).toList(),
+                      onChanged: widget.viewModel.canEdit
+                          ? (value) {
+                              if (value != null) {
+                                widget.viewModel.setEquipamentoMovimentoTipo(
+                                  value,
+                                );
+                              }
+                            }
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    MetricSlateTextField(
+                      controller: _equipamentoController,
+                      enabled: widget.viewModel.canEdit,
+                      label: 'Descricao do equipamento',
+                      onChanged: widget.viewModel.setEquipamentoDescricao,
+                    ),
+                    const SizedBox(height: 16),
+                    MetricSlateTextField(
+                      controller: _equipamentoObservacaoController,
+                      enabled: widget.viewModel.canEdit,
+                      maxLines: 2,
+                      label: 'Observacao do equipamento',
+                      onChanged: widget.viewModel.setEquipamentoObservacao,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<RatStatus>(
@@ -327,6 +430,45 @@ class _RatFormScreenState extends State<RatFormScreen> {
       _allowPop = true;
     });
     Navigator.of(context).pop(result ?? widget.viewModel.shouldReloadOnClose);
+  }
+
+  Future<void> _pickDataVisita() async {
+    final now = DateTime.now();
+    final initialDate = widget.viewModel.dataVisita ?? now;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 1),
+    );
+
+    if (picked != null) {
+      widget.viewModel.setDataVisita(picked);
+    }
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) {
+      return 'Selecione';
+    }
+
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year}';
+  }
+
+  String _movimentoLabel(EquipamentoMovimentoTipo tipo) {
+    switch (tipo) {
+      case EquipamentoMovimentoTipo.nenhum:
+        return 'Nenhuma movimentacao';
+      case EquipamentoMovimentoTipo.retiradaParaReparo:
+        return 'Retirada para reparo';
+      case EquipamentoMovimentoTipo.entregaPosReparo:
+        return 'Entrega pos-reparo';
+      case EquipamentoMovimentoTipo.entregaPosCompra:
+        return 'Entrega pos-compra';
+    }
   }
 }
 

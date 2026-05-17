@@ -3,6 +3,8 @@ import 'package:techreport/features/rat/presentation/screens/rat_list_screen.dar
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
 
+import 'package:techreport/app/theme/metric_slate_theme.dart';
+
 import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
 import '../../features/company_auth/presentation/screens/company_sign_in_screen.dart';
 import '../../features/company_auth/presentation/screens/remote_server_config_screen.dart';
@@ -48,14 +50,7 @@ class _TechReportAppState extends State<TechReportApp> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Tech Report',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF0F766E),
-              brightness: Brightness.light,
-            ),
-            scaffoldBackgroundColor: const Color(0xFFF4F7F5),
-            useMaterial3: true,
-          ),
+          theme: MetricSlateTheme.light(),
           home: AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,
