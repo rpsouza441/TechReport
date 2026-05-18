@@ -142,6 +142,52 @@ tecnico da empresa.
 Depois de executar, use a query de checagem comentada no proprio arquivo para
 confirmar que existem `auth_user_id`, `empresa_id` e `tecnico_id`.
 
+## Admin Inicial
+
+A Sprint 7 adiciona o papel `app_admin`, que administra o TechReport pelo
+proprio app Flutter. Esse papel nao usa `SERVICE_ROLE_KEY` no app.
+
+Para criar o primeiro admin da instancia:
+
+1. Abra o Supabase Studio.
+2. Acesse Authentication > Users.
+3. Crie o usuario admin inicial com email e senha provisoria.
+4. Confirme que o email aparece em `auth.users`.
+5. Abra `supabase/seed.example.sql`.
+6. No bloco `Admin inicial TechReport`, troque:
+
+```text
+<EMAIL_ADMIN_INICIAL>
+<NOME_ADMIN_INICIAL>
+```
+
+por valores reais da instancia.
+
+7. Execute apenas o bloco do admin inicial no SQL Editor.
+8. Confirme que uma linha foi criada ou atualizada em `public.app_admins`.
+9. Entre pelo app com esse email e senha.
+10. Troque a senha se `must_change_password = true`.
+
+Fluxo esperado:
+
+```text
+Supabase Auth autentica email/senha
+-> public.app_admins confirma user_id ativo
+-> app habilita area admin global
+-> RLS continua autorizando cada acao
+```
+
+Nunca coloque no app Flutter:
+
+```text
+SERVICE_ROLE_KEY
+senha real versionada
+credenciais administrativas do banco
+```
+
+O seed do admin inicial deve ficar com placeholders no repositorio. Emails,
+senhas e dados reais pertencem somente ao ambiente da instancia.
+
 ## Observacao Sobre Migrations
 
 As migrations SQL devem ser versionadas no repositorio e aplicadas fora do app,

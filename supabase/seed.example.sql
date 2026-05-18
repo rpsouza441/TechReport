@@ -63,3 +63,34 @@ commit;
 -- join public.tecnicos t on t.user_id = u.id
 -- join public.empresas e on e.id = t.empresa_id
 -- where u.email = '<EMAIL_DO_USUARIO>';
+
+-- Admin inicial TechReport.
+-- Crie primeiro o usuario no Supabase Auth.
+-- Troque placeholders antes de executar.
+
+with usuario as (
+  select id, email
+  from auth.users
+  where email = '<EMAIL_ADMIN_INICIAL>'
+)
+insert into public.app_admins (
+  user_id,
+  nome,
+  email,
+  ativo,
+  must_change_password
+)
+select
+  usuario.id,
+  '<NOME_ADMIN_INICIAL>',
+  usuario.email,
+  true,
+  true
+from usuario
+on conflict (user_id) do update
+set
+  nome = excluded.nome,
+  email = excluded.email,
+  ativo = true,
+  must_change_password = true,
+  updated_at = now();

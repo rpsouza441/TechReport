@@ -1,0 +1,166 @@
+begin;
+
+create extension if not exists pgcrypto;
+
+create table if not exists public.app_admins (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  nome text not null,
+  email text not null,
+  ativo boolean not null default true,
+  must_change_password boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.app_admins enable row level security;
+
+alter table public.tecnicos
+  add column if not exists must_change_password boolean not null default false;
+
+alter table public.tecnicos
+  drop constraint if exists tecnicos_papel_check;
+
+alter table public.tecnicos
+  add constraint tecnicos_papel_check
+  check (papel in ('admin_empresa', 'gerente', 'tecnico'));
+
+create index if not exists app_admins_user_id_idx
+on public.app_admins (user_id);
+
+create or replace function public.is_app_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.app_admins a
+    where a.user_id = (select auth.uid())
+      and a.ativo = true
+  );
+$$;
+
+create or replace function public.current_tecnico_empresa_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select t.empresa_id
+  from public.tecnicos t
+  where t.user_id = (select auth.uid())
+    and t.ativo = true
+  limit 1;
+$$;
+
+create or replace function public.current_tecnico_papel()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select t.papel
+  from public.tecnicos t
+  where t.user_id = (select auth.uid())
+    and t.ativo = true
+  limit 1;
+$$;
+
+drop policy if exists app_admins_select_self on public.app_admins;
+
+create policy app_admins_select_self
+on public.app_admins
+for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and ativo = true
+);
+
+drop policy if exists empresas_select_own on public.empresas;
+drop policy if exists empresas_select_own_or_app_admin on public.empresas;
+drop policy if exists empresas_insert_app_admin on public.empresas;
+drop policy if exists empresas_update_app_admin on public.empresas;
+
+create policy empresas_select_own_or_app_admin
+on public.empresas
+for select
+to authenticated
+using (
+  (select public.is_app_admin())
+  or (
+    ativo = true
+    and id = (select public.current_tecnico_empresa_id())
+  )
+);
+
+create policy empresas_insert_app_admin
+on public.empresas
+for insert
+to authenticated
+with check ((select public.is_app_admin()));
+
+create policy empresas_update_app_admin
+on public.empresas
+for update
+to authenticated
+using ((select public.is_app_admin()))
+with check ((select public.is_app_admin()));
+
+drop policy if exists tecnicos_select_self on public.tecnicos;
+drop policy if exists tecnicos_select_allowed on public.tecnicos;
+drop policy if exists tecnicos_insert_by_admin on public.tecnicos;
+drop policy if exists tecnicos_update_by_admin on public.tecnicos;
+
+create policy tecnicos_select_allowed
+on public.tecnicos
+for select
+to authenticated
+using (
+  (select public.is_app_admin())
+  or user_id = (select auth.uid())
+  or (
+    empresa_id = (select public.current_tecnico_empresa_id())
+    and (select public.current_tecnico_papel()) = 'admin_empresa'
+  )
+);
+
+create policy tecnicos_insert_by_admin
+on public.tecnicos
+for insert
+to authenticated
+with check (
+  (select public.is_app_admin())
+  or (
+    empresa_id = (select public.current_tecnico_empresa_id())
+    and (select public.current_tecnico_papel()) = 'admin_empresa'
+    and papel in ('gerente', 'tecnico')
+  )
+);
+
+create policy tecnicos_update_by_admin
+on public.tecnicos
+for update
+to authenticated
+using (
+  (select public.is_app_admin())
+  or (
+    empresa_id = (select public.current_tecnico_empresa_id())
+    and (select public.current_tecnico_papel()) = 'admin_empresa'
+  )
+)
+with check (
+  (select public.is_app_admin())
+  or (
+    empresa_id = (select public.current_tecnico_empresa_id())
+    and (select public.current_tecnico_papel()) = 'admin_empresa'
+    and papel in ('gerente', 'tecnico')
+  )
+);
+
+commit;
