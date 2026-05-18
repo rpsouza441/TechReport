@@ -66,9 +66,10 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
         clienteNome: row['cliente_nome'] as String,
         responsavelRecebimento: row['responsavel_recebimento'] as String?,
         dataVisita: _parseDate(row['data_visita']),
-        horarioInicioAtendimento: row['horario_inicio_atendimento'] as String?,
-        horarioTerminoAtendimento:
-            row['horario_termino_atendimento'] as String?,
+        horarioInicioAtendimento: _parseTime(row['horario_inicio_atendimento']),
+        horarioTerminoAtendimento: _parseTime(
+          row['horario_termino_atendimento'],
+        ),
         descricao: row['descricao'] as String,
         equipamentoMovimentoTipo: _toEquipamentoMovimentoTipo(
           row['equipamento_movimento_tipo'],
@@ -111,6 +112,19 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
     }
 
     return DateTime.parse(value);
+  }
+
+  String? _parseTime(dynamic value) {
+    if (value is! String || value.isEmpty) {
+      return null;
+    }
+
+    final parts = value.split(':');
+    if (parts.length < 2) {
+      return value;
+    }
+
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
   }
 
   EquipamentoMovimentoTipo? _toEquipamentoMovimentoTipo(dynamic value) {

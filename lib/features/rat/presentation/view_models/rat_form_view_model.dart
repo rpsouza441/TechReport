@@ -184,12 +184,26 @@ class RatFormViewModel extends ChangeNotifier {
       return 'Informe a data da visita.';
     }
 
-    if (!_isValidHour(horarioInicioAtendimento)) {
+    final normalizedStart = _normalizeHour(horarioInicioAtendimento);
+    if (normalizedStart == null) {
       return 'Informe o horario de inicio no formato HH:mm.';
     }
 
-    if (!_isValidHour(horarioTerminoAtendimento)) {
+    if (!_isHourInRange(horarioInicioAtendimento)) {
+      return 'Horario de inicio invalido. Use 00:00 ate 23:59.';
+    }
+
+    final normalizedEnd = _normalizeHour(horarioTerminoAtendimento);
+    if (normalizedEnd == null) {
       return 'Informe o horario de termino no formato HH:mm.';
+    }
+
+    if (!_isHourInRange(horarioTerminoAtendimento)) {
+      return 'Horario de termino invalido. Use 00:00 ate 23:59.';
+    }
+
+    if (!_isEndAfterStart(normalizedStart, normalizedEnd)) {
+      return 'Horario de termino precisa ser depois do inicio.';
     }
 
     if (descricao.trim().isEmpty) {
@@ -429,10 +443,6 @@ String _newRatNumber() {
   return 'RAT-${DateTime.now().microsecondsSinceEpoch}';
 }
 
-bool _isValidHour(String value) {
-  return _normalizeHour(value) != null;
-}
-
 String? _normalizeHour(String value) {
   final digits = value.replaceAll(RegExp(r'\D'), '');
   if (digits.length != 4) {
@@ -446,10 +456,34 @@ String? _normalizeHour(String value) {
     return null;
   }
 
-  if (hour > 23 || minute > 59) {
-    return null;
-  }
-
   return '${hour.toString().padLeft(2, '0')}:'
       '${minute.toString().padLeft(2, '0')}';
+}
+
+bool _isHourInRange(String value) {
+  final digits = value.replaceAll(RegExp(r'\D'), '');
+  if (digits.length != 4) {
+    return false;
+  }
+
+  final hour = int.tryParse(digits.substring(0, 2));
+  final minute = int.tryParse(digits.substring(2, 4));
+
+  if (hour == null || minute == null) {
+    return false;
+  }
+
+  return hour <= 23 && minute <= 59;
+}
+
+bool _isEndAfterStart(String start, String end) {
+  return _minutesSinceMidnight(end) > _minutesSinceMidnight(start);
+}
+
+int _minutesSinceMidnight(String value) {
+  final parts = value.split(':');
+  final hour = int.parse(parts[0]);
+  final minute = int.parse(parts[1]);
+
+  return hour * 60 + minute;
 }
