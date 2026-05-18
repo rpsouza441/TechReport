@@ -28,6 +28,7 @@ class RatListScreen extends StatefulWidget {
     this.processSyncQueue,
     this.downloadRemoteRats,
     this.onSignOut,
+    this.embedded = false,
   });
 
   final AssinaturaRepository assinaturaRepository;
@@ -41,6 +42,7 @@ class RatListScreen extends StatefulWidget {
   final ProcessSyncQueue? processSyncQueue;
   final DownloadRemoteRats? downloadRemoteRats;
   final Future<void> Function()? onSignOut;
+  final bool embedded;
 
   @override
   State<RatListScreen> createState() => _RatListScreenState();
@@ -60,6 +62,23 @@ class _RatListScreenState extends State<RatListScreen> {
     return AnimatedBuilder(
       animation: widget.viewModel,
       builder: (context, _) {
+        if (widget.embedded) {
+          return Stack(
+            children: [
+              _buildBody(context),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: FloatingActionButton.extended(
+                  onPressed: _openCreate,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Novo RAT'),
+                ),
+              ),
+            ],
+          );
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('RATs'),
@@ -83,67 +102,64 @@ class _RatListScreenState extends State<RatListScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Novo RAT'),
           ),
-          body: Builder(
-            builder: (context) {
-              if (widget.viewModel.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          body: _buildBody(context),
+        );
+      },
+    );
+  }
 
-              if (widget.viewModel.errorMessage != null) {
-                return Center(child: Text(widget.viewModel.errorMessage!));
-              }
+  Widget _buildBody(BuildContext context) {
+    if (widget.viewModel.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-              if (widget.viewModel.isEmpty) {
-                return const Center(
-                  child: Text('Nenhum RAT cadastrado ainda.'),
-                );
-              }
+    if (widget.viewModel.errorMessage != null) {
+      return Center(child: Text(widget.viewModel.errorMessage!));
+    }
 
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: widget.viewModel.rats.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final rat = widget.viewModel.rats[index];
-                  final hasSignature = widget.viewModel.hasSignature(rat.id);
-                  return Card(
-                    child: ListTile(
-                      title: Row(
-                        children: [
-                          Expanded(child: Text(rat.clienteNome)),
-                          if (hasSignature) ...[
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.draw,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ],
-                        ],
-                      ),
-                      subtitle: Text(rat.descricao),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(rat.status.name),
-                          const SizedBox(height: 4),
-                          Text(
-                            _syncLabel(rat.syncStatus),
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: _syncColor(context, rat.syncStatus),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ],
-                      ),
-                      onTap: () => _openEdit(rat),
-                    ),
-                  );
-                },
-              );
-            },
+    if (widget.viewModel.isEmpty) {
+      return const Center(child: Text('Nenhum RAT cadastrado ainda.'));
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: widget.viewModel.rats.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final rat = widget.viewModel.rats[index];
+        final hasSignature = widget.viewModel.hasSignature(rat.id);
+        return Card(
+          child: ListTile(
+            title: Row(
+              children: [
+                Expanded(child: Text(rat.clienteNome)),
+                if (hasSignature) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.draw,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ],
+            ),
+            subtitle: Text(rat.descricao),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(rat.status.name),
+                const SizedBox(height: 4),
+                Text(
+                  _syncLabel(rat.syncStatus),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: _syncColor(context, rat.syncStatus),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            onTap: () => _openEdit(rat),
           ),
         );
       },
@@ -204,16 +220,18 @@ class _RatListScreenState extends State<RatListScreen> {
     final processSyncQueue = widget.processSyncQueue;
     final downloadRemoteRats = widget.downloadRemoteRats;
 
-    if (session == null || processSyncQueue == null) {
+    if (session == null ||
+        !session.hasCompanyContext ||
+        processSyncQueue == null) {
       return;
     }
 
     await processSyncQueue.call(
-      empresaId: session.empresaId,
+      empresaId: session.empresaId!,
       usuarioId: session.usuarioId,
       retryFailed: true,
     );
-    await downloadRemoteRats?.call(empresaId: session.empresaId);
+    await downloadRemoteRats?.call(empresaId: session.empresaId!);
     await widget.viewModel.load();
   }
 

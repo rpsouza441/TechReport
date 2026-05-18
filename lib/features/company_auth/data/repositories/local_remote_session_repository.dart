@@ -21,14 +21,21 @@ class LocalRemoteSessionRepository implements RemoteSessionRepository {
 
     final json = jsonDecode(rawSession) as Map<String, dynamic>;
 
+    final papelGlobalName = json['papelGlobal'] as String?;
+    final papelEmpresaName =
+        json['papelEmpresa'] as String? ?? json['papel'] as String?;
+
     return SessaoRemota(
       id: json['id'] as String,
-      empresaId: json['empresaId'] as String,
+      empresaId: json['empresaId'] as String?,
       usuarioId: json['usuarioId'] as String,
-      tecnicoId: json['tecnicoId'] as String,
-      papel: SessaoRemotaPapel.values.byName(
-        (json['papel'] as String?) ?? SessaoRemotaPapel.tecnico.name,
-      ),
+      tecnicoId: json['tecnicoId'] as String?,
+      papelGlobal: papelGlobalName == null
+          ? null
+          : SessaoRemotaPapelGlobal.values.byName(papelGlobalName),
+      papelEmpresa: papelEmpresaName == null
+          ? null
+          : _toPapelEmpresa(papelEmpresaName),
       accessTokenRef: json['accessTokenRef'] as String,
       refreshTokenRef: json['refreshTokenRef'] as String,
       endpointRef: json['endpointRef'] as String,
@@ -66,7 +73,8 @@ class LocalRemoteSessionRepository implements RemoteSessionRepository {
       'empresaId': session.empresaId,
       'usuarioId': session.usuarioId,
       'tecnicoId': session.tecnicoId,
-      'papel': session.papel.name,
+      'papelGlobal': session.papelGlobal?.name,
+      'papelEmpresa': session.papelEmpresa?.name,
       'accessTokenRef': session.accessTokenRef,
       'refreshTokenRef': session.refreshTokenRef,
       'endpointRef': session.endpointRef,
@@ -76,5 +84,19 @@ class LocalRemoteSessionRepository implements RemoteSessionRepository {
       'createdAt': session.createdAt.toIso8601String(),
       'updatedAt': session.updatedAt.toIso8601String(),
     });
+  }
+
+  SessaoRemotaPapelEmpresa _toPapelEmpresa(String value) {
+    switch (value) {
+      case 'adminEmpresa':
+      case 'admin_empresa':
+        return SessaoRemotaPapelEmpresa.adminEmpresa;
+      case 'gerente':
+        return SessaoRemotaPapelEmpresa.gerente;
+      case 'tecnico':
+        return SessaoRemotaPapelEmpresa.tecnico;
+      default:
+        return SessaoRemotaPapelEmpresa.tecnico;
+    }
   }
 }

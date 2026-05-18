@@ -1,6 +1,10 @@
+enum SessaoRemotaPapelGlobal { appAdmin }
+
+enum SessaoRemotaPapelEmpresa { adminEmpresa, gerente, tecnico }
+
 enum SessaoRemotaStatus { valid, expired, offlineAllowed, invalid }
 
-enum SessaoRemotaPapel { tecnico, gerente }
+const _sentinel = Object();
 
 class SessaoRemota {
   const SessaoRemota({
@@ -8,7 +12,8 @@ class SessaoRemota {
     required this.empresaId,
     required this.usuarioId,
     required this.tecnicoId,
-    required this.papel,
+    required this.papelGlobal,
+    required this.papelEmpresa,
     required this.accessTokenRef,
     required this.refreshTokenRef,
     required this.endpointRef,
@@ -20,10 +25,11 @@ class SessaoRemota {
   });
 
   final String id;
-  final String empresaId;
+  final String? empresaId;
   final String usuarioId;
-  final String tecnicoId;
-  final SessaoRemotaPapel papel;
+  final String? tecnicoId;
+  final SessaoRemotaPapelGlobal? papelGlobal;
+  final SessaoRemotaPapelEmpresa? papelEmpresa;
   final String accessTokenRef;
   final String refreshTokenRef;
   final String endpointRef;
@@ -37,7 +43,16 @@ class SessaoRemota {
 
   bool get canUseOffline => DateTime.now().isBefore(offlineAccessUntil);
 
-  bool get isGerente => papel == SessaoRemotaPapel.gerente;
+  bool get isAppAdmin => papelGlobal == SessaoRemotaPapelGlobal.appAdmin;
+
+  bool get isAdminEmpresa =>
+      papelEmpresa == SessaoRemotaPapelEmpresa.adminEmpresa;
+
+  bool get isGerente => papelEmpresa == SessaoRemotaPapelEmpresa.gerente;
+
+  bool get isTecnico => papelEmpresa == SessaoRemotaPapelEmpresa.tecnico;
+
+  bool get hasCompanyContext => empresaId != null && tecnicoId != null;
 
   SessaoRemotaStatus get status {
     if (!isExpired) {
@@ -53,10 +68,11 @@ class SessaoRemota {
 
   SessaoRemota copyWith({
     String? id,
-    String? empresaId,
+    Object? empresaId = _sentinel,
     String? usuarioId,
-    String? tecnicoId,
-    SessaoRemotaPapel? papel,
+    Object? tecnicoId = _sentinel,
+    Object? papelGlobal = _sentinel,
+    Object? papelEmpresa = _sentinel,
     String? accessTokenRef,
     String? refreshTokenRef,
     String? endpointRef,
@@ -68,10 +84,15 @@ class SessaoRemota {
   }) {
     return SessaoRemota(
       id: id ?? this.id,
-      empresaId: empresaId ?? this.empresaId,
+      empresaId: empresaId == _sentinel ? this.empresaId : empresaId as String?,
       usuarioId: usuarioId ?? this.usuarioId,
-      tecnicoId: tecnicoId ?? this.tecnicoId,
-      papel: papel ?? this.papel,
+      tecnicoId: tecnicoId == _sentinel ? this.tecnicoId : tecnicoId as String?,
+      papelGlobal: papelGlobal == _sentinel
+          ? this.papelGlobal
+          : papelGlobal as SessaoRemotaPapelGlobal?,
+      papelEmpresa: papelEmpresa == _sentinel
+          ? this.papelEmpresa
+          : papelEmpresa as SessaoRemotaPapelEmpresa?,
       accessTokenRef: accessTokenRef ?? this.accessTokenRef,
       refreshTokenRef: refreshTokenRef ?? this.refreshTokenRef,
       endpointRef: endpointRef ?? this.endpointRef,
@@ -94,7 +115,8 @@ class SessaoRemota {
         other.empresaId == empresaId &&
         other.usuarioId == usuarioId &&
         other.tecnicoId == tecnicoId &&
-        other.papel == papel &&
+        other.papelGlobal == papelGlobal &&
+        other.papelEmpresa == papelEmpresa &&
         other.accessTokenRef == accessTokenRef &&
         other.refreshTokenRef == refreshTokenRef &&
         other.endpointRef == endpointRef &&
@@ -111,7 +133,8 @@ class SessaoRemota {
     empresaId,
     usuarioId,
     tecnicoId,
-    papel,
+    papelGlobal,
+    papelEmpresa,
     accessTokenRef,
     refreshTokenRef,
     endpointRef,

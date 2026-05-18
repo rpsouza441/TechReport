@@ -241,7 +241,9 @@ class RatFormViewModel extends ChangeNotifier {
     }
 
     final validationError = validate();
-    final isCompanyMode = _remoteSession != null;
+    final remoteSession = _remoteSession;
+    final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
+    final companyEmpresaId = isCompanyMode ? remoteSession!.empresaId! : null;
 
     if (validationError != null) {
       _errorMessage = validationError;
@@ -257,10 +259,10 @@ class RatFormViewModel extends ChangeNotifier {
     final rat = Rat(
       id: ratId,
       authorId:
-          _initialRat?.authorId ?? _remoteSession?.tecnicoId ?? 'tec-local-001',
-      empresaId: _initialRat?.empresaId ?? _remoteSession?.empresaId,
-      usuarioId: _initialRat?.usuarioId ?? _remoteSession?.usuarioId,
-      tecnicoId: _initialRat?.tecnicoId ?? _remoteSession?.tecnicoId,
+          _initialRat?.authorId ?? remoteSession?.tecnicoId ?? 'tec-local-001',
+      empresaId: _initialRat?.empresaId ?? remoteSession?.empresaId,
+      usuarioId: _initialRat?.usuarioId ?? remoteSession?.usuarioId,
+      tecnicoId: _initialRat?.tecnicoId ?? remoteSession?.tecnicoId,
       ownerType:
           _initialRat?.ownerType ??
           (isCompanyMode
@@ -293,7 +295,7 @@ class RatFormViewModel extends ChangeNotifier {
       await _ratRepository.save(rat);
       if (enqueueSync && isCompanyMode) {
         await _enqueueRatSync?.upsert(rat);
-        _syncInBackground(_remoteSession.empresaId);
+        _syncInBackground(companyEmpresaId!);
       }
     } catch (_) {
       _isSubmitting = false;
@@ -323,7 +325,9 @@ class RatFormViewModel extends ChangeNotifier {
     notifyListeners();
 
     final now = DateTime.now();
-    final isCompanyMode = _remoteSession != null;
+    final remoteSession = _remoteSession;
+    final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
+    final companyEmpresaId = isCompanyMode ? remoteSession!.empresaId! : null;
     final deletedRat = initialRat.copyWith(
       syncStatus: isCompanyMode
           ? RatSyncStatus.pendingSync
@@ -336,7 +340,7 @@ class RatFormViewModel extends ChangeNotifier {
       await _ratRepository.save(deletedRat);
       if (isCompanyMode) {
         await _enqueueRatSync?.delete(deletedRat);
-        _syncInBackground(_remoteSession.empresaId);
+        _syncInBackground(companyEmpresaId!);
       }
     } catch (_) {
       _isSubmitting = false;

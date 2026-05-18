@@ -1,3 +1,6 @@
+import 'package:techreport/features/company_admin/data/repositories/supabase_company_admin_repository.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_admin_empresas.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
@@ -52,6 +55,8 @@ class AppScope {
     required this.appSessionViewModel,
     required this.remoteEndpointRepository,
     required this.supabaseClientFactory,
+    required this.listAdminEmpresas,
+    required this.listAdminTecnicos,
     required this.syncQueueRepository,
     required this.remoteRatRepository,
     required this.enqueueRatSync,
@@ -90,6 +95,12 @@ class AppScope {
       endpointRepository: remoteEndpointRepository,
       tokenStore: secureTokenStore,
     );
+    final companyAdminRepository = SupabaseCompanyAdminRepository(
+      clientFactory: supabaseClientFactory,
+    );
+
+    final listAdminEmpresas = ListAdminEmpresas(companyAdminRepository);
+    final listAdminTecnicos = ListAdminTecnicos(companyAdminRepository);
     final syncQueueRepository = DriftSyncQueueRepository(database);
     final remoteRatRepository = SupabaseRemoteRatRepository(
       clientFactory: supabaseClientFactory,
@@ -154,6 +165,8 @@ class AppScope {
       ),
       remoteEndpointRepository: remoteEndpointRepository,
       supabaseClientFactory: supabaseClientFactory,
+      listAdminEmpresas: listAdminEmpresas,
+      listAdminTecnicos: listAdminTecnicos,
       syncQueueRepository: syncQueueRepository,
       syncCheckpointRepository: syncCheckpointRepository,
       downloadRemoteRats: downloadRemoteRats,
@@ -182,6 +195,8 @@ class AppScope {
   final AppSessionViewModel appSessionViewModel;
   final LocalRemoteEndpointRepository remoteEndpointRepository;
   final SupabaseClientFactory supabaseClientFactory;
+  final ListAdminEmpresas listAdminEmpresas;
+  final ListAdminTecnicos listAdminTecnicos;
   final SyncQueueRepository syncQueueRepository;
   final RemoteRatRepository remoteRatRepository;
   final EnqueueRatSync enqueueRatSync;

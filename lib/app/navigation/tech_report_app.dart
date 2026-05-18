@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:techreport/features/rat/presentation/screens/rat_list_screen.dart';
-import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
-import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
-
 import 'package:techreport/app/theme/metric_slate_theme.dart';
 
 import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
@@ -15,6 +11,8 @@ import '../../features/local_auth/presentation/screens/local_home_screen.dart';
 import '../../features/local_auth/presentation/screens/local_onboarding_screen.dart';
 import '../../features/local_auth/presentation/screens/local_unlock_screen.dart';
 import '../di/app_scope.dart';
+import 'company_shell.dart';
+
 import 'app_bootstrap_view_model.dart';
 
 class TechReportApp extends StatefulWidget {
@@ -141,28 +139,9 @@ class AppShell extends StatelessWidget {
           );
         }
 
-        final ratListScope = session.isGerente
-            ? RatListScope.companyManager(empresaId: session.empresaId)
-            : RatListScope.companyTechnician(
-                empresaId: session.empresaId,
-                tecnicoId: session.tecnicoId,
-              );
-
-        return RatListScreen(
-          viewModel: RatListViewModel(
-            assinaturaRepository: scope.assinaturaRepository,
-            ratRepository: scope.ratRepository,
-            scope: ratListScope,
-          ),
-          assinaturaRepository: scope.assinaturaRepository,
-          localSignatureAssetStore: scope.localSignatureAssetStore,
-          ratPdfShareService: scope.ratPdfShareService,
-          ratRepository: scope.ratRepository,
-          shareRatLocally: scope.shareRatLocally,
-          remoteSession: session,
-          enqueueRatSync: scope.enqueueRatSync,
-          processSyncQueue: scope.processSyncQueue,
-          downloadRemoteRats: scope.downloadRemoteRats,
+        return CompanyShell(
+          scope: scope,
+          session: session,
           onSignOut: () async {
             await scope.signOutCompany();
             bootstrapViewModel.requireRemoteLogin();

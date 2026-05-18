@@ -218,19 +218,21 @@ class SupabaseAuthRepository implements AuthRepository {
     required Session session,
     required User user,
     SessaoRemota? previousSession,
-  }) {
+  }) async {
     final now = DateTime.now();
     final expiresAt = session.expiresAt == null
         ? now
         : DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
 
-    return _fetchTecnicoProfile(client: client, user: user).then((profile) {
+    final appAdmin = await _fetchAppAdminProfile(client: client, user: user);
+    if (appAdmin != null) {
       return SessaoRemota(
         id: previousSession?.id ?? session.accessToken.hashCode.toString(),
-        empresaId: profile.empresaId,
+        empresaId: null,
         usuarioId: user.id,
-        tecnicoId: profile.tecnicoId,
-        papel: profile.papel,
+        tecnicoId: null,
+        papelGlobal: SessaoRemotaPapelGlobal.appAdmin,
+        papelEmpresa: null,
         accessTokenRef: SecureTokenStore.accessTokenRef,
         refreshTokenRef: SecureTokenStore.refreshTokenRef,
         endpointRef: previousSession?.endpointRef ?? 'active',
@@ -240,7 +242,47 @@ class SupabaseAuthRepository implements AuthRepository {
         createdAt: previousSession?.createdAt ?? now,
         updatedAt: now,
       );
-    });
+    }
+
+    final profile = await _fetchTecnicoProfile(client: client, user: user);
+
+    return SessaoRemota(
+      id: previousSession?.id ?? session.accessToken.hashCode.toString(),
+      empresaId: profile.empresaId,
+      usuarioId: user.id,
+      tecnicoId: profile.tecnicoId,
+      papelGlobal: null,
+      papelEmpresa: profile.papel,
+      accessTokenRef: SecureTokenStore.accessTokenRef,
+      refreshTokenRef: SecureTokenStore.refreshTokenRef,
+      endpointRef: previousSession?.endpointRef ?? 'active',
+      expiresAt: expiresAt,
+      lastValidatedAt: now,
+      offlineAccessUntil: now.add(const Duration(days: 7)),
+      createdAt: previousSession?.createdAt ?? now,
+      updatedAt: now,
+    );
+  }
+
+  Future<_AppAdminProfile?> _fetchAppAdminProfile({
+    required SupabaseClient client,
+    required User user,
+  }) async {
+    final profile = await client
+        .from('app_admins')
+        .select('id, nome, email, must_change_password')
+        .eq('user_id', user.id)
+        .eq('ativo', true)
+        .maybeSingle();
+
+    if (profile == null) {
+      return null;
+    }
+
+    return _AppAdminProfile(
+      id: profile['id'] as String,
+      mustChangePassword: profile['must_change_password'] as bool? ?? false,
+    );
   }
 
   Future<_TecnicoProfile> _fetchTecnicoProfile({
@@ -249,7 +291,7 @@ class SupabaseAuthRepository implements AuthRepository {
   }) async {
     final profile = await client
         .from('tecnicos')
-        .select('id, empresa_id, papel')
+        .select('id, empresa_id, papel, must_change_password')
         .eq('user_id', user.id)
         .eq('ativo', true)
         .maybeSingle();
@@ -278,20 +320,29 @@ class SupabaseAuthRepository implements AuthRepository {
     return _TecnicoProfile(
       empresaId: empresaId,
       tecnicoId: tecnicoId,
-      papel: _toPapel(papel),
+      papel: _toPapelEmpresa(papel),
     );
   }
 
-  SessaoRemotaPapel _toPapel(String value) {
+  SessaoRemotaPapelEmpresa _toPapelEmpresa(String value) {
     switch (value) {
+      case 'admin_empresa':
+        return SessaoRemotaPapelEmpresa.adminEmpresa;
       case 'gerente':
-        return SessaoRemotaPapel.gerente;
+        return SessaoRemotaPapelEmpresa.gerente;
       case 'tecnico':
-        return SessaoRemotaPapel.tecnico;
+        return SessaoRemotaPapelEmpresa.tecnico;
       default:
-        return SessaoRemotaPapel.tecnico;
+        throw const RemoteAuthException('Papel remoto invalido.');
     }
   }
+}
+
+class _AppAdminProfile {
+  const _AppAdminProfile({required this.id, required this.mustChangePassword});
+
+  final String id;
+  final bool mustChangePassword;
 }
 
 class _TecnicoProfile {
@@ -303,5 +354,5 @@ class _TecnicoProfile {
 
   final String empresaId;
   final String tecnicoId;
-  final SessaoRemotaPapel papel;
+  final SessaoRemotaPapelEmpresa papel;
 }
