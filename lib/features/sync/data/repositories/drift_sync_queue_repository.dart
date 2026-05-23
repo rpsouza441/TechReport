@@ -50,6 +50,36 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
   }
 
   @override
+  Future<int> countPending({
+    required String empresaId,
+    required String usuarioId,
+  }) async {
+    final countExpression = countAll();
+    final statusFilter =
+        _database.syncQueueItems.status.equals(
+          domain.SyncItemStatus.pending.name,
+        ) |
+        _database.syncQueueItems.status.equals(
+          domain.SyncItemStatus.processing.name,
+        ) |
+        _database.syncQueueItems.status.equals(
+          domain.SyncItemStatus.failed.name,
+        );
+
+    final row =
+        await (_database.selectOnly(_database.syncQueueItems)
+              ..addColumns([countExpression])
+              ..where(
+                _database.syncQueueItems.empresaId.equals(empresaId) &
+                    _database.syncQueueItems.usuarioId.equals(usuarioId) &
+                    statusFilter,
+              ))
+            .getSingle();
+
+    return row.read(countExpression) ?? 0;
+  }
+
+  @override
   Future<void> markProcessing(String id) async {
     await (_database.update(
       _database.syncQueueItems,

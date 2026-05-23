@@ -10,6 +10,11 @@ abstract class SyncQueueRepository {
     int limit = 20,
   });
 
+  Future<int> countPending({
+    required String empresaId,
+    required String usuarioId,
+  });
+
   Future<void> markProcessing(String id);
 
   Future<void> markSynced(String id);
