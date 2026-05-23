@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-
-import '../view_models/app_session_view_model.dart';
+import 'package:techreport/features/local_auth/presentation/view_models/app_session_view_model.dart';
 
 class LocalUnlockScreen extends StatefulWidget {
-  const LocalUnlockScreen({super.key, required this.viewModel});
+  const LocalUnlockScreen({
+    super.key,
+    required this.viewModel,
+    required this.onUnlocked,
+  });
 
   final AppSessionViewModel viewModel;
+  final VoidCallback onUnlocked;
 
   @override
   State<LocalUnlockScreen> createState() => _LocalUnlockScreenState();
@@ -50,9 +54,7 @@ class _LocalUnlockScreenState extends State<LocalUnlockScreen> {
                     controller: _pinController,
                     keyboardType: TextInputType.number,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'PIN',
-                    ),
+                    decoration: const InputDecoration(labelText: 'PIN'),
                     onSubmitted: (_) => _submit(),
                   ),
                   if (widget.viewModel.errorMessage != null) ...[
@@ -79,7 +81,11 @@ class _LocalUnlockScreenState extends State<LocalUnlockScreen> {
     );
   }
 
-  void _submit() {
-    widget.viewModel.unlock(_pinController.text);
+  Future<void> _submit() async {
+    await widget.viewModel.unlock(_pinController.text);
+
+    if (widget.viewModel.status == AppSessionStatus.unlocked) {
+      widget.onUnlocked();
+    }
   }
 }

@@ -110,6 +110,10 @@ class AppBootstrapViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void syncLocalStatus() {
+    _syncLocalStatus();
+  }
+
   void _syncLocalStatus() {
     switch (_localSessionViewModel.status) {
       case AppSessionStatus.onboardingRequired:

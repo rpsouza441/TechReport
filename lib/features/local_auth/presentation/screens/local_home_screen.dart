@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/features/local_auth/data/services/local_data_export_share_service.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart' as domain;
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
@@ -16,19 +17,25 @@ class LocalHomeScreen extends StatefulWidget {
   const LocalHomeScreen({
     super.key,
     required this.assinaturaRepository,
+    required this.localDataExportShareService,
     required this.localSignatureAssetStore,
     required this.ratPdfShareService,
     required this.viewModel,
     required this.ratRepository,
     required this.shareRatLocally,
+    required this.onLocalLocked,
+    required this.onSwitchMode,
   });
 
   final AssinaturaRepository assinaturaRepository;
+  final LocalDataExportShareService localDataExportShareService;
   final LocalSignatureAssetStore localSignatureAssetStore;
   final RatPdfShareService ratPdfShareService;
   final AppSessionViewModel viewModel;
   final RatRepository ratRepository;
   final ShareRatLocally shareRatLocally;
+  final VoidCallback onLocalLocked;
+  final Future<void> Function() onSwitchMode;
 
   @override
   State<LocalHomeScreen> createState() => _LocalHomeScreenState();
@@ -62,7 +69,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
             actions: [
               if (widget.viewModel.pinConfigured)
                 TextButton(
-                  onPressed: widget.viewModel.lock,
+                  onPressed: _lockLocal,
                   child: const Text('Bloquear'),
                 ),
             ],
@@ -83,7 +90,9 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
                     style: theme.textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 20),
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
                       FilledButton.icon(
                         onPressed: _openCreate,
@@ -94,6 +103,16 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
                       OutlinedButton(
                         onPressed: _ratListViewModel.load,
                         child: const Text('Atualizar'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => widget.onSwitchMode(),
+                        icon: const Icon(Icons.swap_horiz),
+                        label: const Text('Trocar modo'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _exportLocalData,
+                        icon: const Icon(Icons.file_upload_outlined),
+                        label: const Text('Exportar dados'),
                       ),
                     ],
                   ),
@@ -192,6 +211,27 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
 
     if (result == true) {
       await _ratListViewModel.load();
+    }
+  }
+
+  Future<void> _lockLocal() async {
+    await widget.viewModel.lock();
+    widget.onLocalLocked();
+  }
+
+  Future<void> _exportLocalData() async {
+    try {
+      await widget.localDataExportShareService.shareExport();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nao foi possivel exportar os dados locais.'),
+        ),
+      );
     }
   }
 

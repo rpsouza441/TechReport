@@ -98,16 +98,22 @@ class AppShell extends StatelessWidget {
         );
 
       case AppBootstrapStatus.localLocked:
-        return LocalUnlockScreen(viewModel: scope.appSessionViewModel);
+        return LocalUnlockScreen(
+          viewModel: scope.appSessionViewModel,
+          onUnlocked: bootstrapViewModel.syncLocalStatus,
+        );
 
       case AppBootstrapStatus.localUnlocked:
         return LocalHomeScreen(
           viewModel: scope.appSessionViewModel,
           assinaturaRepository: scope.assinaturaRepository,
+          localDataExportShareService: scope.localDataExportShareService,
           localSignatureAssetStore: scope.localSignatureAssetStore,
           ratPdfShareService: scope.ratPdfShareService,
           ratRepository: scope.ratRepository,
           shareRatLocally: scope.shareRatLocally,
+          onLocalLocked: bootstrapViewModel.syncLocalStatus,
+          onSwitchMode: bootstrapViewModel.chooseCompany,
         );
 
       case AppBootstrapStatus.remoteEndpointRequired:
