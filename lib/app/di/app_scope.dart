@@ -3,6 +3,7 @@ import 'package:techreport/features/company_admin/domain/usecases/list_admin_emp
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
+import 'package:techreport/features/local_auth/data/services/local_data_export_share_service.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
@@ -29,6 +30,7 @@ import 'package:techreport/features/company_auth/data/services/supabase_client_f
 
 import 'package:techreport/features/company_auth/data/repositories/local_app_mode_repository.dart';
 import 'package:techreport/features/company_auth/domain/usecases/bootstrap_company_session.dart';
+import 'package:techreport/features/company_auth/domain/usecases/change_company_password.dart';
 import 'package:techreport/features/company_auth/domain/usecases/select_app_mode.dart';
 import 'package:techreport/features/company_auth/domain/usecases/sign_in_company.dart';
 import 'package:techreport/features/company_auth/domain/usecases/sign_out_company.dart';
@@ -47,6 +49,7 @@ class AppScope {
     required this.database,
     required this.assinaturaRepository,
     required this.localSignatureAssetStore,
+    required this.localDataExportShareService,
     required this.ratPdfShareService,
     required this.ratRepository,
     required this.sessaoLocalRepository,
@@ -67,6 +70,7 @@ class AppScope {
     required this.appModeRepository,
     required this.selectAppMode,
     required this.bootstrapCompanySession,
+    required this.changeCompanyPassword,
     required this.signInCompany,
     required this.signOutCompany,
     required this.syncCheckpointRepository,
@@ -81,6 +85,11 @@ class AppScope {
     final ratRepository = DriftRatRepository(database);
     final assinaturaRepository = DriftAssinaturaRepository(database);
     final localSignatureAssetStore = LocalSignatureAssetStore();
+    final localDataExportShareService = LocalDataExportShareService(
+      ratRepository: ratRepository,
+      assinaturaRepository: assinaturaRepository,
+      localSignatureAssetStore: localSignatureAssetStore,
+    );
     final shareRatLocally = ShareRatLocally(
       ratRepository: ratRepository,
       assinaturaRepository: assinaturaRepository,
@@ -129,6 +138,9 @@ class AppScope {
       appModeRepository: appModeRepository,
       authRepository: authRepository,
     );
+    final changeCompanyPassword = ChangeCompanyPassword(
+      authRepository: authRepository,
+    );
     final signInCompany = SignInCompany(
       authRepository: authRepository,
       remoteSessionRepository: remoteSessionRepository,
@@ -145,6 +157,7 @@ class AppScope {
       database: database,
       assinaturaRepository: assinaturaRepository,
       localSignatureAssetStore: localSignatureAssetStore,
+      localDataExportShareService: localDataExportShareService,
       ratPdfShareService: ratPdfShareService,
       sessaoLocalRepository: sessaoLocalRepository,
       shareRatLocally: shareRatLocally,
@@ -179,6 +192,7 @@ class AppScope {
       appModeRepository: appModeRepository,
       selectAppMode: selectAppMode,
       bootstrapCompanySession: bootstrapCompanySession,
+      changeCompanyPassword: changeCompanyPassword,
       signInCompany: signInCompany,
       signOutCompany: signOutCompany,
     );
@@ -187,6 +201,7 @@ class AppScope {
   final TechReportLocalDatabase database;
   final AssinaturaRepository assinaturaRepository;
   final LocalSignatureAssetStore localSignatureAssetStore;
+  final LocalDataExportShareService localDataExportShareService;
   final RatPdfShareService ratPdfShareService;
   final SessaoLocalRepository sessaoLocalRepository;
   final ShareRatLocally shareRatLocally;
@@ -207,6 +222,7 @@ class AppScope {
   final LocalAppModeRepository appModeRepository;
   final SelectAppMode selectAppMode;
   final BootstrapCompanySession bootstrapCompanySession;
+  final ChangeCompanyPassword changeCompanyPassword;
   final SignInCompany signInCompany;
   final SignOutCompany signOutCompany;
   final SyncCheckpointRepository syncCheckpointRepository;

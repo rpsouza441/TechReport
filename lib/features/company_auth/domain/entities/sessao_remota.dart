@@ -12,6 +12,9 @@ class SessaoRemota {
     required this.empresaId,
     required this.usuarioId,
     required this.tecnicoId,
+    required this.email,
+    required this.nome,
+    required this.mustChangePassword,
     required this.papelGlobal,
     required this.papelEmpresa,
     required this.accessTokenRef,
@@ -28,6 +31,9 @@ class SessaoRemota {
   final String? empresaId;
   final String usuarioId;
   final String? tecnicoId;
+  final String email;
+  final String? nome;
+  final bool mustChangePassword;
   final SessaoRemotaPapelGlobal? papelGlobal;
   final SessaoRemotaPapelEmpresa? papelEmpresa;
   final String accessTokenRef;
@@ -71,6 +77,9 @@ class SessaoRemota {
     Object? empresaId = _sentinel,
     String? usuarioId,
     Object? tecnicoId = _sentinel,
+    String? email,
+    Object? nome = _sentinel,
+    bool? mustChangePassword,
     Object? papelGlobal = _sentinel,
     Object? papelEmpresa = _sentinel,
     String? accessTokenRef,
@@ -87,6 +96,9 @@ class SessaoRemota {
       empresaId: empresaId == _sentinel ? this.empresaId : empresaId as String?,
       usuarioId: usuarioId ?? this.usuarioId,
       tecnicoId: tecnicoId == _sentinel ? this.tecnicoId : tecnicoId as String?,
+      email: email ?? this.email,
+      nome: nome == _sentinel ? this.nome : nome as String?,
+      mustChangePassword: mustChangePassword ?? this.mustChangePassword,
       papelGlobal: papelGlobal == _sentinel
           ? this.papelGlobal
           : papelGlobal as SessaoRemotaPapelGlobal?,
@@ -115,6 +127,9 @@ class SessaoRemota {
         other.empresaId == empresaId &&
         other.usuarioId == usuarioId &&
         other.tecnicoId == tecnicoId &&
+        other.email == email &&
+        other.nome == nome &&
+        other.mustChangePassword == mustChangePassword &&
         other.papelGlobal == papelGlobal &&
         other.papelEmpresa == papelEmpresa &&
         other.accessTokenRef == accessTokenRef &&
@@ -133,6 +148,9 @@ class SessaoRemota {
     empresaId,
     usuarioId,
     tecnicoId,
+    email,
+    nome,
+    mustChangePassword,
     papelGlobal,
     papelEmpresa,
     accessTokenRef,

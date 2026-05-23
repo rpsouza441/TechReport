@@ -30,6 +30,9 @@ class LocalRemoteSessionRepository implements RemoteSessionRepository {
       empresaId: json['empresaId'] as String?,
       usuarioId: json['usuarioId'] as String,
       tecnicoId: json['tecnicoId'] as String?,
+      email: json['email'] as String? ?? '',
+      nome: json['nome'] as String?,
+      mustChangePassword: json['mustChangePassword'] as bool? ?? false,
       papelGlobal: papelGlobalName == null
           ? null
           : SessaoRemotaPapelGlobal.values.byName(papelGlobalName),
@@ -73,6 +76,9 @@ class LocalRemoteSessionRepository implements RemoteSessionRepository {
       'empresaId': session.empresaId,
       'usuarioId': session.usuarioId,
       'tecnicoId': session.tecnicoId,
+      'email': session.email,
+      'nome': session.nome,
+      'mustChangePassword': session.mustChangePassword,
       'papelGlobal': session.papelGlobal?.name,
       'papelEmpresa': session.papelEmpresa?.name,
       'accessTokenRef': session.accessTokenRef,

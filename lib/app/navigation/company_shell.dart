@@ -6,6 +6,7 @@ import 'package:techreport/features/company_admin/presentation/view_models/admin
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_view_model.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/company_auth/presentation/screens/company_home_screen.dart';
+import 'package:techreport/features/company_auth/presentation/view_models/company_account_view_model.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_list_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
@@ -157,7 +158,12 @@ class _CompanyShellState extends State<CompanyShell> {
       case CompanyArea.rats:
         return _buildRatsArea();
       case CompanyArea.profile:
-        return CompanyHomeScreen(session: widget.session);
+        return CompanyHomeScreen(
+          session: widget.session,
+          viewModel: CompanyAccountViewModel(
+            changePassword: widget.scope.changeCompanyPassword,
+          ),
+        );
       case CompanyArea.adminEmpresa:
         return AdminEmpresaArea(
           viewModel: AdminEmpresaViewModel(

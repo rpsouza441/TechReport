@@ -13,4 +13,6 @@ abstract class AuthRepository {
   Future<SessaoRemota?> refreshSession();
 
   Future<SessaoRemota?> currentSession();
+
+  Future<void> changePassword(String newPassword);
 }

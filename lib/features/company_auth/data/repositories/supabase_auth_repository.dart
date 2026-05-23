@@ -231,6 +231,9 @@ class SupabaseAuthRepository implements AuthRepository {
         empresaId: null,
         usuarioId: user.id,
         tecnicoId: null,
+        email: appAdmin.email,
+        nome: appAdmin.nome,
+        mustChangePassword: appAdmin.mustChangePassword,
         papelGlobal: SessaoRemotaPapelGlobal.appAdmin,
         papelEmpresa: null,
         accessTokenRef: SecureTokenStore.accessTokenRef,
@@ -251,6 +254,9 @@ class SupabaseAuthRepository implements AuthRepository {
       empresaId: profile.empresaId,
       usuarioId: user.id,
       tecnicoId: profile.tecnicoId,
+      email: profile.email,
+      nome: profile.nome,
+      mustChangePassword: profile.mustChangePassword,
       papelGlobal: null,
       papelEmpresa: profile.papel,
       accessTokenRef: SecureTokenStore.accessTokenRef,
@@ -262,6 +268,17 @@ class SupabaseAuthRepository implements AuthRepository {
       createdAt: previousSession?.createdAt ?? now,
       updatedAt: now,
     );
+  }
+
+  @override
+  Future<void> changePassword(String newPassword) async {
+    final client = await requireClient();
+
+    try {
+      await client.auth.updateUser(UserAttributes(password: newPassword));
+    } on AuthApiException catch (e) {
+      throw mapAuthException(e);
+    }
   }
 
   Future<_AppAdminProfile?> _fetchAppAdminProfile({
@@ -281,6 +298,8 @@ class SupabaseAuthRepository implements AuthRepository {
 
     return _AppAdminProfile(
       id: profile['id'] as String,
+      nome: profile['nome'] as String?,
+      email: profile['email'] as String? ?? user.email ?? '',
       mustChangePassword: profile['must_change_password'] as bool? ?? false,
     );
   }
@@ -291,7 +310,7 @@ class SupabaseAuthRepository implements AuthRepository {
   }) async {
     final profile = await client
         .from('tecnicos')
-        .select('id, empresa_id, papel, must_change_password')
+        .select('id, empresa_id, nome, email, papel, must_change_password')
         .eq('user_id', user.id)
         .eq('ativo', true)
         .maybeSingle();
@@ -320,7 +339,10 @@ class SupabaseAuthRepository implements AuthRepository {
     return _TecnicoProfile(
       empresaId: empresaId,
       tecnicoId: tecnicoId,
+      nome: profile['nome'] as String?,
+      email: profile['email'] as String? ?? user.email ?? '',
       papel: _toPapelEmpresa(papel),
+      mustChangePassword: profile['must_change_password'] as bool? ?? false,
     );
   }
 
@@ -339,9 +361,16 @@ class SupabaseAuthRepository implements AuthRepository {
 }
 
 class _AppAdminProfile {
-  const _AppAdminProfile({required this.id, required this.mustChangePassword});
+  const _AppAdminProfile({
+    required this.id,
+    required this.nome,
+    required this.email,
+    required this.mustChangePassword,
+  });
 
   final String id;
+  final String? nome;
+  final String email;
   final bool mustChangePassword;
 }
 
@@ -349,10 +378,16 @@ class _TecnicoProfile {
   const _TecnicoProfile({
     required this.empresaId,
     required this.tecnicoId,
+    required this.nome,
+    required this.email,
     required this.papel,
+    required this.mustChangePassword,
   });
 
   final String empresaId;
   final String tecnicoId;
+  final String? nome;
+  final String email;
   final SessaoRemotaPapelEmpresa papel;
+  final bool mustChangePassword;
 }
