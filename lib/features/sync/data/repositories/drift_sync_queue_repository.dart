@@ -132,6 +132,25 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
     );
   }
 
+  @override
+  Future<List<domain.SyncItem>> listForSession({
+    required String empresaId,
+    required String usuarioId,
+    int limit = 50,
+  }) async {
+    final rows = await (_database.select(_database.syncQueueItems)
+          ..where(
+            (tbl) =>
+                tbl.empresaId.equals(empresaId) &
+                tbl.usuarioId.equals(usuarioId),
+          )
+          ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+          ..limit(limit))
+        .get();
+
+    return rows.map(_toEntity).toList();
+  }
+
   domain.SyncItem _toEntity(SyncQueueItem row) {
     return domain.SyncItem(
       id: row.id,

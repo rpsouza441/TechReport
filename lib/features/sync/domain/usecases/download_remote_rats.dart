@@ -15,8 +15,17 @@ class DownloadRemoteRats {
   final RatRepository _ratRepository;
   final SyncCheckpointRepository _checkpointRepository;
 
-  Future<void> call({required String empresaId}) async {
-    final since = await _checkpointRepository.getLastRatDownloadAt(empresaId);
+  Future<void> call({
+    required String empresaId,
+    required String usuarioId,
+    required String papel,
+  }) async {
+    final since = await _checkpointRepository.getLastRatDownloadAt(
+      empresaId: empresaId,
+      usuarioId: usuarioId,
+      papel: papel,
+    );
+
     final snapshots = await _remoteRatRepository.fetchUpdatedSince(
       empresaId: empresaId,
       since: since,
@@ -37,6 +46,8 @@ class DownloadRemoteRats {
     if (newestServerUpdate != null) {
       await _checkpointRepository.saveLastRatDownloadAt(
         empresaId: empresaId,
+        usuarioId: usuarioId,
+        papel: papel,
         value: newestServerUpdate,
       );
     }

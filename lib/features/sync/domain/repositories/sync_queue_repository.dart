@@ -24,4 +24,10 @@ abstract class SyncQueueRepository {
     required String errorMessage,
     required DateTime nextAttemptAt,
   });
+
+  Future<List<SyncItem>> listForSession({
+    required String empresaId,
+    required String usuarioId,
+    int limit = 50,
+  });
 }
