@@ -26,6 +26,7 @@ class TechReportApp extends StatefulWidget {
 
 class _TechReportAppState extends State<TechReportApp> {
   late final AppBootstrapViewModel bootstrapViewModel;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -42,19 +43,21 @@ class _TechReportAppState extends State<TechReportApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: bootstrapViewModel,
-      builder: (context, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Tech Report',
-          theme: MetricSlateTheme.light(),
-          home: AppShell(
+    return MaterialApp(
+      navigatorKey: _navigatorKey,
+      debugShowCheckedModeBanner: false,
+      title: 'Tech Report',
+      theme: MetricSlateTheme.light(),
+      home: AnimatedBuilder(
+        animation: bootstrapViewModel,
+        builder: (context, _) {
+          return AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,
-          ),
-        );
-      },
+            rootNavigatorKey: _navigatorKey,
+          );
+        },
+      ),
     );
   }
 }
@@ -64,10 +67,12 @@ class AppShell extends StatelessWidget {
     super.key,
     required this.bootstrapViewModel,
     required this.scope,
+    required this.rootNavigatorKey,
   });
 
   final AppBootstrapViewModel bootstrapViewModel;
   final AppScope scope;
+  final GlobalKey<NavigatorState> rootNavigatorKey;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +99,7 @@ class AppShell extends StatelessWidget {
       case AppBootstrapStatus.localOnboarding:
         return LocalOnboardingScreen(
           viewModel: scope.appSessionViewModel,
+          onCompleted: bootstrapViewModel.syncLocalStatus,
           onBackToModeChoice: bootstrapViewModel.requireModeChoice,
         );
 
@@ -107,8 +113,11 @@ class AppShell extends StatelessWidget {
         return LocalHomeScreen(
           viewModel: scope.appSessionViewModel,
           assinaturaRepository: scope.assinaturaRepository,
+          applyLocalDataImport: scope.applyLocalDataImport,
+          localDataImportParser: scope.localDataImportParser,
           localDataExportShareService: scope.localDataExportShareService,
           localSignatureAssetStore: scope.localSignatureAssetStore,
+          previewLocalDataImport: scope.previewLocalDataImport,
           ratPdfShareService: scope.ratPdfShareService,
           ratRepository: scope.ratRepository,
           shareRatLocally: scope.shareRatLocally,
@@ -127,6 +136,7 @@ class AppShell extends StatelessWidget {
 
       case AppBootstrapStatus.remoteLoginRequired:
         return CompanySignInScreen(
+          key: const ValueKey('remoteLoginRequired'),
           viewModel: CompanySignInViewModel(signInCompany: scope.signInCompany),
           onSignedIn: bootstrapViewModel.unlockCompany,
           onCancel: bootstrapViewModel.requireModeChoice,
@@ -137,6 +147,7 @@ class AppShell extends StatelessWidget {
 
         if (session == null) {
           return CompanySignInScreen(
+            key: const ValueKey('companyUnlockedWithoutSession'),
             viewModel: CompanySignInViewModel(
               signInCompany: scope.signInCompany,
             ),
@@ -146,10 +157,12 @@ class AppShell extends StatelessWidget {
         }
 
         return CompanyShell(
+          key: ValueKey('companyUnlocked-${session.usuarioId}'),
           scope: scope,
           session: session,
           onSignOut: () async {
             await scope.signOutCompany();
+            rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
             bootstrapViewModel.requireRemoteLogin();
           },
         );

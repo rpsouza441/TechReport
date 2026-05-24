@@ -272,13 +272,40 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> changePassword(String newPassword) async {
-    final client = await requireClient();
-
     try {
+      final client = await _clientFactory.tryCreateAuthenticatedClient();
+      if (client == null) {
+        throw const RemoteAuthException(
+          'Sessão remota expirada. Entre novamente para trocar a senha.',
+        );
+      }
+
       await client.auth.updateUser(UserAttributes(password: newPassword));
+    } on RemoteAuthException {
+      rethrow;
     } on AuthApiException catch (e) {
-      throw mapAuthException(e);
+      throw _mapChangePasswordException(e);
+    } on AuthException catch (e) {
+      if (e.message.toLowerCase().contains('session')) {
+        throw const RemoteAuthException(
+          'Sessão remota expirada. Entre novamente para trocar a senha.',
+        );
+      }
+      throw RemoteAuthException(e.message);
     }
+  }
+
+  RemoteAuthException _mapChangePasswordException(AuthApiException exception) {
+    final message = exception.message.toLowerCase();
+    if (message.contains('session')) {
+      throw const RemoteAuthException(
+        'Sessão remota expirada. Entre novamente para trocar a senha.',
+      );
+    }
+
+    return const RemoteAuthException(
+      'Não foi possível trocar a senha. Entre novamente e tente outra vez.',
+    );
   }
 
   Future<_AppAdminProfile?> _fetchAppAdminProfile({

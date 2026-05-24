@@ -18,7 +18,7 @@ class ChangeCompanyPassword {
 
     if (newPassword != confirmPassword) {
       return const ChangeCompanyPasswordResult.failure(
-        'As senhas nao conferem.',
+        'As senhas não conferem.',
       );
     }
 

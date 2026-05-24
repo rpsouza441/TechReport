@@ -18,7 +18,6 @@ class CompanyAccountViewModel extends ChangeNotifier {
     isChangingPassword = true;
     errorMessage = null;
     successMessage = null;
-    notifyListeners();
 
     final result = await _changePassword(
       newPassword: newPassword,
@@ -29,8 +28,7 @@ class CompanyAccountViewModel extends ChangeNotifier {
     if (result.success) {
       successMessage = 'Senha atualizada.';
     } else {
-      errorMessage = result.errorMessage ?? 'Nao foi possivel trocar a senha.';
+      errorMessage = result.errorMessage ?? 'Não foi possível trocar a senha.';
     }
-    notifyListeners();
   }
 }
