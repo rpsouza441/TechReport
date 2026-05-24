@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
@@ -32,6 +34,20 @@ class LocalDataExportShareService {
         text: 'Backup local TechReport',
         files: [XFile(file.path)],
       ),
+    );
+  }
+
+  Future<String?> saveExportToDevice() async {
+    final json = await buildExportJson();
+    final fileName = _exportFileName();
+    final bytes = Uint8List.fromList(utf8.encode(json));
+
+    return FilePicker.saveFile(
+      dialogTitle: 'Salvar backup local TechReport',
+      fileName: fileName,
+      type: FileType.custom,
+      allowedExtensions: const ['json'],
+      bytes: bytes,
     );
   }
 
@@ -103,15 +119,20 @@ class LocalDataExportShareService {
 
   Future<File> _saveTemporaryJson(String json) async {
     final directory = await getTemporaryDirectory();
-    final timestamp = DateTime.now()
-        .toIso8601String()
-        .replaceAll(RegExp(r'[^0-9]'), '')
-        .substring(0, 14);
     final file = File(
-      '${directory.path}${Platform.pathSeparator}techreport-local-export-$timestamp.json',
+      '${directory.path}${Platform.pathSeparator}${_exportFileName()}',
     );
 
     await file.writeAsString(json, flush: true);
     return file;
+  }
+
+  String _exportFileName() {
+    final timestamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(RegExp(r'[^0-9]'), '')
+        .substring(0, 14);
+
+    return 'techreport-local-export-$timestamp.json';
   }
 }

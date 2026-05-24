@@ -19,4 +19,9 @@ class LocalPinSecretStore implements PinSecretRepository {
     final savedPin = await _storage.read(key: _pinKey);
     return savedPin == pin;
   }
+
+  @override
+  Future<void> deletePin() async {
+    await _storage.delete(key: _pinKey);
+  }
 }

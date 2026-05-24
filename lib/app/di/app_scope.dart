@@ -3,7 +3,10 @@ import 'package:techreport/features/company_admin/domain/usecases/list_admin_emp
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
+import 'package:techreport/features/local_auth/data/services/local_data_import_parser.dart';
 import 'package:techreport/features/local_auth/data/services/local_data_export_share_service.dart';
+import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
+import 'package:techreport/features/local_auth/domain/usecases/preview_local_data_import.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
@@ -38,6 +41,7 @@ import 'package:techreport/features/company_auth/domain/usecases/sign_out_compan
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
 import '../../features/local_auth/domain/repositories/tecnico_local_repository.dart';
 import '../../features/local_auth/domain/usecases/bootstrap_local_session.dart';
+import '../../features/local_auth/domain/usecases/change_local_pin.dart';
 import '../../features/local_auth/domain/usecases/complete_local_onboarding.dart';
 import '../../features/local_auth/domain/usecases/lock_local_session.dart';
 import '../../features/local_auth/domain/usecases/unlock_local_session.dart';
@@ -48,8 +52,11 @@ class AppScope {
   AppScope({
     required this.database,
     required this.assinaturaRepository,
+    required this.applyLocalDataImport,
+    required this.localDataImportParser,
     required this.localSignatureAssetStore,
     required this.localDataExportShareService,
+    required this.previewLocalDataImport,
     required this.ratPdfShareService,
     required this.ratRepository,
     required this.sessaoLocalRepository,
@@ -86,6 +93,15 @@ class AppScope {
     final assinaturaRepository = DriftAssinaturaRepository(database);
     final localSignatureAssetStore = LocalSignatureAssetStore();
     final localDataExportShareService = LocalDataExportShareService(
+      ratRepository: ratRepository,
+      assinaturaRepository: assinaturaRepository,
+      localSignatureAssetStore: localSignatureAssetStore,
+    );
+    final localDataImportParser = LocalDataImportParser();
+    final previewLocalDataImport = PreviewLocalDataImport(
+      ratRepository: ratRepository,
+    );
+    final applyLocalDataImport = ApplyLocalDataImport(
       ratRepository: ratRepository,
       assinaturaRepository: assinaturaRepository,
       localSignatureAssetStore: localSignatureAssetStore,
@@ -156,8 +172,11 @@ class AppScope {
     return AppScope(
       database: database,
       assinaturaRepository: assinaturaRepository,
+      applyLocalDataImport: applyLocalDataImport,
+      localDataImportParser: localDataImportParser,
       localSignatureAssetStore: localSignatureAssetStore,
       localDataExportShareService: localDataExportShareService,
+      previewLocalDataImport: previewLocalDataImport,
       ratPdfShareService: ratPdfShareService,
       sessaoLocalRepository: sessaoLocalRepository,
       shareRatLocally: shareRatLocally,
@@ -165,6 +184,11 @@ class AppScope {
       ratRepository: ratRepository,
       appSessionViewModel: AppSessionViewModel(
         bootstrapLocalSession: BootstrapLocalSession(sessaoLocalRepository),
+        changeLocalPin: ChangeLocalPin(
+          pinSecretRepository: pinSecretRepository,
+          sessaoLocalRepository: sessaoLocalRepository,
+          tecnicoLocalRepository: tecnicoLocalRepository,
+        ),
         completeLocalOnboarding: CompleteLocalOnboarding(
           pinSecretRepository: pinSecretRepository,
           tecnicoLocalRepository: tecnicoLocalRepository,
@@ -200,8 +224,11 @@ class AppScope {
 
   final TechReportLocalDatabase database;
   final AssinaturaRepository assinaturaRepository;
+  final ApplyLocalDataImport applyLocalDataImport;
+  final LocalDataImportParser localDataImportParser;
   final LocalSignatureAssetStore localSignatureAssetStore;
   final LocalDataExportShareService localDataExportShareService;
+  final PreviewLocalDataImport previewLocalDataImport;
   final RatPdfShareService ratPdfShareService;
   final SessaoLocalRepository sessaoLocalRepository;
   final ShareRatLocally shareRatLocally;
