@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart' as domain;
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/shared/infra/database/tech_report_local_database.dart'
     as database;
 
@@ -9,6 +10,38 @@ class DriftRatRepository implements RatRepository {
   DriftRatRepository(this._database);
 
   final database.TechReportLocalDatabase _database;
+
+  @override
+  Future<domain.Rat?> getByIdScoped({
+    required String id,
+    required RatListScope scope,
+  }) async {
+    final query = _database.select(_database.rats)
+      ..where((tbl) => tbl.id.equals(id) & tbl.deletedAt.isNull());
+
+    switch (scope.type) {
+      case RatListScopeType.local:
+        query.where(
+          (tbl) => tbl.ownerType.equals(RatOwnerType.localTecnico.name),
+        );
+      case RatListScopeType.companyTechnician:
+        query
+          ..where((tbl) => tbl.empresaId.equals(scope.empresaId!))
+          ..where((tbl) => tbl.tecnicoId.equals(scope.tecnicoId!))
+          ..where(
+            (tbl) => tbl.ownerType.equals(RatOwnerType.companyTecnico.name),
+          );
+      case RatListScopeType.companyManager:
+        query
+          ..where((tbl) => tbl.empresaId.equals(scope.empresaId!))
+          ..where(
+            (tbl) => tbl.ownerType.equals(RatOwnerType.companyTecnico.name),
+          );
+    }
+
+    final row = await query.getSingleOrNull();
+    return row == null ? null : _toEntity(row);
+  }
 
   @override
   Future<domain.Rat?> getById(String id) async {

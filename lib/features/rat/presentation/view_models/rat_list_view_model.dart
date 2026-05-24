@@ -23,13 +23,52 @@ class RatListViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Filtros em memória
+  String _query = '';
+  RatStatus? _statusFilter;
+
   List<Rat> get rats => _rats;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isEmpty => _rats.isEmpty;
+  String get query => _query;
+  RatStatus? get statusFilter => _statusFilter;
+  RatListScope get scope => _scope;
 
   bool hasSignature(String ratId) {
     return _signedRatIds.contains(ratId);
+  }
+
+  void setQuery(String value) {
+    _query = value;
+    notifyListeners();
+  }
+
+  void setStatusFilter(RatStatus? status) {
+    _statusFilter = status;
+    notifyListeners();
+  }
+
+  /// Lista filtrada em memória — nunca expande o escopo da sessão.
+  List<Rat> get filteredRats {
+    var list = _rats;
+
+    if (_query.isNotEmpty) {
+      final q = _query.toLowerCase();
+      list = list
+          .where(
+            (r) =>
+                r.clienteNome.toLowerCase().contains(q) ||
+                r.descricao.toLowerCase().contains(q),
+          )
+          .toList();
+    }
+
+    if (_statusFilter != null) {
+      list = list.where((r) => r.status == _statusFilter).toList();
+    }
+
+    return list;
   }
 
   Future<void> load() async {

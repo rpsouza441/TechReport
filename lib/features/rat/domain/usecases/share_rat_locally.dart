@@ -1,5 +1,6 @@
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 
@@ -13,8 +14,12 @@ class ShareRatLocally {
   final RatRepository _ratRepository;
   final AssinaturaRepository _assinaturaRepository;
 
-  Future<ShareRatLocallyResult> call(String ratId) async {
-    final rat = await _ratRepository.getById(ratId);
+  Future<ShareRatLocallyResult> call({
+    required String ratId,
+    required RatListScope scope,
+  }) async {
+    final rat = await _ratRepository.getByIdScoped(id: ratId, scope: scope);
+
     if (rat == null) {
       return const ShareRatLocallyResult.failure('RAT nao encontrado.');
     }

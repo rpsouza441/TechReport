@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
+import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
 
-import '../../domain/entities/rat.dart';
 import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
 import '../../presentation/view_models/rat_list_view_model.dart';
@@ -27,7 +28,6 @@ class RatListScreen extends StatefulWidget {
     this.enqueueRatSync,
     this.processSyncQueue,
     this.downloadRemoteRats,
-    this.onSignOut,
     this.embedded = false,
   });
 
@@ -41,7 +41,6 @@ class RatListScreen extends StatefulWidget {
   final EnqueueRatSync? enqueueRatSync;
   final ProcessSyncQueue? processSyncQueue;
   final DownloadRemoteRats? downloadRemoteRats;
-  final Future<void> Function()? onSignOut;
   final bool embedded;
 
   @override
@@ -49,8 +48,6 @@ class RatListScreen extends StatefulWidget {
 }
 
 class _RatListScreenState extends State<RatListScreen> {
-  bool _isSigningOut = false;
-
   @override
   void initState() {
     super.initState();
@@ -89,12 +86,6 @@ class _RatListScreenState extends State<RatListScreen> {
                   icon: const Icon(Icons.sync),
                   tooltip: 'Sincronizar',
                 ),
-              if (widget.remoteSession != null)
-                IconButton(
-                  onPressed: _isSigningOut ? null : _signOut,
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Sair',
-                ),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
@@ -114,19 +105,101 @@ class _RatListScreenState extends State<RatListScreen> {
     }
 
     if (widget.viewModel.errorMessage != null) {
-      return Center(child: Text(widget.viewModel.errorMessage!));
+      return TechReportStateView.error(
+        message: widget.viewModel.errorMessage!,
+        primaryAction: FilledButton(
+          onPressed: widget.viewModel.load,
+          child: const Text('Tentar novamente'),
+        ),
+      );
     }
 
-    if (widget.viewModel.isEmpty) {
-      return const Center(child: Text('Nenhum RAT cadastrado ainda.'));
+    return Column(
+      children: [
+        _buildFilterBar(),
+        Expanded(child: _buildList(context)),
+      ],
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Buscar cliente ou descrição',
+                prefixIcon: Icon(Icons.search, size: 20),
+                border: OutlineInputBorder(),
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+              onChanged: widget.viewModel.setQuery,
+            ),
+          ),
+          const SizedBox(width: 8),
+          DropdownButton<RatStatus?>(
+            value: widget.viewModel.statusFilter,
+            hint: const Text('Status'),
+            underline: const SizedBox.shrink(),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Todos')),
+              DropdownMenuItem(value: RatStatus.draft, child: Text('Rascunho')),
+              DropdownMenuItem(
+                value: RatStatus.finalizado,
+                child: Text('Finalizado'),
+              ),
+              DropdownMenuItem(
+                value: RatStatus.enviado,
+                child: Text('Enviado'),
+              ),
+              DropdownMenuItem(
+                value: RatStatus.arquivado,
+                child: Text('Arquivado'),
+              ),
+            ],
+            onChanged: widget.viewModel.setStatusFilter,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildList(BuildContext context) {
+    final rats = widget.viewModel.filteredRats;
+
+    if (rats.isEmpty) {
+      final hasActiveFilter =
+          widget.viewModel.query.isNotEmpty ||
+          widget.viewModel.statusFilter != null;
+
+      return TechReportStateView.empty(
+        message: hasActiveFilter
+            ? 'Nenhum RAT corresponde ao filtro atual.'
+            : 'Nenhum RAT cadastrado ainda.',
+        primaryAction: hasActiveFilter
+            ? TextButton(
+                onPressed: () {
+                  widget.viewModel.setQuery('');
+                  widget.viewModel.setStatusFilter(null);
+                },
+                child: const Text('Limpar filtros'),
+              )
+            : null,
+      );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: widget.viewModel.rats.length,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      itemCount: rats.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final rat = widget.viewModel.rats[index];
+        final rat = rats[index];
         final hasSignature = widget.viewModel.hasSignature(rat.id);
         return Card(
           child: ListTile(
@@ -226,26 +299,21 @@ class _RatListScreenState extends State<RatListScreen> {
       return;
     }
 
+    final empresaId = session.empresaId!;
+    final papel =
+        session.papelEmpresa?.name ?? session.papelGlobal?.name ?? 'unknown';
+
     await processSyncQueue.call(
-      empresaId: session.empresaId!,
+      empresaId: empresaId,
       usuarioId: session.usuarioId,
       retryFailed: true,
     );
-    await downloadRemoteRats?.call(empresaId: session.empresaId!);
+    await downloadRemoteRats?.call(
+      empresaId: empresaId,
+      usuarioId: session.usuarioId,
+      papel: papel,
+    );
     await widget.viewModel.load();
-  }
-
-  Future<void> _signOut() async {
-    final onSignOut = widget.onSignOut;
-    if (onSignOut == null) {
-      return;
-    }
-
-    setState(() {
-      _isSigningOut = true;
-    });
-
-    await onSignOut();
   }
 
   Color _syncColor(BuildContext context, RatSyncStatus status) {

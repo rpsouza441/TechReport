@@ -14,6 +14,7 @@ import '../../data/services/rat_pdf_share_service.dart';
 import '../../domain/entities/rat.dart';
 import '../../domain/repositories/rat_repository.dart';
 import '../../domain/usecases/share_rat_locally.dart';
+import 'rat_list_scope.dart';
 
 class RatFormViewModel extends ChangeNotifier {
   RatFormViewModel({
@@ -357,16 +358,26 @@ class RatFormViewModel extends ChangeNotifier {
 
   void _syncInBackground(String empresaId) {
     final processSyncQueue = _processSyncQueue;
-    final usuarioId = _remoteSession?.usuarioId;
+    final remoteSession = _remoteSession;
+    final usuarioId = remoteSession?.usuarioId;
 
     if (processSyncQueue == null || usuarioId == null) {
       return;
     }
 
+    final papel =
+        remoteSession?.papelEmpresa?.name ??
+        remoteSession?.papelGlobal?.name ??
+        'unknown';
+
     unawaited(() async {
       try {
         await processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
-        await _downloadRemoteRats?.call(empresaId: empresaId);
+        await _downloadRemoteRats?.call(
+          empresaId: empresaId,
+          usuarioId: usuarioId,
+          papel: papel,
+        );
       } catch (_) {
         // RAT local continua salvo; retry manual fica pela lista.
       }
@@ -421,7 +432,10 @@ class RatFormViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final shareData = await _shareRatLocally(ratId);
+      final shareData = await _shareRatLocally(
+        ratId: ratId,
+        scope: _shareScope(),
+      );
       if (!shareData.success) {
         _errorMessage = shareData.errorMessage;
         return false;
@@ -436,6 +450,28 @@ class RatFormViewModel extends ChangeNotifier {
       _isSharing = false;
       notifyListeners();
     }
+  }
+
+  RatListScope _shareScope() {
+    final remoteSession = _remoteSession;
+    if (remoteSession == null || !remoteSession.hasCompanyContext) {
+      return const RatListScope.local();
+    }
+
+    final empresaId = remoteSession.empresaId!;
+    if (remoteSession.isGerente || remoteSession.isAdminEmpresa) {
+      return RatListScope.companyManager(empresaId: empresaId);
+    }
+
+    final tecnicoId = remoteSession.tecnicoId;
+    if (tecnicoId == null) {
+      return RatListScope.companyManager(empresaId: empresaId);
+    }
+
+    return RatListScope.companyTechnician(
+      empresaId: empresaId,
+      tecnicoId: tecnicoId,
+    );
   }
 }
 
