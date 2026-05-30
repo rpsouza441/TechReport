@@ -31,7 +31,7 @@ class AppModeChoiceScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Como voce quer comecar?',
+                        'Como você quer começar?',
                         style: Theme.of(context).textTheme.headlineSmall,
                         textAlign: TextAlign.center,
                       ),

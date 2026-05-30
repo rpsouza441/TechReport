@@ -71,7 +71,7 @@ class SyncCenterViewModel extends ChangeNotifier {
         retryFailed: true,
       );
     } catch (_) {
-      _retryError = 'Falha ao tentar novamente. Verifique a conexao.';
+      _retryError = 'Falha ao tentar novamente. Verifique a conexão.';
     }
 
     await load();

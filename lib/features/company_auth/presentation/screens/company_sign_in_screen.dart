@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/company_sign_in_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 
 class CompanySignInScreen extends StatefulWidget {
   const CompanySignInScreen({
@@ -22,6 +24,7 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -35,87 +38,113 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
     return AnimatedBuilder(
       animation: widget.viewModel,
       builder: (context, _) {
+        final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
+        final isSubmitting = widget.viewModel.isSubmitting;
+
         return Scaffold(
           appBar: AppBar(title: const Text('Entrar na empresa')),
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Login empresa',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Use o email e senha da conta remota.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        if (widget.viewModel.errorMessage != null) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            widget.viewModel.errorMessage!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                        const SizedBox(height: 32),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          validator: _validateEmail,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Senha',
-                            border: OutlineInputBorder(),
-                          ),
-                          obscureText: true,
-                          textInputAction: TextInputAction.done,
-                          validator: _validatePassword,
-                          onFieldSubmitted: (_) => _submit(),
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: widget.viewModel.isSubmitting
-                              ? null
-                              : _submit,
-                          child: widget.viewModel.isSubmitting
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                  child: TechReportCard(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _BrandHeader(theme: theme, scheme: scheme),
+                          if (widget.viewModel.errorMessage != null) ...[
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            TechReportCard(
+                              tone: TechReportCardTone.error,
+                              padding: const EdgeInsets.all(
+                                MetricSlateSpacing.sm,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.error_outline, size: 22),
+                                  const SizedBox(width: MetricSlateSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      widget.viewModel.errorMessage!,
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
                                   ),
-                                )
-                              : const Text('Entrar'),
-                        ),
-                        if (widget.onCancel != null) ...[
-                          const SizedBox(height: 12),
-                          OutlinedButton(
-                            onPressed: widget.viewModel.isSubmitting
-                                ? null
-                                : widget.onCancel,
-                            child: const Text('Voltar'),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          TextFormField(
+                            controller: _emailController,
+                            enabled: !isSubmitting,
+                            decoration: const InputDecoration(
+                              labelText: 'E-mail corporativo',
+                              hintText: 'usuario@empresa.com.br',
+                              prefixIcon: Icon(Icons.mail_outline),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            validator: _validateEmail,
                           ),
+                          const SizedBox(height: MetricSlateSpacing.md),
+                          TextFormField(
+                            controller: _passwordController,
+                            enabled: !isSubmitting,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Senha',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () => setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      ),
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
+                              ),
+                            ),
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            validator: _validatePassword,
+                            onFieldSubmitted: (_) => _submit(),
+                          ),
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          FilledButton.icon(
+                            onPressed: isSubmitting ? null : _submit,
+                            icon: isSubmitting
+                                ? SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: scheme.onPrimary,
+                                    ),
+                                  )
+                                : const Icon(Icons.login, size: 20),
+                            label: Text(
+                              isSubmitting ? 'Entrando...' : 'Entrar',
+                            ),
+                          ),
+                          if (widget.onCancel != null) ...[
+                            const SizedBox(height: MetricSlateSpacing.sm),
+                            OutlinedButton(
+                              onPressed: isSubmitting ? null : widget.onCancel,
+                              child: const Text('Voltar'),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -131,11 +160,11 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
     final email = value?.trim() ?? '';
 
     if (email.isEmpty) {
-      return 'Informe o email.';
+      return 'Informe o e-mail.';
     }
 
     if (!email.contains('@')) {
-      return 'Informe um email valido.';
+      return 'Informe um e-mail válido.';
     }
 
     return null;
@@ -165,5 +194,38 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
     }
 
     widget.onSignedIn(widget.viewModel.session!);
+  }
+}
+
+class _BrandHeader extends StatelessWidget {
+  const _BrandHeader({required this.theme, required this.scheme});
+
+  final ThemeData theme;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.analytics_outlined, size: 32, color: scheme.primary),
+            const SizedBox(width: MetricSlateSpacing.xs),
+            Text(
+              'TechReport',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: MetricSlateSpacing.xxs),
+        Text(
+          'Acesso corporativo',
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
+    );
   }
 }

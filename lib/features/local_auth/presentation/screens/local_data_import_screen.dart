@@ -3,10 +3,16 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/local_auth/domain/entities/local_import_preview.dart';
 import 'package:techreport/features/local_auth/domain/entities/local_import_result.dart';
 import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
 import 'package:techreport/features/local_auth/presentation/view_models/local_data_import_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_info_row.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 
 class LocalDataImportScreen extends StatelessWidget {
   const LocalDataImportScreen({super.key, required this.viewModel});
@@ -20,74 +26,85 @@ class LocalDataImportScreen extends StatelessWidget {
       builder: (context, _) {
         final preview = viewModel.preview;
         final result = viewModel.result;
+        final isLoading = viewModel.isLoading;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Importar dados locais')),
           body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                Text(
-                  'Revise o backup antes de importar. RATs já existentes não serão duplicadas.',
-                  style: Theme.of(context).textTheme.bodyLarge,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: TechReportCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const TechReportFormHeader(
+                          icon: Icons.upload_file_outlined,
+                          title: 'Importar backup',
+                          subtitle:
+                              'Revise o arquivo JSON antes de importar. RATs já existentes não serão duplicadas.',
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.lg),
+                        FilledButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () => _selectBackup(context),
+                          icon: const Icon(Icons.file_open_outlined, size: 20),
+                          label: const Text('Selecionar backup JSON'),
+                        ),
+                        if (isLoading) ...[
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          const Center(child: CircularProgressIndicator()),
+                        ],
+                        if (viewModel.errorMessage != null) ...[
+                          const SizedBox(height: MetricSlateSpacing.md),
+                          TechReportErrorBanner(
+                            message: viewModel.errorMessage!,
+                          ),
+                        ],
+                        if (result != null) ...[
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          _ImportResultSection(result: result),
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          FilledButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Concluir'),
+                          ),
+                        ] else if (preview != null) ...[
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          _ImportPreviewSection(preview: preview),
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          FilledButton.icon(
+                            onPressed: preview.canApply && !isLoading
+                                ? () => viewModel.apply(
+                                    conflictPolicy:
+                                        LocalImportConflictPolicy.skip,
+                                  )
+                                : null,
+                            icon: const Icon(Icons.download_outlined, size: 20),
+                            label: Text(
+                              preview.hasConflicts
+                                  ? 'Importar novos e pular conflitos'
+                                  : 'Importar backup',
+                            ),
+                          ),
+                          if (preview.hasConflicts) ...[
+                            const SizedBox(height: MetricSlateSpacing.sm),
+                            OutlinedButton(
+                              onPressed: preview.canApply && !isLoading
+                                  ? () => _confirmOverwriteConflicts(context)
+                                  : null,
+                              child: const Text('Substituir conflitos'),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: viewModel.isLoading
-                      ? null
-                      : () => _selectBackup(context),
-                  icon: const Icon(Icons.file_open_outlined),
-                  label: const Text('Selecionar backup JSON'),
-                ),
-                if (viewModel.isLoading) ...[
-                  const SizedBox(height: 24),
-                  const Center(child: CircularProgressIndicator()),
-                ],
-                if (viewModel.errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    viewModel.errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-                if (result != null) ...[
-                  const SizedBox(height: 24),
-                  _ImportResultSection(result: result),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Concluir'),
-                  ),
-                ] else if (preview != null) ...[
-                  const SizedBox(height: 24),
-                  _ImportPreviewSection(preview: preview),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: preview.canApply && !viewModel.isLoading
-                        ? () => viewModel.apply(
-                            conflictPolicy: LocalImportConflictPolicy.skip,
-                          )
-                        : null,
-                    child: Text(
-                      preview.hasConflicts
-                          ? 'Importar novos e pular conflitos'
-                          : 'Importar backup',
-                    ),
-                  ),
-                  if (preview.hasConflicts) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: preview.canApply && !viewModel.isLoading
-                          ? () => _confirmOverwriteConflicts(context)
-                          : null,
-                      child: const Text('Substituir conflitos'),
-                    ),
-                  ],
-                ],
-              ],
+              ),
             ),
           ),
         );
@@ -159,24 +176,46 @@ class _ImportPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Resumo do backup',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        _InfoRow(label: 'RATs no arquivo', value: '${preview.totalRats}'),
-        _InfoRow(
-          label: 'Assinaturas no arquivo',
-          value: '${preview.totalAssinaturas}',
-        ),
-        _InfoRow(label: 'Novos ou restaurados', value: '${preview.newRats}'),
-        _InfoRow(label: 'Duplicados iguais', value: '${preview.duplicateRats}'),
-        _InfoRow(label: 'Conflitos', value: '${preview.conflictingRats}'),
-        _InfoRow(label: 'Itens inválidos', value: '${preview.invalidItems}'),
-      ],
+    return TechReportCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const TechReportSectionHeader(
+            title: 'Resumo do backup',
+            padding: EdgeInsets.zero,
+          ),
+          TechReportInfoRow(
+            label: 'RATs no arquivo',
+            value: '${preview.totalRats}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Assinaturas no arquivo',
+            value: '${preview.totalAssinaturas}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Novos ou restaurados',
+            value: '${preview.newRats}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Duplicados iguais',
+            value: '${preview.duplicateRats}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Conflitos',
+            value: '${preview.conflictingRats}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Itens inválidos',
+            value: '${preview.invalidItems}',
+            dense: true,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -188,50 +227,39 @@ class _ImportResultSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Importação concluída',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        _InfoRow(label: 'RATs importadas', value: '${result.importedRats}'),
-        _InfoRow(
-          label: 'Duplicados ignorados',
-          value: '${result.ignoredDuplicates}',
-        ),
-        _InfoRow(
-          label: 'Conflitos pulados',
-          value: '${result.skippedConflicts}',
-        ),
-        _InfoRow(
-          label: 'Conflitos substituídos',
-          value: '${result.overwrittenConflicts}',
-        ),
-        _InfoRow(
-          label: 'Assinaturas importadas',
-          value: '${result.importedAssinaturas}',
-        ),
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+    return TechReportCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: Text(label)),
-          Text(value, style: Theme.of(context).textTheme.labelLarge),
+          const TechReportSectionHeader(
+            title: 'Importação concluída',
+            padding: EdgeInsets.zero,
+          ),
+          TechReportInfoRow(
+            label: 'RATs importadas',
+            value: '${result.importedRats}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Duplicados ignorados',
+            value: '${result.ignoredDuplicates}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Conflitos pulados',
+            value: '${result.skippedConflicts}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Conflitos substituídos',
+            value: '${result.overwrittenConflicts}',
+            dense: true,
+          ),
+          TechReportInfoRow(
+            label: 'Assinaturas importadas',
+            value: '${result.importedAssinaturas}',
+            dense: true,
+          ),
         ],
       ),
     );

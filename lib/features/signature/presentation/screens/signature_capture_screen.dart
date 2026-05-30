@@ -30,7 +30,7 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Pe\u00e7a para o cliente assinar no quadro abaixo.',
+                'Peça para o cliente assinar no quadro abaixo.',
                 style: theme.textTheme.bodyLarge,
               ),
               const SizedBox(height: 8),

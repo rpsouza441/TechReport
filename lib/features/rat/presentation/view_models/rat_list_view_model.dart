@@ -93,7 +93,7 @@ class RatListViewModel extends ChangeNotifier {
 
       _signedRatIds = await _loadSignedRatIds(_rats);
     } catch (_) {
-      _errorMessage = 'Nao foi possivel carregar os RATs.';
+      _errorMessage = 'Não foi possível carregar os RATs.';
     }
     _isLoading = false;
     notifyListeners();

@@ -20,7 +20,7 @@ class AppAdminViewModel extends ChangeNotifier {
     try {
       empresas = await _listEmpresas();
     } catch (_) {
-      errorMessage = 'Nao foi possivel carregar empresas.';
+      errorMessage = 'Não foi possível carregar empresas.';
     }
 
     isLoading = false;

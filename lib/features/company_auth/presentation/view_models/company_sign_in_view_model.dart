@@ -28,7 +28,7 @@ class CompanySignInViewModel extends ChangeNotifier {
 
     if (normalizedEmail.isEmpty || normalizedPassword.isEmpty) {
       status = CompanySignInStatus.failure;
-      errorMessage = 'Informe email e senha.';
+      errorMessage = 'Informe e-mail e senha.';
       notifyListeners();
       return false;
     }
@@ -44,7 +44,7 @@ class CompanySignInViewModel extends ChangeNotifier {
 
     if (!result.success || result.session == null) {
       status = CompanySignInStatus.failure;
-      errorMessage = result.errorMessage ?? 'Nao foi possivel entrar.';
+      errorMessage = result.errorMessage ?? 'Não foi possível entrar.';
       notifyListeners();
       return false;
     }

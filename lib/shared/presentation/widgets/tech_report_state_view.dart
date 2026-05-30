@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
 
 /// Widget padrao para estados de loading/vazio/erro.
 ///
@@ -59,7 +60,7 @@ class TechReportStateView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(MetricSlateSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

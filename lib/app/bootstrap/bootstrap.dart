@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../di/app_scope.dart';
 import '../navigation/tech_report_app.dart';
+import '../theme/metric_slate_theme.dart';
 
 void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,8 +39,8 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
         final error = snapshot.error;
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          theme: MetricSlateTheme.light(),
           home: Scaffold(
-            backgroundColor: Colors.white,
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -49,20 +50,22 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
                         children: [
                           CircularProgressIndicator(),
                           SizedBox(height: 16),
-                          Text(
-                            'Iniciando TechReport...',
-                            style: TextStyle(color: Colors.black),
-                          ),
+                          Text('Iniciando TechReport...'),
                         ],
                       )
                     : Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.error_outline, size: 40),
+                          Icon(
+                            Icons.error_outline,
+                            size: 40,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'Falha ao iniciar',
                             textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Text('$error', textAlign: TextAlign.center),

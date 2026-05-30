@@ -84,7 +84,7 @@ class AppShell extends StatelessWidget {
         return _BootstrapFailureScreen(
           message:
               bootstrapViewModel.errorMessage ??
-              'Nao foi possivel iniciar o app.',
+              'Não foi possível iniciar o app.',
           onRetry: bootstrapViewModel.bootstrap,
           onResetMode: bootstrapViewModel.requireModeChoice,
         );

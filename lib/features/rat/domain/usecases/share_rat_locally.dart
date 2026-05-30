@@ -1,5 +1,6 @@
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
@@ -21,7 +22,7 @@ class ShareRatLocally {
     final rat = await _ratRepository.getByIdScoped(id: ratId, scope: scope);
 
     if (rat == null) {
-      return const ShareRatLocallyResult.failure('RAT nao encontrado.');
+      return const ShareRatLocallyResult.failure('RAT não encontrado.');
     }
 
     final assinaturas = await _assinaturaRepository.listByRatId(ratId);
@@ -43,47 +44,32 @@ class ShareRatLocally {
     return '''
 RAT: ${rat.numero}
 Cliente: ${rat.clienteNome}
-Responsavel: ${rat.responsavelRecebimento ?? 'Nao informado'}
+Responsável: ${rat.responsavelRecebimento ?? ratNotInformedLabel}
 Data da visita: ${_formatDate(rat.dataVisita)}
-Inicio: ${rat.horarioInicioAtendimento ?? 'Nao informado'}
-Termino: ${rat.horarioTerminoAtendimento ?? 'Nao informado'}
-Status: ${rat.status.name}
+Início: ${rat.horarioInicioAtendimento ?? ratNotInformedLabel}
+Término: ${rat.horarioTerminoAtendimento ?? ratNotInformedLabel}
+Status: ${ratStatusLabel(rat.status)}
 Atualizado em: ${_formatDateTime(rat.updatedAt)}
 
-Descricao:
+Descrição:
 ${rat.descricao}
 
-Movimentacao de equipamento: ${_movimentoLabel(rat.equipamentoMovimentoTipo)}
-Equipamento: ${rat.equipamentoDescricao ?? 'Nao informado'}
-Observacao: ${rat.equipamentoObservacao ?? 'Nao informado'}
+Movimentação de equipamento: ${equipamentoMovimentoLabel(rat.equipamentoMovimentoTipo ?? EquipamentoMovimentoTipo.nenhum)}
+Equipamento: ${rat.equipamentoDescricao ?? ratNotInformedLabel}
+Observação: ${rat.equipamentoObservacao ?? ratNotInformedLabel}
 
-Assinatura: ${assinatura == null ? 'nao capturada' : 'capturada'}
+Assinatura: ${assinatura == null ? 'não capturada' : 'capturada'}
 ''';
   }
 
   String _formatDate(DateTime? value) {
     if (value == null) {
-      return 'Nao informado';
+      return ratNotInformedLabel;
     }
 
     return '${value.day.toString().padLeft(2, '0')}/'
         '${value.month.toString().padLeft(2, '0')}/'
         '${value.year}';
-  }
-
-  String _movimentoLabel(EquipamentoMovimentoTipo? tipo) {
-    switch (tipo) {
-      case null:
-        return 'Nao informado';
-      case EquipamentoMovimentoTipo.nenhum:
-        return 'Nenhuma movimentacao';
-      case EquipamentoMovimentoTipo.retiradaParaReparo:
-        return 'Retirada para reparo';
-      case EquipamentoMovimentoTipo.entregaPosReparo:
-        return 'Entrega pos-reparo';
-      case EquipamentoMovimentoTipo.entregaPosCompra:
-        return 'Entrega pos-compra';
-    }
   }
 
   String _formatDateTime(DateTime value) {

@@ -3,8 +3,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show TextEditingValue, TextInputFormatter;
+import 'package:techreport/app/theme/metric_slate_radii.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
+import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 
 import '../../domain/entities/rat.dart';
 import '../view_models/rat_form_view_model.dart';
@@ -72,6 +78,10 @@ class _RatFormScreenState extends State<RatFormScreen> {
     return AnimatedBuilder(
       animation: widget.viewModel,
       builder: (context, _) {
+        final scheme = Theme.of(context).colorScheme;
+        final vm = widget.viewModel;
+        final isBusy = vm.isSubmitting || vm.isSharing;
+
         return PopScope<bool>(
           canPop: _allowPop,
           onPopInvokedWithResult: (didPop, result) {
@@ -84,18 +94,12 @@ class _RatFormScreenState extends State<RatFormScreen> {
             appBar: AppBar(
               leading: BackButton(onPressed: _closeForm),
               title: Text(
-                widget.viewModel.isEditing || widget.viewModel.isSaved
-                    ? 'Editar RAT'
-                    : 'Novo RAT',
+                vm.isEditing || vm.isSaved ? 'Editar RAT' : 'Novo RAT',
               ),
               actions: [
-                if (widget.viewModel.canDelete)
+                if (vm.canDelete)
                   IconButton(
-                    onPressed:
-                        widget.viewModel.isSubmitting ||
-                            widget.viewModel.isSharing
-                        ? null
-                        : _handleDelete,
+                    onPressed: isBusy ? null : _handleDelete,
                     icon: const Icon(Icons.delete_outline),
                     tooltip: 'Excluir RAT',
                   ),
@@ -103,186 +107,201 @@ class _RatFormScreenState extends State<RatFormScreen> {
             ),
             body: SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    MetricSlateTextField(
-                      controller: _clienteController,
-                      enabled: widget.viewModel.canEdit,
-                      label: 'Cliente',
-                      onChanged: widget.viewModel.setClienteNome,
-                    ),
-                    const SizedBox(height: 16),
-                    MetricSlateTextField(
-                      controller: _responsavelController,
-                      enabled: widget.viewModel.canEdit,
-                      label: 'Responsavel pelo recebimento',
-                      onChanged: widget.viewModel.setResponsavelRecebimento,
-                    ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: widget.viewModel.canEdit ? _pickDataVisita : null,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Data da visita',
-                        ),
-                        child: Text(_formatDate(widget.viewModel.dataVisita)),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
+                    _FormSection(
+                      title: 'Cliente e visita',
                       children: [
-                        Expanded(
-                          child: MetricSlateTextField(
-                            controller: _inicioController,
-                            enabled: widget.viewModel.canEdit,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: const [_HourTextInputFormatter()],
-                            label: 'Inicio (HH:mm)',
-                            onChanged:
-                                widget.viewModel.setHorarioInicioAtendimento,
+                        MetricSlateTextField(
+                          controller: _clienteController,
+                          enabled: vm.canEdit,
+                          label: 'Cliente',
+                          onChanged: vm.setClienteNome,
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.md),
+                        MetricSlateTextField(
+                          controller: _responsavelController,
+                          enabled: vm.canEdit,
+                          label: 'Responsável pelo recebimento',
+                          onChanged: vm.setResponsavelRecebimento,
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.md),
+                        InkWell(
+                          onTap: vm.canEdit ? _pickDataVisita : null,
+                          borderRadius: BorderRadius.circular(
+                            MetricSlateRadii.sm,
+                          ),
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              labelText: 'Data da visita',
+                              prefixIcon: Icon(Icons.calendar_today_outlined),
+                            ),
+                            child: Text(_formatDate(vm.dataVisita)),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: MetricSlateTextField(
-                            controller: _terminoController,
-                            enabled: widget.viewModel.canEdit,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: const [_HourTextInputFormatter()],
-                            label: 'Termino (HH:mm)',
-                            onChanged:
-                                widget.viewModel.setHorarioTerminoAtendimento,
+                        const SizedBox(height: MetricSlateSpacing.md),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: MetricSlateTextField(
+                                controller: _inicioController,
+                                enabled: vm.canEdit,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: const [
+                                  _HourTextInputFormatter(),
+                                ],
+                                label: 'Início (HH:mm)',
+                                onChanged: vm.setHorarioInicioAtendimento,
+                              ),
+                            ),
+                            const SizedBox(width: MetricSlateSpacing.sm),
+                            Expanded(
+                              child: MetricSlateTextField(
+                                controller: _terminoController,
+                                enabled: vm.canEdit,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: const [
+                                  _HourTextInputFormatter(),
+                                ],
+                                label: 'Término (HH:mm)',
+                                onChanged: vm.setHorarioTerminoAtendimento,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    _FormSection(
+                      title: 'Atendimento',
+                      children: [
+                        MetricSlateTextField(
+                          controller: _descricaoController,
+                          enabled: vm.canEdit,
+                          maxLines: 5,
+                          label: 'Descrição',
+                          onChanged: vm.setDescricao,
+                        ),
+                      ],
+                    ),
+                    _FormSection(
+                      title: 'Equipamento',
+                      children: [
+                        DropdownButtonFormField<EquipamentoMovimentoTipo>(
+                          key: ValueKey(vm.equipamentoMovimentoTipo),
+                          initialValue: vm.equipamentoMovimentoTipo,
+                          decoration: const InputDecoration(
+                            labelText: 'Movimentação de equipamento',
+                            prefixIcon: Icon(Icons.precision_manufacturing_outlined),
+                          ),
+                          items: EquipamentoMovimentoTipo.values.map((tipo) {
+                            return DropdownMenuItem(
+                              value: tipo,
+                              child: Text(equipamentoMovimentoLabel(tipo)),
+                            );
+                          }).toList(),
+                          onChanged: vm.canEdit
+                              ? (value) {
+                                  if (value != null) {
+                                    vm.setEquipamentoMovimentoTipo(value);
+                                  }
+                                }
+                              : null,
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.md),
+                        MetricSlateTextField(
+                          controller: _equipamentoController,
+                          enabled: vm.canEdit,
+                          label: 'Descrição do equipamento',
+                          onChanged: vm.setEquipamentoDescricao,
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.md),
+                        MetricSlateTextField(
+                          controller: _equipamentoObservacaoController,
+                          enabled: vm.canEdit,
+                          maxLines: 2,
+                          label: 'Observação do equipamento',
+                          onChanged: vm.setEquipamentoObservacao,
+                        ),
+                      ],
+                    ),
+                    _FormSection(
+                      title: 'Status',
+                      children: [
+                        DropdownButtonFormField<RatStatus>(
+                          key: ValueKey(vm.status),
+                          initialValue: vm.status,
+                          decoration: const InputDecoration(
+                            labelText: 'Status do RAT',
+                            prefixIcon: Icon(Icons.flag_outlined),
+                          ),
+                          items: RatStatus.values.map((status) {
+                            return DropdownMenuItem(
+                              value: status,
+                              child: Text(ratStatusLabel(status)),
+                            );
+                          }).toList(),
+                          onChanged: vm.canEdit
+                              ? (value) {
+                                  if (value != null) {
+                                    vm.setStatus(value);
+                                  }
+                                }
+                              : null,
+                        ),
+                      ],
+                    ),
+                    if (vm.errorMessage != null) ...[
+                      const SizedBox(height: MetricSlateSpacing.md),
+                      TechReportErrorBanner(message: vm.errorMessage!),
+                    ],
+                    const SizedBox(height: MetricSlateSpacing.md),
+                    _FormSection(
+                      title: 'Assinatura',
+                      children: [
+                        _buildSignatureSection(context),
+                        const SizedBox(height: MetricSlateSpacing.sm),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: isBusy || !vm.canEdit
+                                ? null
+                                : _handleSignature,
+                            icon: const Icon(Icons.draw_outlined),
+                            label: Text(
+                              vm.hasSignature
+                                  ? 'Substituir assinatura'
+                                  : 'Capturar assinatura',
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    MetricSlateTextField(
-                      controller: _descricaoController,
-                      enabled: widget.viewModel.canEdit,
-                      maxLines: 5,
-                      label: 'Descri\u00e7\u00e3o',
-                      onChanged: widget.viewModel.setDescricao,
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<EquipamentoMovimentoTipo>(
-                      initialValue: widget.viewModel.equipamentoMovimentoTipo,
-                      decoration: const InputDecoration(
-                        labelText: 'Movimentacao de equipamento',
-                      ),
-                      items: EquipamentoMovimentoTipo.values.map((tipo) {
-                        return DropdownMenuItem(
-                          value: tipo,
-                          child: Text(_movimentoLabel(tipo)),
-                        );
-                      }).toList(),
-                      onChanged: widget.viewModel.canEdit
-                          ? (value) {
-                              if (value != null) {
-                                widget.viewModel.setEquipamentoMovimentoTipo(
-                                  value,
-                                );
-                              }
-                            }
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    MetricSlateTextField(
-                      controller: _equipamentoController,
-                      enabled: widget.viewModel.canEdit,
-                      label: 'Descricao do equipamento',
-                      onChanged: widget.viewModel.setEquipamentoDescricao,
-                    ),
-                    const SizedBox(height: 16),
-                    MetricSlateTextField(
-                      controller: _equipamentoObservacaoController,
-                      enabled: widget.viewModel.canEdit,
-                      maxLines: 2,
-                      label: 'Observacao do equipamento',
-                      onChanged: widget.viewModel.setEquipamentoObservacao,
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<RatStatus>(
-                      initialValue: widget.viewModel.status,
-                      decoration: const InputDecoration(labelText: 'Status'),
-                      items: RatStatus.values.map((status) {
-                        return DropdownMenuItem(
-                          value: status,
-                          child: Text(status.name),
-                        );
-                      }).toList(),
-                      onChanged: widget.viewModel.canEdit
-                          ? (value) {
-                              if (value != null) {
-                                widget.viewModel.setStatus(value);
-                              }
-                            }
-                          : null,
-                    ),
-                    if (widget.viewModel.errorMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        widget.viewModel.errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    _SignatureStatusCard(viewModel: widget.viewModel),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            widget.viewModel.isSubmitting ||
-                                !widget.viewModel.canEdit
-                            ? null
-                            : _handleSignature,
-                        icon: const Icon(Icons.draw),
-                        label: Text(
-                          widget.viewModel.hasSignature
-                              ? 'Substituir assinatura'
-                              : 'Capturar assinatura',
-                        ),
+                    const SizedBox(height: MetricSlateSpacing.md),
+                    OutlinedButton.icon(
+                      onPressed: isBusy || !vm.canEdit ? null : _handleSharePdf,
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      label: Text(
+                        vm.isSharing
+                            ? 'Preparando PDF...'
+                            : 'Compartilhar PDF',
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            widget.viewModel.isSubmitting ||
-                                widget.viewModel.isSharing ||
-                                !widget.viewModel.canEdit
-                            ? null
-                            : _handleSharePdf,
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: Text(
-                          widget.viewModel.isSharing
-                              ? 'Preparando PDF...'
-                              : 'Compartilhar PDF',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed:
-                            widget.viewModel.isSubmitting ||
-                                widget.viewModel.isSharing ||
-                                !widget.viewModel.canEdit
-                            ? null
-                            : _handleSubmit,
-                        child: Text(
-                          widget.viewModel.isSubmitting
-                              ? 'Salvando...'
-                              : 'Salvar RAT',
-                        ),
+                    const SizedBox(height: MetricSlateSpacing.sm),
+                    FilledButton.icon(
+                      onPressed: isBusy || !vm.canEdit ? null : _handleSubmit,
+                      icon: vm.isSubmitting
+                          ? SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: scheme.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.save_outlined, size: 20),
+                      label: Text(
+                        vm.isSubmitting ? 'Salvando...' : 'Salvar RAT',
                       ),
                     ),
                   ],
@@ -351,7 +370,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
         return AlertDialog(
           title: const Text('Substituir assinatura?'),
           content: const Text(
-            'Este RAT j\u00e1 possui uma assinatura salva. Ao continuar, a assinatura atual ser\u00e1 substitu\u00edda.',
+            'Este RAT já possui uma assinatura salva. Ao continuar, a assinatura atual será substituída.',
           ),
           actions: [
             TextButton(
@@ -406,7 +425,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
         return AlertDialog(
           title: const Text('Excluir RAT?'),
           content: const Text(
-            'Este RAT sera removido da lista. Em modo empresa, a exclusao sera sincronizada.',
+            'Este RAT será removido da lista. Em modo empresa, a exclusão será sincronizada.',
           ),
           actions: [
             TextButton(
@@ -462,27 +481,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
         '${value.year}';
   }
 
-  String _movimentoLabel(EquipamentoMovimentoTipo tipo) {
-    switch (tipo) {
-      case EquipamentoMovimentoTipo.nenhum:
-        return 'Nenhuma movimentacao';
-      case EquipamentoMovimentoTipo.retiradaParaReparo:
-        return 'Retirada para reparo';
-      case EquipamentoMovimentoTipo.entregaPosReparo:
-        return 'Entrega pos-reparo';
-      case EquipamentoMovimentoTipo.entregaPosCompra:
-        return 'Entrega pos-compra';
-    }
-  }
-}
-
-class _SignatureStatusCard extends StatelessWidget {
-  const _SignatureStatusCard({required this.viewModel});
-
-  final RatFormViewModel viewModel;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSignatureSection(BuildContext context) {
+    final viewModel = widget.viewModel;
     final theme = Theme.of(context);
 
     if (viewModel.isLoadingSignature) {
@@ -491,53 +491,75 @@ class _SignatureStatusCard extends StatelessWidget {
 
     final previewBytes = viewModel.signaturePreviewBytes;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(
-                  viewModel.hasSignature
-                      ? Icons.check_circle_outline
-                      : Icons.info_outline,
-                  color: viewModel.hasSignature
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  viewModel.hasSignature
-                      ? 'Assinatura salva'
-                      : 'Nenhuma assinatura salva',
-                  style: theme.textTheme.titleMedium,
-                ),
-              ],
+            Icon(
+              viewModel.hasSignature
+                  ? Icons.check_circle_outline
+                  : Icons.info_outline,
+              color: viewModel.hasSignature
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline,
             ),
-            if (previewBytes != null) ...[
-              const SizedBox(height: 12),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Image.memory(
-                      previewBytes,
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+            const SizedBox(width: MetricSlateSpacing.xs),
+            Text(
+              viewModel.hasSignature
+                  ? 'Assinatura salva'
+                  : 'Nenhuma assinatura salva',
+              style: theme.textTheme.titleMedium,
+            ),
+          ],
+        ),
+        if (previewBytes != null) ...[
+          const SizedBox(height: MetricSlateSpacing.sm),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(MetricSlateRadii.sm),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(MetricSlateRadii.sm),
+              child: Padding(
+                padding: const EdgeInsets.all(MetricSlateSpacing.sm),
+                child: Image.memory(
+                  previewBytes,
+                  height: 120,
+                  width: double.infinity,
+                  fit: BoxFit.contain,
                 ),
               ),
-            ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FormSection extends StatelessWidget {
+  const _FormSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: MetricSlateSpacing.md),
+      child: TechReportCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TechReportSectionHeader(
+              title: title,
+              padding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: MetricSlateSpacing.md),
+            ...children,
           ],
         ),
       ),

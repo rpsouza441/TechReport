@@ -178,7 +178,7 @@ class RatFormViewModel extends ChangeNotifier {
     }
 
     if (responsavelRecebimento.trim().isEmpty) {
-      return 'Informe o responsavel pelo recebimento.';
+      return 'Informe o responsável pelo recebimento.';
     }
 
     if (dataVisita == null) {
@@ -187,28 +187,28 @@ class RatFormViewModel extends ChangeNotifier {
 
     final normalizedStart = _normalizeHour(horarioInicioAtendimento);
     if (normalizedStart == null) {
-      return 'Informe o horario de inicio no formato HH:mm.';
+      return 'Informe o horário de início no formato HH:mm.';
     }
 
     if (!_isHourInRange(horarioInicioAtendimento)) {
-      return 'Horario de inicio invalido. Use 00:00 ate 23:59.';
+      return 'Horário de início inválido. Use 00:00 até 23:59.';
     }
 
     final normalizedEnd = _normalizeHour(horarioTerminoAtendimento);
     if (normalizedEnd == null) {
-      return 'Informe o horario de termino no formato HH:mm.';
+      return 'Informe o horário de término no formato HH:mm.';
     }
 
     if (!_isHourInRange(horarioTerminoAtendimento)) {
-      return 'Horario de termino invalido. Use 00:00 ate 23:59.';
+      return 'Horário de término inválido. Use 00:00 até 23:59.';
     }
 
     if (!_isEndAfterStart(normalizedStart, normalizedEnd)) {
-      return 'Horario de termino precisa ser depois do inicio.';
+      return 'Horário de término precisa ser depois do início.';
     }
 
     if (descricao.trim().isEmpty) {
-      return 'Informe a descricao.';
+      return 'Informe a descrição.';
     }
 
     return null;
@@ -236,7 +236,7 @@ class RatFormViewModel extends ChangeNotifier {
 
   Future<bool> save({bool enqueueSync = true}) async {
     if (!canEdit) {
-      _errorMessage = 'Este RAT pertence a outro tecnico.';
+      _errorMessage = 'Este RAT pertence a outro técnico.';
       notifyListeners();
       return false;
     }
@@ -300,7 +300,7 @@ class RatFormViewModel extends ChangeNotifier {
       }
     } catch (_) {
       _isSubmitting = false;
-      _errorMessage = 'Nao foi possivel salvar o RAT.';
+      _errorMessage = 'Não foi possível salvar o RAT.';
       notifyListeners();
       return false;
     }
@@ -345,7 +345,7 @@ class RatFormViewModel extends ChangeNotifier {
       }
     } catch (_) {
       _isSubmitting = false;
-      _errorMessage = 'Nao foi possivel excluir o RAT.';
+      _errorMessage = 'Não foi possível excluir o RAT.';
       notifyListeners();
       return false;
     }
@@ -444,7 +444,7 @@ class RatFormViewModel extends ChangeNotifier {
       await _ratPdfShareService.share(shareData);
       return true;
     } catch (_) {
-      _errorMessage = 'Nao foi possivel compartilhar o PDF.';
+      _errorMessage = 'Não foi possível compartilhar o PDF.';
       return false;
     } finally {
       _isSharing = false;

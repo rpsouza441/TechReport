@@ -9,6 +9,7 @@ import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
+import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 
 class RatPdfShareService {
   RatPdfShareService({
@@ -61,24 +62,24 @@ class RatPdfShareService {
               style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 24),
-            _sectionTitle('Identificacao'),
+            _sectionTitle('Identificação'),
             pw.SizedBox(height: 8),
             _infoRow('RAT', rat.numero),
             _infoRow('Cliente', rat.clienteNome),
             _infoRow(
-              'Responsavel',
-              rat.responsavelRecebimento ?? 'Nao informado',
+              'Responsável',
+              rat.responsavelRecebimento ?? ratNotInformedLabel,
             ),
             _infoRow('Data da visita', _formatDate(rat.dataVisita)),
             _infoRow(
-              'Horario',
-              '${rat.horarioInicioAtendimento ?? '--:--'} ate '
+              'Horário',
+              '${rat.horarioInicioAtendimento ?? '--:--'} até '
                   '${rat.horarioTerminoAtendimento ?? '--:--'}',
             ),
-            _infoRow('Status', rat.status.name),
+            _infoRow('Status', ratStatusLabel(rat.status)),
 
             pw.SizedBox(height: 18),
-            _sectionTitle('Descricao do atendimento'),
+            _sectionTitle('Descrição do atendimento'),
             pw.SizedBox(height: 8),
             pw.Text(rat.descricao),
 
@@ -86,13 +87,13 @@ class RatPdfShareService {
             _sectionTitle('Equipamento'),
             pw.SizedBox(height: 8),
             _infoRow(
-              'Movimentacao',
+              'Movimentação',
               _movimentoLabel(rat.equipamentoMovimentoTipo),
             ),
-            _infoRow('Descricao', rat.equipamentoDescricao ?? 'Nao informado'),
+            _infoRow('Descrição', rat.equipamentoDescricao ?? ratNotInformedLabel),
             _infoRow(
-              'Observacao',
-              rat.equipamentoObservacao ?? 'Nao informado',
+              'Observação',
+              rat.equipamentoObservacao ?? ratNotInformedLabel,
             ),
 
             pw.SizedBox(height: 24),
@@ -139,7 +140,7 @@ class RatPdfShareService {
 
   String _formatDate(DateTime? value) {
     if (value == null) {
-      return 'Nao informado';
+      return ratNotInformedLabel;
     }
 
     return '${value.day.toString().padLeft(2, '0')}/'
@@ -148,18 +149,11 @@ class RatPdfShareService {
   }
 
   String _movimentoLabel(EquipamentoMovimentoTipo? tipo) {
-    switch (tipo) {
-      case null:
-        return 'Nao informado';
-      case EquipamentoMovimentoTipo.nenhum:
-        return 'Nenhuma movimentacao';
-      case EquipamentoMovimentoTipo.retiradaParaReparo:
-        return 'Retirada para reparo';
-      case EquipamentoMovimentoTipo.entregaPosReparo:
-        return 'Entrega pos-reparo';
-      case EquipamentoMovimentoTipo.entregaPosCompra:
-        return 'Entrega pos-compra';
+    if (tipo == null) {
+      return ratNotInformedLabel;
     }
+
+    return equipamentoMovimentoLabel(tipo);
   }
 
   pw.Widget _sectionTitle(String title) {

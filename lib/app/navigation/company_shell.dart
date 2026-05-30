@@ -105,7 +105,7 @@ class _CompanyShellState extends State<CompanyShell> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Ainda ha $remainingCount item(ns) aguardando sincronizacao.',
+          'Ainda há $remainingCount item(ns) aguardando sincronização.',
         ),
       ),
     );
@@ -116,9 +116,9 @@ class _CompanyShellState extends State<CompanyShell> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Sair com pendencias?'),
+          title: const Text('Sair com pendências?'),
           content: Text(
-            'Voce tem $count item(ns) aguardando sincronizacao. '
+            'Você tem $count item(ns) aguardando sincronização. '
             'Sincronize antes de sair para reduzir risco de dados ficarem '
             'apenas neste aparelho.',
           ),
@@ -195,7 +195,7 @@ class _CompanyShellState extends State<CompanyShell> {
             IconButton(
               onPressed: _isSyncing ? null : _openSyncCenter,
               icon: const Icon(Icons.sync_alt_outlined),
-              tooltip: 'Centro de sincronizacao',
+              tooltip: 'Central de sincronização',
             ),
           IconButton(
             onPressed: _isSyncing ? null : _signOut,
@@ -274,7 +274,7 @@ class _CompanyShellState extends State<CompanyShell> {
   Widget _buildRatsArea() {
     final viewModel = _ratListViewModel;
     if (viewModel == null) {
-      return const Center(child: Text('Sessao sem empresa vinculada.'));
+      return const Center(child: Text('Sessão sem empresa vinculada.'));
     }
 
     return RatListScreen(
@@ -352,7 +352,7 @@ class _CompanyShellState extends State<CompanyShell> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nao foi possivel sincronizar.')),
+          const SnackBar(content: Text('Não foi possível sincronizar.')),
         );
       }
     } finally {

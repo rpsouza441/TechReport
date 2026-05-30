@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/sync/domain/entities/sync_item.dart';
 import 'package:techreport/features/sync/presentation/view_models/sync_center_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 class SyncCenterScreen extends StatefulWidget {
   const SyncCenterScreen({super.key, required this.viewModel});
@@ -22,7 +28,7 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sincronizacao')),
+      appBar: AppBar(title: const Text('Central de sincronização')),
       body: ListenableBuilder(
         listenable: widget.viewModel,
         builder: (context, _) {
@@ -35,7 +41,7 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
           if (vm.items.isEmpty) {
             return TechReportStateView.empty(
               title: 'Tudo sincronizado',
-              message: 'Nao ha itens pendentes ou com erro.',
+              message: 'Não há itens pendentes ou com erro.',
             );
           }
 
@@ -43,33 +49,18 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
             onRefresh: vm.load,
             child: CustomScrollView(
               slivers: [
+                SliverToBoxAdapter(child: _buildHeader(context)),
                 SliverToBoxAdapter(child: _buildSummary(vm)),
                 if (vm.retryError != null)
                   SliverToBoxAdapter(child: _buildErrorBanner(vm.retryError!)),
                 if (vm.hasActionable)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: FilledButton.icon(
-                        onPressed: vm.isRetrying ? null : vm.retryFailed,
-                        icon: vm.isRetrying
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.sync),
-                        label: const Text('Tentar novamente'),
-                      ),
-                    ),
-                  ),
+                  SliverToBoxAdapter(child: _buildRetryButton(context, vm)),
                 _buildSection('Pendentes', vm.pending),
                 _buildSection('Com erro', vm.failed),
                 _buildSection('Sincronizados recentes', vm.synced),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: MetricSlateSpacing.lg),
+                ),
               ],
             ),
           );
@@ -78,42 +69,89 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.md,
+        0,
+      ),
+      child: TechReportCard(
+        child: const TechReportFormHeader(
+          icon: Icons.sync_outlined,
+          title: 'Fila de sincronização',
+          subtitle:
+              'Acompanhe envios pendentes, falhas recentes e itens já sincronizados.',
+        ),
+      ),
+    );
+  }
+
   Widget _buildSummary(SyncCenterViewModel vm) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(MetricSlateSpacing.md),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: MetricSlateSpacing.xs,
+        runSpacing: MetricSlateSpacing.xs,
         children: [
-          _summaryChip('Pendentes', vm.pending.length, Colors.orange),
-          _summaryChip('Com erro', vm.failed.length, Colors.red),
-          _summaryChip('Enviados', vm.synced.length, Colors.green),
+          TechReportStatusChip(
+            label: 'Pendentes',
+            count: vm.pending.length,
+            tone: TechReportStatusTone.warning,
+            icon: Icons.schedule,
+          ),
+          TechReportStatusChip(
+            label: 'Com erro',
+            count: vm.failed.length,
+            tone: TechReportStatusTone.error,
+            icon: Icons.error_outline,
+          ),
+          TechReportStatusChip(
+            label: 'Enviados',
+            count: vm.synced.length,
+            tone: TechReportStatusTone.success,
+            icon: Icons.check_circle_outline,
+          ),
         ],
       ),
     );
   }
 
-  Widget _summaryChip(String label, int count, Color color) {
-    return Chip(
-      label: Text('$label: $count'),
-      side: BorderSide(color: color.withValues(alpha: 0.5)),
+  Widget _buildErrorBanner(String message) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        MetricSlateSpacing.md,
+        0,
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.xs,
+      ),
+      child: TechReportErrorBanner(message: message),
     );
   }
 
-  Widget _buildErrorBanner(String message) {
+  Widget _buildRetryButton(BuildContext context, SyncCenterViewModel vm) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Card(
-        color: Theme.of(context).colorScheme.errorContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            message,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onErrorContainer,
-            ),
-          ),
-        ),
+      padding: const EdgeInsets.fromLTRB(
+        MetricSlateSpacing.md,
+        0,
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.sm,
+      ),
+      child: FilledButton.icon(
+        onPressed: vm.isRetrying ? null : vm.retryFailed,
+        icon: vm.isRetrying
+            ? SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: scheme.onPrimary,
+                ),
+              )
+            : const Icon(Icons.sync, size: 20),
+        label: Text(vm.isRetrying ? 'Tentando...' : 'Tentar novamente'),
       ),
     );
   }
@@ -123,99 +161,144 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
-    return SliverList.separated(
-      itemCount: items.length + 1,
-      separatorBuilder: (context, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(title, style: Theme.of(context).textTheme.labelLarge),
-          );
-        }
-        return _buildTile(items[index - 1]);
-      },
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: MetricSlateSpacing.md),
+      sliver: SliverList.separated(
+        itemCount: items.length + 1,
+        separatorBuilder: (context, index) {
+          if (index == 0) {
+            return const SizedBox(height: MetricSlateSpacing.xs);
+          }
+          return const SizedBox(height: MetricSlateSpacing.sm);
+        },
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return TechReportSectionHeader(
+              title: title,
+              padding: EdgeInsets.zero,
+            );
+          }
+          return _SyncItemCard(item: items[index - 1]);
+        },
+      ),
     );
   }
+}
 
-  Widget _buildTile(SyncItem item) {
-    final Widget statusIcon;
-    switch (item.status) {
-      case SyncItemStatus.pending:
-        statusIcon = const Icon(Icons.schedule, size: 18);
-      case SyncItemStatus.processing:
-        statusIcon = const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        );
-      case SyncItemStatus.synced:
-        statusIcon = Icon(
-          Icons.check_circle_outline,
-          size: 18,
-          color: Theme.of(context).colorScheme.primary,
-        );
-      case SyncItemStatus.failed:
-        statusIcon = Icon(
-          Icons.error_outline,
-          size: 18,
-          color: Theme.of(context).colorScheme.error,
-        );
-    }
+class _SyncItemCard extends StatelessWidget {
+  const _SyncItemCard({required this.item});
 
+  final SyncItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final errorText = item.lastError;
-    final showError =
-        errorText != null && item.status == SyncItemStatus.failed;
+    final showError = errorText != null && item.status == SyncItemStatus.failed;
 
-    return ListTile(
-      leading: statusIcon,
-      title: Text(
-        '${item.entityType.name.toUpperCase()} · ${item.operation.name}',
-        style: const TextStyle(fontSize: 13),
-      ),
-      subtitle: Column(
+    return TechReportCard(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Tentativas: ${item.attempts} · ${_formatDate(item.updatedAt)}',
-            style: const TextStyle(fontSize: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _statusIcon(context, item.status),
+              const SizedBox(width: MetricSlateSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${item.entityType.name.toUpperCase()} · ${item.operation.name}',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: MetricSlateSpacing.xxs),
+                    Text(
+                      'Tentativas: ${item.attempts} · ${_formatDate(item.updatedAt)}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              TechReportStatusChip(
+                label: _syncItemStatusLabel(item.status),
+                tone: _syncItemStatusTone(item.status),
+              ),
+            ],
           ),
-          if (showError)
+          if (showError) ...[
+            const SizedBox(height: MetricSlateSpacing.sm),
             Text(
               _friendlyError(errorText),
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.error,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w600,
               ),
             ),
+          ],
         ],
       ),
-      isThreeLine: showError,
     );
   }
 
-  String _formatDate(DateTime dt) {
-    return '${dt.day.toString().padLeft(2, '0')}/'
-        '${dt.month.toString().padLeft(2, '0')} '
-        '${dt.hour.toString().padLeft(2, '0')}:'
-        '${dt.minute.toString().padLeft(2, '0')}';
-  }
+  Widget _statusIcon(BuildContext context, SyncItemStatus status) {
+    final scheme = Theme.of(context).colorScheme;
 
-  /// Exibe erro amigável — sem token, URL com segredo, headers ou stack trace.
-  String _friendlyError(String raw) {
-    if (raw.contains('SocketException') ||
-        raw.contains('Failed host lookup') ||
-        raw.contains('Connection refused')) {
-      return 'Sem conexao com o servidor.';
-    }
-    if (raw.contains('401') || raw.contains('403')) {
-      return 'Sessao expirada ou sem permissao.';
-    }
-    if (raw.contains('500') ||
-        raw.contains('502') ||
-        raw.contains('503')) {
-      return 'Erro no servidor. Tente mais tarde.';
-    }
-    return 'Falha ao sincronizar. Tente novamente.';
+    return switch (status) {
+      SyncItemStatus.pending => Icon(Icons.schedule, color: scheme.tertiary),
+      SyncItemStatus.processing => SizedBox.square(
+        dimension: 22,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: scheme.primary,
+        ),
+      ),
+      SyncItemStatus.synced => Icon(
+        Icons.check_circle_outline,
+        color: scheme.primary,
+      ),
+      SyncItemStatus.failed => Icon(Icons.error_outline, color: scheme.error),
+    };
   }
+}
+
+String _syncItemStatusLabel(SyncItemStatus status) {
+  return switch (status) {
+    SyncItemStatus.pending => 'Pendente',
+    SyncItemStatus.processing => 'Processando',
+    SyncItemStatus.synced => 'Enviado',
+    SyncItemStatus.failed => 'Erro',
+  };
+}
+
+TechReportStatusTone _syncItemStatusTone(SyncItemStatus status) {
+  return switch (status) {
+    SyncItemStatus.pending => TechReportStatusTone.warning,
+    SyncItemStatus.processing => TechReportStatusTone.info,
+    SyncItemStatus.synced => TechReportStatusTone.success,
+    SyncItemStatus.failed => TechReportStatusTone.error,
+  };
+}
+
+String _formatDate(DateTime dt) {
+  return '${dt.day.toString().padLeft(2, '0')}/'
+      '${dt.month.toString().padLeft(2, '0')} '
+      '${dt.hour.toString().padLeft(2, '0')}:'
+      '${dt.minute.toString().padLeft(2, '0')}';
+}
+
+String _friendlyError(String raw) {
+  if (raw.contains('SocketException') ||
+      raw.contains('Failed host lookup') ||
+      raw.contains('Connection refused')) {
+    return 'Sem conexão com o servidor.';
+  }
+  if (raw.contains('401') || raw.contains('403')) {
+    return 'Sessão expirada ou sem permissão.';
+  }
+  if (raw.contains('500') || raw.contains('502') || raw.contains('503')) {
+    return 'Erro no servidor. Tente mais tarde.';
+  }
+  return 'Falha ao sincronizar. Tente novamente.';
 }

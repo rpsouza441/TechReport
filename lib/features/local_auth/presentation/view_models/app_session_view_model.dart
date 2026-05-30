@@ -169,7 +169,7 @@ class AppSessionViewModel extends ChangeNotifier {
     }
 
     if (email.trim().isEmpty || !email.contains('@')) {
-      return 'Informe um email válido.';
+      return 'Informe um e-mail válido.';
     }
 
     if (!usePin) {

@@ -38,18 +38,18 @@ class SupabaseAuthRepository implements AuthRepository {
 
     final session = response.session;
     if (session == null) {
-      throw const RemoteAuthException('Sessao remota nao foi retornada.');
+      throw const RemoteAuthException('Sessão remota não foi retornada.');
     }
 
     final user = response.user;
     if (user == null) {
-      throw const RemoteAuthException('Usuario remoto nao foi retornado.');
+      throw const RemoteAuthException('Usuário remoto não foi retornado.');
     }
 
     final refreshToken = session.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
       throw const RemoteAuthException(
-        'Refresh token remoto nao foi retornado.',
+        'Refresh token remoto não foi retornado.',
       );
     }
 
@@ -197,7 +197,7 @@ class SupabaseAuthRepository implements AuthRepository {
     final client = await _clientFactory.tryCreateClient();
 
     if (client == null) {
-      throw const RemoteAuthException('Servidor remoto nao configurado.');
+      throw const RemoteAuthException('Servidor remoto não configurado.');
     }
 
     return client;
@@ -205,11 +205,11 @@ class SupabaseAuthRepository implements AuthRepository {
 
   RemoteAuthException mapAuthException(AuthApiException exception) {
     if (exception.code == 'invalid_credentials') {
-      return const RemoteAuthException('Email ou senha invalidos.');
+      return const RemoteAuthException('E-mail ou senha inválidos.');
     }
 
     return const RemoteAuthException(
-      'Nao foi possivel entrar. Confira os dados e tente novamente.',
+      'Não foi possível entrar. Confira os dados e tente novamente.',
     );
   }
 
@@ -344,7 +344,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
     if (profile == null) {
       throw const RemoteAuthException(
-        'Conta remota autenticada, mas nao vinculada a uma empresa TechReport.',
+        'Conta remota autenticada, mas não vinculada a uma empresa TechReport.',
       );
     }
 
@@ -359,7 +359,7 @@ class SupabaseAuthRepository implements AuthRepository {
         papel is! String ||
         papel.isEmpty) {
       throw const RemoteAuthException(
-        'Cadastro remoto incompleto para este usuario.',
+        'Cadastro remoto incompleto para este usuário.',
       );
     }
 
@@ -382,7 +382,7 @@ class SupabaseAuthRepository implements AuthRepository {
       case 'tecnico':
         return SessaoRemotaPapelEmpresa.tecnico;
       default:
-        throw const RemoteAuthException('Papel remoto invalido.');
+        throw const RemoteAuthException('Papel remoto inválido.');
     }
   }
 }

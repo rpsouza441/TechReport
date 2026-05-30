@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/metric_slate_radii.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
@@ -8,7 +10,10 @@ import 'package:techreport/features/signature/domain/repositories/assinatura_rep
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
+import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
@@ -59,13 +64,15 @@ class _RatListScreenState extends State<RatListScreen> {
     return AnimatedBuilder(
       animation: widget.viewModel,
       builder: (context, _) {
+        final body = _buildBody(context);
+
         if (widget.embedded) {
           return Stack(
             children: [
-              _buildBody(context),
+              body,
               Positioned(
-                right: 16,
-                bottom: 16,
+                right: MetricSlateSpacing.md,
+                bottom: MetricSlateSpacing.md,
                 child: FloatingActionButton.extended(
                   onPressed: _openCreate,
                   icon: const Icon(Icons.add),
@@ -78,11 +85,11 @@ class _RatListScreenState extends State<RatListScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('RATs'),
+            title: const Text('Relatórios RAT'),
             actions: [
               if (widget.remoteSession != null)
                 IconButton(
-                  onPressed: _syncNow,
+                  onPressed: widget.viewModel.isLoading ? null : _syncNow,
                   icon: const Icon(Icons.sync),
                   tooltip: 'Sincronizar',
                 ),
@@ -93,7 +100,7 @@ class _RatListScreenState extends State<RatListScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Novo RAT'),
           ),
-          body: _buildBody(context),
+          body: body,
         );
       },
     );
@@ -115,57 +122,102 @@ class _RatListScreenState extends State<RatListScreen> {
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildFilterBar(),
+        _buildFilterBar(context),
         Expanded(child: _buildList(context)),
       ],
     );
   }
 
-  Widget _buildFilterBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
+  Widget _buildFilterBar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasActiveFilter =
+        widget.viewModel.query.isNotEmpty ||
+        widget.viewModel.statusFilter != null;
+
+    return Material(
+      color: scheme.surfaceContainerLow,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          MetricSlateSpacing.md,
+          MetricSlateSpacing.sm,
+          MetricSlateSpacing.md,
+          MetricSlateSpacing.sm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
               decoration: const InputDecoration(
                 hintText: 'Buscar cliente ou descrição',
-                prefixIcon: Icon(Icons.search, size: 20),
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
+                prefixIcon: Icon(Icons.search, size: 22),
               ),
               onChanged: widget.viewModel.setQuery,
             ),
-          ),
-          const SizedBox(width: 8),
-          DropdownButton<RatStatus?>(
-            value: widget.viewModel.statusFilter,
-            hint: const Text('Status'),
-            underline: const SizedBox.shrink(),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Todos')),
-              DropdownMenuItem(value: RatStatus.draft, child: Text('Rascunho')),
-              DropdownMenuItem(
-                value: RatStatus.finalizado,
-                child: Text('Finalizado'),
+            const SizedBox(height: MetricSlateSpacing.sm),
+            InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Status do RAT',
+                isDense: true,
               ),
-              DropdownMenuItem(
-                value: RatStatus.enviado,
-                child: Text('Enviado'),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<RatStatus?>(
+                  isExpanded: true,
+                  value: widget.viewModel.statusFilter,
+                  hint: const Text('Todos'),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Todos')),
+                    DropdownMenuItem(
+                      value: RatStatus.draft,
+                      child: Text('Rascunho'),
+                    ),
+                    DropdownMenuItem(
+                      value: RatStatus.finalizado,
+                      child: Text('Finalizado'),
+                    ),
+                    DropdownMenuItem(
+                      value: RatStatus.enviado,
+                      child: Text('Enviado'),
+                    ),
+                    DropdownMenuItem(
+                      value: RatStatus.arquivado,
+                      child: Text('Arquivado'),
+                    ),
+                  ],
+                  onChanged: widget.viewModel.setStatusFilter,
+                ),
               ),
-              DropdownMenuItem(
-                value: RatStatus.arquivado,
-                child: Text('Arquivado'),
+            ),
+            if (hasActiveFilter) ...[
+              const SizedBox(height: MetricSlateSpacing.sm),
+              Wrap(
+                spacing: MetricSlateSpacing.xs,
+                runSpacing: MetricSlateSpacing.xs,
+                children: [
+                  if (widget.viewModel.query.isNotEmpty)
+                    TechReportStatusChip(
+                      label: 'Busca',
+                      tone: TechReportStatusTone.info,
+                      icon: Icons.search,
+                    ),
+                  if (widget.viewModel.statusFilter != null)
+                    TechReportStatusChip(
+                      label: ratStatusLabel(widget.viewModel.statusFilter!),
+                      tone: ratStatusTone(widget.viewModel.statusFilter!),
+                    ),
+                  ActionChip(
+                    label: const Text('Limpar'),
+                    onPressed: () {
+                      widget.viewModel.setQuery('');
+                      widget.viewModel.setStatusFilter(null);
+                    },
+                  ),
+                ],
               ),
             ],
-            onChanged: widget.viewModel.setStatusFilter,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -195,45 +247,32 @@ class _RatListScreenState extends State<RatListScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-      itemCount: rats.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      padding: const EdgeInsets.fromLTRB(
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.sm,
+        MetricSlateSpacing.md,
+        88,
+      ),
+      itemCount: rats.length + 1,
+      separatorBuilder: (_, index) {
+        if (index == 0) {
+          return const SizedBox(height: MetricSlateSpacing.sm);
+        }
+        return const SizedBox(height: MetricSlateSpacing.sm);
+      },
       itemBuilder: (context, index) {
-        final rat = rats[index];
-        final hasSignature = widget.viewModel.hasSignature(rat.id);
-        return Card(
-          child: ListTile(
-            title: Row(
-              children: [
-                Expanded(child: Text(rat.clienteNome)),
-                if (hasSignature) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.draw,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ],
-            ),
-            subtitle: Text(rat.descricao),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(rat.status.name),
-                const SizedBox(height: 4),
-                Text(
-                  _syncLabel(rat.syncStatus),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: _syncColor(context, rat.syncStatus),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            onTap: () => _openEdit(rat),
-          ),
+        if (index == 0) {
+          return Text(
+            '${rats.length} ${rats.length == 1 ? 'relatório' : 'relatórios'}',
+            style: Theme.of(context).textTheme.labelLarge,
+          );
+        }
+
+        final rat = rats[index - 1];
+        return _RatListItemCard(
+          rat: rat,
+          hasSignature: widget.viewModel.hasSignature(rat.id),
+          onTap: () => _openEdit(rat),
         );
       },
     );
@@ -315,32 +354,113 @@ class _RatListScreenState extends State<RatListScreen> {
     );
     await widget.viewModel.load();
   }
+}
 
-  Color _syncColor(BuildContext context, RatSyncStatus status) {
-    final colorScheme = Theme.of(context).colorScheme;
+class _RatListItemCard extends StatelessWidget {
+  const _RatListItemCard({
+    required this.rat,
+    required this.hasSignature,
+    required this.onTap,
+  });
 
-    switch (status) {
-      case RatSyncStatus.localOnly:
-        return colorScheme.outline;
-      case RatSyncStatus.pendingSync:
-        return colorScheme.tertiary;
-      case RatSyncStatus.synced:
-        return colorScheme.primary;
-      case RatSyncStatus.syncError:
-        return colorScheme.error;
-    }
+  final Rat rat;
+  final bool hasSignature;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return TechReportCard(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(MetricSlateRadii.md),
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rat.clienteNome,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: MetricSlateSpacing.xxs),
+                      Text(
+                        'RAT ${rat.numero}',
+                        style: theme.textTheme.labelMedium,
+                      ),
+                      const SizedBox(height: MetricSlateSpacing.xs),
+                      Text(
+                        rat.descricao,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                if (hasSignature)
+                  Padding(
+                    padding: const EdgeInsets.only(left: MetricSlateSpacing.xs),
+                    child: Icon(
+                      Icons.draw_outlined,
+                      size: 22,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: MetricSlateSpacing.sm),
+            Wrap(
+              spacing: MetricSlateSpacing.xs,
+              runSpacing: MetricSlateSpacing.xs,
+              children: [
+                TechReportStatusChip(
+                  label: ratStatusLabel(rat.status),
+                  tone: ratStatusTone(rat.status),
+                ),
+                TechReportStatusChip(
+                  label: _syncLabel(rat.syncStatus),
+                  tone: _syncTone(rat.syncStatus),
+                  icon: _syncIcon(rat.syncStatus),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
 
-  String _syncLabel(RatSyncStatus status) {
-    switch (status) {
-      case RatSyncStatus.localOnly:
-        return 'Local';
-      case RatSyncStatus.pendingSync:
-        return 'Pendente';
-      case RatSyncStatus.synced:
-        return 'Sincronizado';
-      case RatSyncStatus.syncError:
-        return 'Erro de sync';
-    }
-  }
+String _syncLabel(RatSyncStatus status) {
+  return switch (status) {
+    RatSyncStatus.localOnly => 'Local',
+    RatSyncStatus.pendingSync => 'Pendente',
+    RatSyncStatus.synced => 'Sincronizado',
+    RatSyncStatus.syncError => 'Erro de sync',
+  };
+}
+
+TechReportStatusTone _syncTone(RatSyncStatus status) {
+  return switch (status) {
+    RatSyncStatus.localOnly => TechReportStatusTone.neutral,
+    RatSyncStatus.pendingSync => TechReportStatusTone.warning,
+    RatSyncStatus.synced => TechReportStatusTone.success,
+    RatSyncStatus.syncError => TechReportStatusTone.error,
+  };
+}
+
+IconData? _syncIcon(RatSyncStatus status) {
+  return switch (status) {
+    RatSyncStatus.localOnly => Icons.smartphone_outlined,
+    RatSyncStatus.pendingSync => Icons.schedule,
+    RatSyncStatus.synced => Icons.cloud_done_outlined,
+    RatSyncStatus.syncError => Icons.error_outline,
+  };
 }

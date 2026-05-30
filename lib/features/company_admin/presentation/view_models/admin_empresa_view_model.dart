@@ -23,7 +23,7 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     try {
       tecnicos = await _listTecnicos(empresaId: empresaId);
     } catch (_) {
-      errorMessage = 'Nao foi possivel carregar a equipe.';
+      errorMessage = 'Não foi possível carregar a equipe.';
     }
 
     isLoading = false;

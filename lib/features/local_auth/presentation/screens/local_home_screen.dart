@@ -9,6 +9,7 @@ import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart
 import 'package:techreport/features/rat/domain/entities/rat.dart' as domain;
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
+import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_form_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_form_view_model.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
@@ -215,7 +216,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(rat.status.name),
+                                    Text(ratStatusLabel(rat.status)),
                                     const SizedBox(height: 4),
                                     Text(
                                       _formatDate(rat.updatedAt),
