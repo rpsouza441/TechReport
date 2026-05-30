@@ -8,6 +8,7 @@ class AdminTecnicoResumo {
     required this.email,
     required this.papel,
     required this.ativo,
+    this.mustChangePassword = false,
   });
 
   final String id;
@@ -16,4 +17,5 @@ class AdminTecnicoResumo {
   final String email;
   final AdminTecnicoPapel papel;
   final bool ativo;
+  final bool mustChangePassword;
 }

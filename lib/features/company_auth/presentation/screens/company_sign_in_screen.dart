@@ -10,11 +10,13 @@ class CompanySignInScreen extends StatefulWidget {
     required this.viewModel,
     required this.onSignedIn,
     this.onCancel,
+    this.onAcceptInvite,
   });
 
   final CompanySignInViewModel viewModel;
   final ValueChanged<SessaoRemota> onSignedIn;
   final VoidCallback? onCancel;
+  final VoidCallback? onAcceptInvite;
 
   @override
   State<CompanySignInScreen> createState() => _CompanySignInScreenState();
@@ -141,6 +143,15 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
                             OutlinedButton(
                               onPressed: isSubmitting ? null : widget.onCancel,
                               child: const Text('Voltar'),
+                            ),
+                          ],
+                          if (widget.onAcceptInvite != null) ...[
+                            const SizedBox(height: MetricSlateSpacing.sm),
+                            TextButton(
+                              onPressed: isSubmitting
+                                  ? null
+                                  : widget.onAcceptInvite,
+                              child: const Text('Aceitar convite da empresa'),
                             ),
                           ],
                         ],

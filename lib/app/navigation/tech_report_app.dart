@@ -3,6 +3,8 @@ import 'package:techreport/app/theme/metric_slate_theme.dart';
 
 import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
 import '../../features/company_auth/presentation/screens/company_sign_in_screen.dart';
+import '../../features/company_auth/presentation/screens/company_accept_invite_screen.dart';
+import '../../features/company_auth/presentation/view_models/company_accept_invite_view_model.dart';
 import '../../features/company_auth/presentation/screens/remote_server_config_screen.dart';
 import '../../features/company_auth/presentation/view_models/app_mode_choice_view_model.dart';
 import '../../features/company_auth/presentation/view_models/company_sign_in_view_model.dart';
@@ -140,6 +142,7 @@ class AppShell extends StatelessWidget {
           viewModel: CompanySignInViewModel(signInCompany: scope.signInCompany),
           onSignedIn: bootstrapViewModel.unlockCompany,
           onCancel: bootstrapViewModel.requireModeChoice,
+          onAcceptInvite: () => _openAcceptInvite(context),
         );
 
       case AppBootstrapStatus.companyUnlocked:
@@ -153,6 +156,7 @@ class AppShell extends StatelessWidget {
             ),
             onSignedIn: bootstrapViewModel.unlockCompany,
             onCancel: bootstrapViewModel.requireModeChoice,
+            onAcceptInvite: () => _openAcceptInvite(context),
           );
         }
 
@@ -167,6 +171,20 @@ class AppShell extends StatelessWidget {
           },
         );
     }
+  }
+
+  void _openAcceptInvite(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => CompanyAcceptInviteScreen(
+          viewModel: CompanyAcceptInviteViewModel(
+            signInCompanyWithInvite: scope.signInCompanyWithInvite,
+          ),
+          onAccepted: bootstrapViewModel.unlockCompany,
+          onCancel: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
   }
 }
 

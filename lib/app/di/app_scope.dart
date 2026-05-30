@@ -1,6 +1,10 @@
 import 'package:techreport/features/company_admin/data/repositories/supabase_company_admin_repository.dart';
+import 'package:techreport/features/company_admin/domain/usecases/cancel_tecnico_convite.dart';
+import 'package:techreport/features/company_admin/domain/usecases/create_tecnico_convite.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_admin_convites.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_empresas.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
+import 'package:techreport/features/company_admin/domain/usecases/update_tecnico_equipe.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
 import 'package:techreport/features/local_auth/data/services/local_data_import_parser.dart';
@@ -36,6 +40,7 @@ import 'package:techreport/features/company_auth/domain/usecases/bootstrap_compa
 import 'package:techreport/features/company_auth/domain/usecases/change_company_password.dart';
 import 'package:techreport/features/company_auth/domain/usecases/select_app_mode.dart';
 import 'package:techreport/features/company_auth/domain/usecases/sign_in_company.dart';
+import 'package:techreport/features/company_auth/domain/usecases/sign_in_company_with_invite.dart';
 import 'package:techreport/features/company_auth/domain/usecases/sign_out_company.dart';
 
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
@@ -67,6 +72,11 @@ class AppScope {
     required this.supabaseClientFactory,
     required this.listAdminEmpresas,
     required this.listAdminTecnicos,
+    required this.listAdminConvites,
+    required this.createTecnicoConvite,
+    required this.cancelTecnicoConvite,
+    required this.updateTecnicoEquipe,
+    required this.signInCompanyWithInvite,
     required this.syncQueueRepository,
     required this.remoteRatRepository,
     required this.enqueueRatSync,
@@ -126,6 +136,10 @@ class AppScope {
 
     final listAdminEmpresas = ListAdminEmpresas(companyAdminRepository);
     final listAdminTecnicos = ListAdminTecnicos(companyAdminRepository);
+    final listAdminConvites = ListAdminConvites(companyAdminRepository);
+    final createTecnicoConvite = CreateTecnicoConvite(companyAdminRepository);
+    final cancelTecnicoConvite = CancelTecnicoConvite(companyAdminRepository);
+    final updateTecnicoEquipe = UpdateTecnicoEquipe(companyAdminRepository);
     final syncQueueRepository = DriftSyncQueueRepository(database);
     final remoteRatRepository = SupabaseRemoteRatRepository(
       clientFactory: supabaseClientFactory,
@@ -158,6 +172,12 @@ class AppScope {
       authRepository: authRepository,
     );
     final signInCompany = SignInCompany(
+      authRepository: authRepository,
+      remoteSessionRepository: remoteSessionRepository,
+      appModeRepository: appModeRepository,
+    );
+
+    final signInCompanyWithInvite = SignInCompanyWithInvite(
       authRepository: authRepository,
       remoteSessionRepository: remoteSessionRepository,
       appModeRepository: appModeRepository,
@@ -204,6 +224,11 @@ class AppScope {
       supabaseClientFactory: supabaseClientFactory,
       listAdminEmpresas: listAdminEmpresas,
       listAdminTecnicos: listAdminTecnicos,
+      listAdminConvites: listAdminConvites,
+      createTecnicoConvite: createTecnicoConvite,
+      cancelTecnicoConvite: cancelTecnicoConvite,
+      updateTecnicoEquipe: updateTecnicoEquipe,
+      signInCompanyWithInvite: signInCompanyWithInvite,
       syncQueueRepository: syncQueueRepository,
       syncCheckpointRepository: syncCheckpointRepository,
       downloadRemoteRats: downloadRemoteRats,
@@ -239,6 +264,11 @@ class AppScope {
   final SupabaseClientFactory supabaseClientFactory;
   final ListAdminEmpresas listAdminEmpresas;
   final ListAdminTecnicos listAdminTecnicos;
+  final ListAdminConvites listAdminConvites;
+  final CreateTecnicoConvite createTecnicoConvite;
+  final CancelTecnicoConvite cancelTecnicoConvite;
+  final UpdateTecnicoEquipe updateTecnicoEquipe;
+  final SignInCompanyWithInvite signInCompanyWithInvite;
   final SyncQueueRepository syncQueueRepository;
   final RemoteRatRepository remoteRatRepository;
   final EnqueueRatSync enqueueRatSync;

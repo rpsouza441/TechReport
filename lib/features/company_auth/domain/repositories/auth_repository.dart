@@ -6,6 +6,12 @@ abstract class AuthRepository {
     required String password,
   });
 
+  Future<SessaoRemota> signInWithInvite({
+    required String email,
+    required String password,
+    required String codigoConvite,
+  });
+
   Future<void> signOut();
 
   Future<SessaoRemota?> restoreSession();

@@ -259,7 +259,12 @@ class _CompanyShellState extends State<CompanyShell> {
         return AdminEmpresaArea(
           viewModel: AdminEmpresaViewModel(
             empresaId: widget.session.empresaId!,
+            currentTecnicoId: widget.session.tecnicoId,
             listTecnicos: widget.scope.listAdminTecnicos,
+            listConvites: widget.scope.listAdminConvites,
+            createTecnicoConvite: widget.scope.createTecnicoConvite,
+            cancelTecnicoConvite: widget.scope.cancelTecnicoConvite,
+            updateTecnicoEquipe: widget.scope.updateTecnicoEquipe,
           ),
         );
       case CompanyArea.appAdmin:

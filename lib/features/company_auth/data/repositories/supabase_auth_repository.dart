@@ -70,6 +70,67 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<SessaoRemota> signInWithInvite({
+    required String email,
+    required String password,
+    required String codigoConvite,
+  }) async {
+    final client = await requireClient();
+
+    final AuthResponse response;
+    try {
+      response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } on AuthApiException catch (e) {
+      throw mapAuthException(e);
+    }
+
+    final session = response.session;
+    if (session == null) {
+      throw const RemoteAuthException('Sessão remota não foi retornada.');
+    }
+
+    final user = response.user;
+    if (user == null) {
+      throw const RemoteAuthException('Usuário remoto não foi retornado.');
+    }
+
+    final refreshToken = session.refreshToken;
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw const RemoteAuthException(
+        'Refresh token remoto não foi retornado.',
+      );
+    }
+
+    await _tokenStore.saveTokens(
+      accessToken: session.accessToken,
+      refreshToken: refreshToken,
+    );
+
+    try {
+      await client.rpc(
+        'accept_tecnico_convite',
+        params: {'p_codigo': codigoConvite.trim()},
+      );
+    } on PostgrestException catch (e) {
+      await _tokenStore.clearTokens();
+      throw RemoteAuthException(e.message);
+    }
+
+    final remoteSession = await buildRemoteSession(
+      client: client,
+      session: session,
+      user: user,
+    );
+
+    await _remoteSessionRepository.saveSession(remoteSession);
+
+    return remoteSession;
+  }
+
+  @override
   Future<SessaoRemota?> currentSession() {
     return _remoteSessionRepository.getSession();
   }

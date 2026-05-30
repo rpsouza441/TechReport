@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_empresa_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/domain/repositories/company_admin_repository.dart';
@@ -29,17 +30,96 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
     final client = await _requireClient();
     final rows = await client
         .from('tecnicos')
-        .select('id, empresa_id, nome, email, papel, ativo')
+        .select('id, empresa_id, nome, email, papel, ativo, must_change_password')
         .eq('empresa_id', empresaId)
         .order('nome');
 
     return rows.map<AdminTecnicoResumo>(_toTecnico).toList();
   }
 
+  @override
+  Future<List<AdminConviteResumo>> listConvites({
+    required String empresaId,
+  }) async {
+    final client = await _requireClient();
+    final rows = await client
+        .from('tecnico_convites')
+        .select(
+          'id, empresa_id, email, nome, papel, status, expires_at, created_at',
+        )
+        .eq('empresa_id', empresaId)
+        .inFilter('status', ['pending', 'accepted', 'expired', 'cancelled'])
+        .order('created_at', ascending: false);
+
+    return rows.map<AdminConviteResumo>(_toConvite).toList();
+  }
+
+  @override
+  Future<CreateTecnicoConviteResult> createConvite({
+    required String email,
+    required String nome,
+    required AdminTecnicoPapel papel,
+  }) async {
+    final client = await _requireClient();
+    final response = await client.rpc(
+      'create_tecnico_convite',
+      params: {
+        'p_email': email.trim(),
+        'p_nome': nome.trim(),
+        'p_papel': _papelToRemote(papel),
+      },
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw StateError('Resposta inválida ao criar convite.');
+    }
+
+    return CreateTecnicoConviteResult(
+      conviteId: response['convite_id'] as String,
+      codigoConvite: response['codigo_convite'] as String,
+      expiresAt: DateTime.parse(response['expires_at'] as String),
+    );
+  }
+
+  @override
+  Future<void> cancelConvite({required String conviteId}) async {
+    final client = await _requireClient();
+    await client.rpc(
+      'cancel_tecnico_convite',
+      params: {'p_convite_id': conviteId},
+    );
+  }
+
+  @override
+  Future<void> acceptConvite({required String codigoConvite}) async {
+    final client = await _requireClient();
+    await client.rpc(
+      'accept_tecnico_convite',
+      params: {'p_codigo': codigoConvite.trim()},
+    );
+  }
+
+  @override
+  Future<void> updateTecnicoEquipe({
+    required String tecnicoId,
+    bool? ativo,
+    bool? mustChangePassword,
+  }) async {
+    final client = await _requireClient();
+    await client.rpc(
+      'update_tecnico_equipe',
+      params: {
+        'p_tecnico_id': tecnicoId,
+        'p_ativo': ativo,
+        'p_must_change_password': mustChangePassword,
+      },
+    );
+  }
+
   Future<SupabaseClient> _requireClient() async {
     final client = await _clientFactory.tryCreateAuthenticatedClient();
     if (client == null) {
-      throw StateError('Sessao remota nao restaurada.');
+      throw StateError('Sessão remota não restaurada.');
     }
 
     return client;
@@ -61,6 +141,20 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
       email: row['email'] as String,
       papel: _toPapel(row['papel'] as String),
       ativo: row['ativo'] as bool,
+      mustChangePassword: row['must_change_password'] as bool? ?? false,
+    );
+  }
+
+  AdminConviteResumo _toConvite(Map<String, dynamic> row) {
+    return AdminConviteResumo(
+      id: row['id'] as String,
+      empresaId: row['empresa_id'] as String,
+      email: row['email'] as String,
+      nome: row['nome'] as String,
+      papel: _toPapel(row['papel'] as String),
+      status: _toConviteStatus(row['status'] as String),
+      expiresAt: DateTime.parse(row['expires_at'] as String),
+      createdAt: DateTime.parse(row['created_at'] as String),
     );
   }
 
@@ -73,7 +167,25 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
       case 'tecnico':
         return AdminTecnicoPapel.tecnico;
       default:
-        throw ArgumentError('Papel admin invalido: $value');
+        throw ArgumentError('Papel admin inválido: $value');
     }
+  }
+
+  String _papelToRemote(AdminTecnicoPapel papel) {
+    return switch (papel) {
+      AdminTecnicoPapel.adminEmpresa => 'admin_empresa',
+      AdminTecnicoPapel.gerente => 'gerente',
+      AdminTecnicoPapel.tecnico => 'tecnico',
+    };
+  }
+
+  AdminConviteStatus _toConviteStatus(String value) {
+    return switch (value) {
+      'pending' => AdminConviteStatus.pending,
+      'accepted' => AdminConviteStatus.accepted,
+      'expired' => AdminConviteStatus.expired,
+      'cancelled' => AdminConviteStatus.cancelled,
+      _ => throw ArgumentError('Status de convite inválido: $value'),
+    };
   }
 }
