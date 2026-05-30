@@ -115,6 +115,7 @@ class ApplyLocalDataImport {
         numero: json['numero'] as String,
         clienteNome: json['clienteNome'] as String,
         responsavelRecebimento: json['responsavelRecebimento'] as String?,
+        responsavelDocumento: json['responsavelDocumento'] as String?,
         dataVisita: _optionalDate(json['dataVisita'] as String?),
         horarioInicioAtendimento: json['horarioInicioAtendimento'] as String?,
         horarioTerminoAtendimento: json['horarioTerminoAtendimento'] as String?,

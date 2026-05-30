@@ -22,6 +22,7 @@ class Rat {
     required this.numero,
     required this.clienteNome,
     this.responsavelRecebimento,
+    this.responsavelDocumento,
     this.dataVisita,
     this.horarioInicioAtendimento,
     this.horarioTerminoAtendimento,
@@ -45,6 +46,7 @@ class Rat {
   final String numero;
   final String clienteNome;
   final String? responsavelRecebimento;
+  final String? responsavelDocumento;
   final DateTime? dataVisita;
   final String? horarioInicioAtendimento;
   final String? horarioTerminoAtendimento;
@@ -76,6 +78,7 @@ class Rat {
     String? numero,
     String? clienteNome,
     Object? responsavelRecebimento = _sentinel,
+    Object? responsavelDocumento = _sentinel,
     Object? dataVisita = _sentinel,
     Object? horarioInicioAtendimento = _sentinel,
     Object? horarioTerminoAtendimento = _sentinel,
@@ -101,6 +104,9 @@ class Rat {
       responsavelRecebimento: responsavelRecebimento == _sentinel
           ? this.responsavelRecebimento
           : responsavelRecebimento as String?,
+      responsavelDocumento: responsavelDocumento == _sentinel
+          ? this.responsavelDocumento
+          : responsavelDocumento as String?,
       dataVisita: dataVisita == _sentinel
           ? this.dataVisita
           : dataVisita as DateTime?,
@@ -146,6 +152,7 @@ class Rat {
         other.numero == numero &&
         other.clienteNome == clienteNome &&
         other.responsavelRecebimento == responsavelRecebimento &&
+        other.responsavelDocumento == responsavelDocumento &&
         other.dataVisita == dataVisita &&
         other.horarioInicioAtendimento == horarioInicioAtendimento &&
         other.horarioTerminoAtendimento == horarioTerminoAtendimento &&
@@ -171,6 +178,7 @@ class Rat {
     numero,
     clienteNome,
     responsavelRecebimento,
+    responsavelDocumento,
     dataVisita,
     horarioInicioAtendimento,
     horarioTerminoAtendimento,

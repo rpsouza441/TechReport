@@ -9,6 +9,7 @@ class RatRemoteDto {
     required this.numero,
     required this.clienteNome,
     this.responsavelRecebimento,
+    this.responsavelDocumento,
     this.dataVisita,
     this.horarioInicioAtendimento,
     this.horarioTerminoAtendimento,
@@ -28,6 +29,7 @@ class RatRemoteDto {
   final String numero;
   final String clienteNome;
   final String? responsavelRecebimento;
+  final String? responsavelDocumento;
   final DateTime? dataVisita;
   final String? horarioInicioAtendimento;
   final String? horarioTerminoAtendimento;
@@ -48,6 +50,7 @@ class RatRemoteDto {
       'numero': numero,
       'cliente_nome': clienteNome,
       'responsavel_recebimento': responsavelRecebimento,
+      'responsavel_documento': responsavelDocumento,
       'data_visita': _dateOnly(dataVisita),
       'horario_inicio_atendimento': horarioInicioAtendimento,
       'horario_termino_atendimento': horarioTerminoAtendimento,

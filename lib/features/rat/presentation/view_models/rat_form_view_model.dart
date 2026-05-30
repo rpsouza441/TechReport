@@ -38,6 +38,7 @@ class RatFormViewModel extends ChangeNotifier {
        numero = initialRat?.numero ?? _newRatNumber(),
        clienteNome = initialRat?.clienteNome ?? '',
        responsavelRecebimento = initialRat?.responsavelRecebimento ?? '',
+       responsavelDocumento = initialRat?.responsavelDocumento ?? '',
        dataVisita = initialRat?.dataVisita,
        horarioInicioAtendimento = initialRat?.horarioInicioAtendimento ?? '',
        horarioTerminoAtendimento = initialRat?.horarioTerminoAtendimento ?? '',
@@ -68,6 +69,7 @@ class RatFormViewModel extends ChangeNotifier {
   final String numero;
   String clienteNome;
   String responsavelRecebimento;
+  String responsavelDocumento;
   DateTime? dataVisita;
   String horarioInicioAtendimento;
   String horarioTerminoAtendimento;
@@ -129,6 +131,11 @@ class RatFormViewModel extends ChangeNotifier {
 
   void setResponsavelRecebimento(String value) {
     responsavelRecebimento = value;
+    notifyListeners();
+  }
+
+  void setResponsavelDocumento(String value) {
+    responsavelDocumento = value;
     notifyListeners();
   }
 
@@ -272,6 +279,7 @@ class RatFormViewModel extends ChangeNotifier {
       numero: numero,
       clienteNome: clienteNome.trim(),
       responsavelRecebimento: responsavelRecebimento.trim(),
+      responsavelDocumento: _optionalText(responsavelDocumento),
       dataVisita: dataVisita,
       horarioInicioAtendimento: _normalizeHour(horarioInicioAtendimento)!,
       horarioTerminoAtendimento: _normalizeHour(horarioTerminoAtendimento)!,
@@ -481,6 +489,11 @@ String _newRatId() {
 
 String _newRatNumber() {
   return 'RAT-${DateTime.now().microsecondsSinceEpoch}';
+}
+
+String? _optionalText(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }
 
 String? _normalizeHour(String value) {

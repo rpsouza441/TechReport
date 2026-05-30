@@ -28,6 +28,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
   late final TextEditingController _clienteController;
   late final TextEditingController _descricaoController;
   late final TextEditingController _responsavelController;
+  late final TextEditingController _responsavelDocumentoController;
   late final TextEditingController _inicioController;
   late final TextEditingController _terminoController;
   late final TextEditingController _equipamentoController;
@@ -45,6 +46,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
     );
     _responsavelController = TextEditingController(
       text: widget.viewModel.responsavelRecebimento,
+    );
+    _responsavelDocumentoController = TextEditingController(
+      text: widget.viewModel.responsavelDocumento,
     );
     _inicioController = TextEditingController(
       text: widget.viewModel.horarioInicioAtendimento,
@@ -66,6 +70,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
     _clienteController.dispose();
     _descricaoController.dispose();
     _responsavelController.dispose();
+    _responsavelDocumentoController.dispose();
     _inicioController.dispose();
     _terminoController.dispose();
     _equipamentoController.dispose();
@@ -126,6 +131,13 @@ class _RatFormScreenState extends State<RatFormScreen> {
                           enabled: vm.canEdit,
                           label: 'Responsável pelo recebimento',
                           onChanged: vm.setResponsavelRecebimento,
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.md),
+                        MetricSlateTextField(
+                          controller: _responsavelDocumentoController,
+                          enabled: vm.canEdit,
+                          label: 'Documento do responsável (opcional)',
+                          onChanged: vm.setResponsavelDocumento,
                         ),
                         const SizedBox(height: MetricSlateSpacing.md),
                         InkWell(

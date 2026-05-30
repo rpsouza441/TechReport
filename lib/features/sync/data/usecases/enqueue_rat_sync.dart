@@ -29,6 +29,7 @@ class EnqueueRatSync {
       numero: rat.numero,
       clienteNome: rat.clienteNome,
       responsavelRecebimento: rat.responsavelRecebimento,
+      responsavelDocumento: rat.responsavelDocumento,
       dataVisita: rat.dataVisita,
       horarioInicioAtendimento: rat.horarioInicioAtendimento,
       horarioTerminoAtendimento: rat.horarioTerminoAtendimento,

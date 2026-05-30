@@ -70,6 +70,10 @@ class RatPdfShareService {
               'Responsável',
               rat.responsavelRecebimento ?? ratNotInformedLabel,
             ),
+            _infoRow(
+              'Documento do responsável',
+              rat.responsavelDocumento ?? ratNotInformedLabel,
+            ),
             _infoRow('Data da visita', _formatDate(rat.dataVisita)),
             _infoRow(
               'Horário',

@@ -1449,6 +1449,17 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _responsavelDocumentoMeta =
+      const VerificationMeta('responsavelDocumento');
+  @override
+  late final GeneratedColumn<String> responsavelDocumento =
+      GeneratedColumn<String>(
+        'responsavel_documento',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _dataVisitaMeta = const VerificationMeta(
     'dataVisita',
   );
@@ -1590,6 +1601,7 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     numero,
     clienteNome,
     responsavelRecebimento,
+    responsavelDocumento,
     dataVisita,
     horarioInicioAtendimento,
     horarioTerminoAtendimento,
@@ -1679,6 +1691,15 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
         responsavelRecebimento.isAcceptableOrUnknown(
           data['responsavel_recebimento']!,
           _responsavelRecebimentoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('responsavel_documento')) {
+      context.handle(
+        _responsavelDocumentoMeta,
+        responsavelDocumento.isAcceptableOrUnknown(
+          data['responsavel_documento']!,
+          _responsavelDocumentoMeta,
         ),
       );
     }
@@ -1824,6 +1845,10 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
         DriftSqlType.string,
         data['${effectivePrefix}responsavel_recebimento'],
       ),
+      responsavelDocumento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}responsavel_documento'],
+      ),
       dataVisita: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}data_visita'],
@@ -1891,6 +1916,7 @@ class Rat extends DataClass implements Insertable<Rat> {
   final String numero;
   final String clienteNome;
   final String? responsavelRecebimento;
+  final String? responsavelDocumento;
   final DateTime? dataVisita;
   final String? horarioInicioAtendimento;
   final String? horarioTerminoAtendimento;
@@ -1913,6 +1939,7 @@ class Rat extends DataClass implements Insertable<Rat> {
     required this.numero,
     required this.clienteNome,
     this.responsavelRecebimento,
+    this.responsavelDocumento,
     this.dataVisita,
     this.horarioInicioAtendimento,
     this.horarioTerminoAtendimento,
@@ -1945,6 +1972,9 @@ class Rat extends DataClass implements Insertable<Rat> {
     map['cliente_nome'] = Variable<String>(clienteNome);
     if (!nullToAbsent || responsavelRecebimento != null) {
       map['responsavel_recebimento'] = Variable<String>(responsavelRecebimento);
+    }
+    if (!nullToAbsent || responsavelDocumento != null) {
+      map['responsavel_documento'] = Variable<String>(responsavelDocumento);
     }
     if (!nullToAbsent || dataVisita != null) {
       map['data_visita'] = Variable<DateTime>(dataVisita);
@@ -2000,6 +2030,9 @@ class Rat extends DataClass implements Insertable<Rat> {
       responsavelRecebimento: responsavelRecebimento == null && nullToAbsent
           ? const Value.absent()
           : Value(responsavelRecebimento),
+      responsavelDocumento: responsavelDocumento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responsavelDocumento),
       dataVisita: dataVisita == null && nullToAbsent
           ? const Value.absent()
           : Value(dataVisita),
@@ -2047,6 +2080,9 @@ class Rat extends DataClass implements Insertable<Rat> {
       responsavelRecebimento: serializer.fromJson<String?>(
         json['responsavelRecebimento'],
       ),
+      responsavelDocumento: serializer.fromJson<String?>(
+        json['responsavelDocumento'],
+      ),
       dataVisita: serializer.fromJson<DateTime?>(json['dataVisita']),
       horarioInicioAtendimento: serializer.fromJson<String?>(
         json['horarioInicioAtendimento'],
@@ -2086,6 +2122,7 @@ class Rat extends DataClass implements Insertable<Rat> {
       'responsavelRecebimento': serializer.toJson<String?>(
         responsavelRecebimento,
       ),
+      'responsavelDocumento': serializer.toJson<String?>(responsavelDocumento),
       'dataVisita': serializer.toJson<DateTime?>(dataVisita),
       'horarioInicioAtendimento': serializer.toJson<String?>(
         horarioInicioAtendimento,
@@ -2119,6 +2156,7 @@ class Rat extends DataClass implements Insertable<Rat> {
     String? numero,
     String? clienteNome,
     Value<String?> responsavelRecebimento = const Value.absent(),
+    Value<String?> responsavelDocumento = const Value.absent(),
     Value<DateTime?> dataVisita = const Value.absent(),
     Value<String?> horarioInicioAtendimento = const Value.absent(),
     Value<String?> horarioTerminoAtendimento = const Value.absent(),
@@ -2143,6 +2181,9 @@ class Rat extends DataClass implements Insertable<Rat> {
     responsavelRecebimento: responsavelRecebimento.present
         ? responsavelRecebimento.value
         : this.responsavelRecebimento,
+    responsavelDocumento: responsavelDocumento.present
+        ? responsavelDocumento.value
+        : this.responsavelDocumento,
     dataVisita: dataVisita.present ? dataVisita.value : this.dataVisita,
     horarioInicioAtendimento: horarioInicioAtendimento.present
         ? horarioInicioAtendimento.value
@@ -2181,6 +2222,9 @@ class Rat extends DataClass implements Insertable<Rat> {
       responsavelRecebimento: data.responsavelRecebimento.present
           ? data.responsavelRecebimento.value
           : this.responsavelRecebimento,
+      responsavelDocumento: data.responsavelDocumento.present
+          ? data.responsavelDocumento.value
+          : this.responsavelDocumento,
       dataVisita: data.dataVisita.present
           ? data.dataVisita.value
           : this.dataVisita,
@@ -2222,6 +2266,7 @@ class Rat extends DataClass implements Insertable<Rat> {
           ..write('numero: $numero, ')
           ..write('clienteNome: $clienteNome, ')
           ..write('responsavelRecebimento: $responsavelRecebimento, ')
+          ..write('responsavelDocumento: $responsavelDocumento, ')
           ..write('dataVisita: $dataVisita, ')
           ..write('horarioInicioAtendimento: $horarioInicioAtendimento, ')
           ..write('horarioTerminoAtendimento: $horarioTerminoAtendimento, ')
@@ -2249,6 +2294,7 @@ class Rat extends DataClass implements Insertable<Rat> {
     numero,
     clienteNome,
     responsavelRecebimento,
+    responsavelDocumento,
     dataVisita,
     horarioInicioAtendimento,
     horarioTerminoAtendimento,
@@ -2275,6 +2321,7 @@ class Rat extends DataClass implements Insertable<Rat> {
           other.numero == this.numero &&
           other.clienteNome == this.clienteNome &&
           other.responsavelRecebimento == this.responsavelRecebimento &&
+          other.responsavelDocumento == this.responsavelDocumento &&
           other.dataVisita == this.dataVisita &&
           other.horarioInicioAtendimento == this.horarioInicioAtendimento &&
           other.horarioTerminoAtendimento == this.horarioTerminoAtendimento &&
@@ -2299,6 +2346,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
   final Value<String> numero;
   final Value<String> clienteNome;
   final Value<String?> responsavelRecebimento;
+  final Value<String?> responsavelDocumento;
   final Value<DateTime?> dataVisita;
   final Value<String?> horarioInicioAtendimento;
   final Value<String?> horarioTerminoAtendimento;
@@ -2322,6 +2370,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     this.numero = const Value.absent(),
     this.clienteNome = const Value.absent(),
     this.responsavelRecebimento = const Value.absent(),
+    this.responsavelDocumento = const Value.absent(),
     this.dataVisita = const Value.absent(),
     this.horarioInicioAtendimento = const Value.absent(),
     this.horarioTerminoAtendimento = const Value.absent(),
@@ -2346,6 +2395,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     required String numero,
     required String clienteNome,
     this.responsavelRecebimento = const Value.absent(),
+    this.responsavelDocumento = const Value.absent(),
     this.dataVisita = const Value.absent(),
     this.horarioInicioAtendimento = const Value.absent(),
     this.horarioTerminoAtendimento = const Value.absent(),
@@ -2379,6 +2429,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     Expression<String>? numero,
     Expression<String>? clienteNome,
     Expression<String>? responsavelRecebimento,
+    Expression<String>? responsavelDocumento,
     Expression<DateTime>? dataVisita,
     Expression<String>? horarioInicioAtendimento,
     Expression<String>? horarioTerminoAtendimento,
@@ -2404,6 +2455,8 @@ class RatsCompanion extends UpdateCompanion<Rat> {
       if (clienteNome != null) 'cliente_nome': clienteNome,
       if (responsavelRecebimento != null)
         'responsavel_recebimento': responsavelRecebimento,
+      if (responsavelDocumento != null)
+        'responsavel_documento': responsavelDocumento,
       if (dataVisita != null) 'data_visita': dataVisita,
       if (horarioInicioAtendimento != null)
         'horario_inicio_atendimento': horarioInicioAtendimento,
@@ -2435,6 +2488,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     Value<String>? numero,
     Value<String>? clienteNome,
     Value<String?>? responsavelRecebimento,
+    Value<String?>? responsavelDocumento,
     Value<DateTime?>? dataVisita,
     Value<String?>? horarioInicioAtendimento,
     Value<String?>? horarioTerminoAtendimento,
@@ -2460,6 +2514,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
       clienteNome: clienteNome ?? this.clienteNome,
       responsavelRecebimento:
           responsavelRecebimento ?? this.responsavelRecebimento,
+      responsavelDocumento: responsavelDocumento ?? this.responsavelDocumento,
       dataVisita: dataVisita ?? this.dataVisita,
       horarioInicioAtendimento:
           horarioInicioAtendimento ?? this.horarioInicioAtendimento,
@@ -2510,6 +2565,11 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     if (responsavelRecebimento.present) {
       map['responsavel_recebimento'] = Variable<String>(
         responsavelRecebimento.value,
+      );
+    }
+    if (responsavelDocumento.present) {
+      map['responsavel_documento'] = Variable<String>(
+        responsavelDocumento.value,
       );
     }
     if (dataVisita.present) {
@@ -2576,6 +2636,7 @@ class RatsCompanion extends UpdateCompanion<Rat> {
           ..write('numero: $numero, ')
           ..write('clienteNome: $clienteNome, ')
           ..write('responsavelRecebimento: $responsavelRecebimento, ')
+          ..write('responsavelDocumento: $responsavelDocumento, ')
           ..write('dataVisita: $dataVisita, ')
           ..write('horarioInicioAtendimento: $horarioInicioAtendimento, ')
           ..write('horarioTerminoAtendimento: $horarioTerminoAtendimento, ')
@@ -4504,6 +4565,7 @@ typedef $$RatsTableCreateCompanionBuilder =
       required String numero,
       required String clienteNome,
       Value<String?> responsavelRecebimento,
+      Value<String?> responsavelDocumento,
       Value<DateTime?> dataVisita,
       Value<String?> horarioInicioAtendimento,
       Value<String?> horarioTerminoAtendimento,
@@ -4529,6 +4591,7 @@ typedef $$RatsTableUpdateCompanionBuilder =
       Value<String> numero,
       Value<String> clienteNome,
       Value<String?> responsavelRecebimento,
+      Value<String?> responsavelDocumento,
       Value<DateTime?> dataVisita,
       Value<String?> horarioInicioAtendimento,
       Value<String?> horarioTerminoAtendimento,
@@ -4595,6 +4658,11 @@ class $$RatsTableFilterComposer
 
   ColumnFilters<String> get responsavelRecebimento => $composableBuilder(
     column: $table.responsavelRecebimento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get responsavelDocumento => $composableBuilder(
+    column: $table.responsavelDocumento,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4713,6 +4781,11 @@ class $$RatsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get responsavelDocumento => $composableBuilder(
+    column: $table.responsavelDocumento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get dataVisita => $composableBuilder(
     column: $table.dataVisita,
     builder: (column) => ColumnOrderings(column),
@@ -4814,6 +4887,11 @@ class $$RatsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get responsavelDocumento => $composableBuilder(
+    column: $table.responsavelDocumento,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get dataVisita => $composableBuilder(
     column: $table.dataVisita,
     builder: (column) => column,
@@ -4902,6 +4980,7 @@ class $$RatsTableTableManager
                 Value<String> numero = const Value.absent(),
                 Value<String> clienteNome = const Value.absent(),
                 Value<String?> responsavelRecebimento = const Value.absent(),
+                Value<String?> responsavelDocumento = const Value.absent(),
                 Value<DateTime?> dataVisita = const Value.absent(),
                 Value<String?> horarioInicioAtendimento = const Value.absent(),
                 Value<String?> horarioTerminoAtendimento = const Value.absent(),
@@ -4925,6 +5004,7 @@ class $$RatsTableTableManager
                 numero: numero,
                 clienteNome: clienteNome,
                 responsavelRecebimento: responsavelRecebimento,
+                responsavelDocumento: responsavelDocumento,
                 dataVisita: dataVisita,
                 horarioInicioAtendimento: horarioInicioAtendimento,
                 horarioTerminoAtendimento: horarioTerminoAtendimento,
@@ -4950,6 +5030,7 @@ class $$RatsTableTableManager
                 required String numero,
                 required String clienteNome,
                 Value<String?> responsavelRecebimento = const Value.absent(),
+                Value<String?> responsavelDocumento = const Value.absent(),
                 Value<DateTime?> dataVisita = const Value.absent(),
                 Value<String?> horarioInicioAtendimento = const Value.absent(),
                 Value<String?> horarioTerminoAtendimento = const Value.absent(),
@@ -4973,6 +5054,7 @@ class $$RatsTableTableManager
                 numero: numero,
                 clienteNome: clienteNome,
                 responsavelRecebimento: responsavelRecebimento,
+                responsavelDocumento: responsavelDocumento,
                 dataVisita: dataVisita,
                 horarioInicioAtendimento: horarioInicioAtendimento,
                 horarioTerminoAtendimento: horarioTerminoAtendimento,

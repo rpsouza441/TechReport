@@ -65,6 +65,7 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
         numero: row['numero'] as String,
         clienteNome: row['cliente_nome'] as String,
         responsavelRecebimento: row['responsavel_recebimento'] as String?,
+        responsavelDocumento: row['responsavel_documento'] as String?,
         dataVisita: _parseDate(row['data_visita']),
         horarioInicioAtendimento: _parseTime(row['horario_inicio_atendimento']),
         horarioTerminoAtendimento: _parseTime(

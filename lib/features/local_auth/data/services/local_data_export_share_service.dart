@@ -84,6 +84,7 @@ class LocalDataExportShareService {
       'numero': rat.numero,
       'clienteNome': rat.clienteNome,
       'responsavelRecebimento': rat.responsavelRecebimento,
+      'responsavelDocumento': rat.responsavelDocumento,
       'dataVisita': rat.dataVisita?.toIso8601String(),
       'horarioInicioAtendimento': rat.horarioInicioAtendimento,
       'horarioTerminoAtendimento': rat.horarioTerminoAtendimento,

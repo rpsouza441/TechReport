@@ -46,6 +46,7 @@ class Rats extends Table {
   TextColumn get numero => text()();
   TextColumn get clienteNome => text()();
   TextColumn get responsavelRecebimento => text().nullable()();
+  TextColumn get responsavelDocumento => text().nullable()();
   DateTimeColumn get dataVisita => dateTime().nullable()();
   TextColumn get horarioInicioAtendimento => text().nullable()();
   TextColumn get horarioTerminoAtendimento => text().nullable()();
@@ -108,7 +109,7 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
       );
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -161,6 +162,13 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
           m,
           'equipamento_observacao',
           rats.equipamentoObservacao,
+        );
+      }
+      if (from >= 2 && from < 7) {
+        await _addRatColumnIfMissing(
+          m,
+          'responsavel_documento',
+          rats.responsavelDocumento,
         );
       }
     },

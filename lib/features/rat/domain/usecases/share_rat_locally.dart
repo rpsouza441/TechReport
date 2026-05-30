@@ -45,6 +45,7 @@ class ShareRatLocally {
 RAT: ${rat.numero}
 Cliente: ${rat.clienteNome}
 Responsável: ${rat.responsavelRecebimento ?? ratNotInformedLabel}
+Documento do responsável: ${rat.responsavelDocumento ?? ratNotInformedLabel}
 Data da visita: ${_formatDate(rat.dataVisita)}
 Início: ${rat.horarioInicioAtendimento ?? ratNotInformedLabel}
 Término: ${rat.horarioTerminoAtendimento ?? ratNotInformedLabel}
