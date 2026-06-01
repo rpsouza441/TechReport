@@ -16,7 +16,7 @@ create table if not exists public.tecnico_convites (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint tecnico_convites_papel_check
-    check (papel in ('gerente', 'tecnico')),
+    check (papel in ('admin_empresa', 'gerente', 'tecnico')),
   constraint tecnico_convites_status_check
     check (status in ('pending', 'accepted', 'expired', 'cancelled'))
 );
@@ -97,7 +97,7 @@ begin
     raise exception 'Informe o nome do convidado.';
   end if;
 
-  if v_papel not in ('gerente', 'tecnico') then
+  if v_papel not in ('admin_empresa', 'gerente', 'tecnico') then
     raise exception 'Papel inválido para convite.';
   end if;
 
@@ -123,7 +123,7 @@ begin
   end if;
 
   v_codigo := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
-  v_hash := encode(digest(v_codigo, 'sha256'), 'hex');
+  v_hash := encode(extensions.digest(v_codigo, 'sha256'), 'hex');
   v_expires_at := now() + interval '7 days';
 
   insert into public.tecnico_convites (
@@ -181,13 +181,59 @@ begin
     raise exception 'Sem permissão para cancelar convite.';
   end if;
 
-  update public.tecnico_convites
-  set
-    status = 'cancelled',
-    cancelled_at = now(),
-    updated_at = now()
+  delete from public.tecnico_convites
   where id = p_convite_id
     and status = 'pending';
+end;
+$$;
+
+create or replace function public.validate_tecnico_convite(
+  p_email text,
+  p_codigo text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_hash text;
+  v_convite public.tecnico_convites%rowtype;
+begin
+  v_hash := encode(extensions.digest(upper(trim(p_codigo)), 'sha256'), 'hex');
+
+  select *
+  into v_convite
+  from public.tecnico_convites c
+  where c.token_hash = v_hash
+  limit 1;
+
+  if v_convite.id is null then
+    raise exception 'Codigo de convite invalido.';
+  end if;
+
+  if v_convite.status <> 'pending' then
+    raise exception 'Convite nao esta pendente.';
+  end if;
+
+  if v_convite.expires_at <= now() then
+    update public.tecnico_convites
+    set status = 'expired', updated_at = now()
+    where id = v_convite.id;
+    raise exception 'Convite expirado.';
+  end if;
+
+  if lower(v_convite.email) <> lower(trim(p_email)) then
+    raise exception 'E-mail informado nao confere com o convite.';
+  end if;
+
+  return jsonb_build_object(
+    'convite_id', v_convite.id,
+    'email', v_convite.email,
+    'nome', v_convite.nome,
+    'papel', v_convite.papel,
+    'expires_at', v_convite.expires_at
+  );
 end;
 $$;
 
@@ -228,7 +274,7 @@ begin
     raise exception 'Usuário já vinculado a uma empresa.';
   end if;
 
-  v_hash := encode(digest(upper(trim(p_codigo)), 'sha256'), 'hex');
+  v_hash := encode(extensions.digest(upper(trim(p_codigo)), 'sha256'), 'hex');
 
   select *
   into v_convite
@@ -271,7 +317,7 @@ begin
     v_convite.email,
     v_convite.papel,
     true,
-    true
+    false
   )
   returning id into v_tecnico_id;
 
@@ -316,8 +362,9 @@ begin
     raise exception 'Sem permissão para alterar equipe.';
   end if;
 
-  if v_row.papel = 'admin_empresa' then
-    raise exception 'Não é permitido alterar admin da empresa por aqui.';
+  if v_row.papel = 'admin_empresa'
+     and not (select public.is_app_admin()) then
+    raise exception 'Somente admin global pode alterar admin da empresa.';
   end if;
 
   if v_row.user_id = (select auth.uid()) and p_ativo is false then
@@ -338,11 +385,13 @@ $$;
 
 revoke all on function public.create_tecnico_convite(text, text, text) from public;
 revoke all on function public.cancel_tecnico_convite(uuid) from public;
+revoke all on function public.validate_tecnico_convite(text, text) from public;
 revoke all on function public.accept_tecnico_convite(text) from public;
 revoke all on function public.update_tecnico_equipe(uuid, boolean, boolean) from public;
 
 grant execute on function public.create_tecnico_convite(text, text, text) to authenticated;
 grant execute on function public.cancel_tecnico_convite(uuid) to authenticated;
+grant execute on function public.validate_tecnico_convite(text, text) to anon, authenticated;
 grant execute on function public.accept_tecnico_convite(text) to authenticated;
 grant execute on function public.update_tecnico_equipe(uuid, boolean, boolean) to authenticated;
 
