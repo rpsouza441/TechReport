@@ -31,7 +31,12 @@ email e senha remotos e o app sincroniza RATs de forma local-first conforme a
 sessao e as permissoes remotas.
 
 Na etapa atual, o modo empresa ja cobre configuracao, login remoto, sessao
-remota, sync basico de RAT e isolamento por RLS para tecnico comum e gerente.
+remota, sync de RAT, central de sincronizacao, conta/perfil, logout com
+pendencias, administracao basica de papeis e isolamento por RLS.
+
+**Sprint atual (2026-05-30):** Sprint 8.2 — campo opcional de documento do
+responsavel na RAT e revisao de acentuacao PT-BR. Ver
+[estado-do-projeto.md](./estado-do-projeto.md) e [spec/README.md](./spec/README.md).
 
 ## Principios
 
