@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_empresa_resumo.dart';
+import 'package:techreport/features/company_admin/presentation/screens/app_admin_company_form_screen.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
@@ -17,10 +18,19 @@ class AppAdminArea extends StatefulWidget {
 }
 
 class _AppAdminAreaState extends State<AppAdminArea> {
+  final _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     widget.viewModel.load();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -28,9 +38,24 @@ class _AppAdminAreaState extends State<AppAdminArea> {
     return AnimatedBuilder(
       animation: widget.viewModel,
       builder: (context, _) {
-        return RefreshIndicator(
-          onRefresh: widget.viewModel.load,
-          child: _buildBody(context),
+        return Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: widget.viewModel.load,
+              child: _buildBody(context),
+            ),
+            Positioned(
+              right: MetricSlateSpacing.lg,
+              bottom: MetricSlateSpacing.lg,
+              child: FloatingActionButton.extended(
+                onPressed: widget.viewModel.isSubmitting
+                    ? null
+                    : _openCreateEmpresaScreen,
+                icon: const Icon(Icons.add_business_outlined),
+                label: const Text('Empresa'),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -42,44 +67,113 @@ class _AppAdminAreaState extends State<AppAdminArea> {
     }
 
     final errorMessage = widget.viewModel.errorMessage;
-    if (errorMessage != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-        children: [TechReportErrorBanner(message: errorMessage)],
-      );
-    }
+    final empresas = _filteredEmpresas();
 
-    if (widget.viewModel.empresas.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          TechReportStateView.empty(
-            title: 'Sem empresas',
-            message: 'Nenhuma empresa encontrada.',
-          ),
-        ],
-      );
-    }
-
-    return ListView.separated(
+    return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(MetricSlateSpacing.md),
-      itemCount: widget.viewModel.empresas.length,
-      separatorBuilder: (context, index) =>
+      padding: const EdgeInsets.fromLTRB(
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.md,
+        MetricSlateSpacing.md,
+        88,
+      ),
+      children: [
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            labelText: 'Pesquisar empresa',
+            prefixIcon: const Icon(Icons.search_outlined),
+            suffixIcon: _searchController.text.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: _searchController.clear,
+                    icon: const Icon(Icons.close_outlined),
+                    tooltip: 'Limpar',
+                  ),
+          ),
+        ),
+        const SizedBox(height: MetricSlateSpacing.md),
+        if (errorMessage != null) ...[
+          TechReportErrorBanner(message: errorMessage),
           const SizedBox(height: MetricSlateSpacing.sm),
-      itemBuilder: (context, index) {
-        final empresa = widget.viewModel.empresas[index];
-        return _EmpresaCard(empresa: empresa);
-      },
+        ],
+        if (widget.viewModel.empresas.isEmpty)
+          const TechReportStateView.empty(
+            title: 'Sem empresas',
+            message: 'Crie a primeira empresa pelo botao abaixo.',
+          )
+        else if (empresas.isEmpty)
+          const TechReportStateView.empty(
+            title: 'Nada encontrado',
+            message: 'Ajuste a pesquisa para ver empresas.',
+          )
+        else
+          for (final empresa in empresas) ...[
+            _EmpresaCard(
+              empresa: empresa,
+              isSubmitting: widget.viewModel.isSubmitting,
+              onInviteAdmin: () => _openInviteAdminScreen(empresa),
+              onToggleAtivo: (ativo) => widget.viewModel.setEmpresaAtiva(
+                empresa: empresa,
+                ativo: ativo,
+              ),
+            ),
+            const SizedBox(height: MetricSlateSpacing.sm),
+          ],
+      ],
+    );
+  }
+
+  List<AdminEmpresaResumo> _filteredEmpresas() {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return widget.viewModel.empresas;
+    }
+
+    return widget.viewModel.empresas
+        .where((empresa) => empresa.nome.toLowerCase().contains(query))
+        .toList();
+  }
+
+  Future<void> _openCreateEmpresaScreen() async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            AppAdminCreateCompanyScreen(viewModel: widget.viewModel),
+      ),
+    );
+
+    if (!mounted || created != true) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Empresa criada.')));
+  }
+
+  Future<void> _openInviteAdminScreen(AdminEmpresaResumo empresa) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AppAdminInviteCompanyAdminScreen(
+          viewModel: widget.viewModel,
+          empresa: empresa,
+        ),
+      ),
     );
   }
 }
 
 class _EmpresaCard extends StatelessWidget {
-  const _EmpresaCard({required this.empresa});
+  const _EmpresaCard({
+    required this.empresa,
+    required this.isSubmitting,
+    required this.onInviteAdmin,
+    required this.onToggleAtivo,
+  });
 
   final AdminEmpresaResumo empresa;
+  final bool isSubmitting;
+  final VoidCallback onInviteAdmin;
+  final ValueChanged<bool> onToggleAtivo;
 
   @override
   Widget build(BuildContext context) {
@@ -109,11 +203,46 @@ class _EmpresaCard extends StatelessWidget {
               ],
             ),
           ),
-          TechReportStatusChip(
-            label: empresa.ativo ? 'Ativa' : 'Inativa',
-            tone: empresa.ativo
-                ? TechReportStatusTone.success
-                : TechReportStatusTone.neutral,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              TechReportStatusChip(
+                label: empresa.ativo ? 'Ativa' : 'Inativa',
+                tone: empresa.ativo
+                    ? TechReportStatusTone.success
+                    : TechReportStatusTone.neutral,
+              ),
+              const SizedBox(height: MetricSlateSpacing.xxs),
+              PopupMenuButton<String>(
+                enabled: !isSubmitting,
+                onSelected: (value) {
+                  switch (value) {
+                    case 'invite_admin':
+                      onInviteAdmin();
+                    case 'activate':
+                      onToggleAtivo(true);
+                    case 'deactivate':
+                      onToggleAtivo(false);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'invite_admin',
+                    child: Text('Convidar admin'),
+                  ),
+                  if (!empresa.ativo)
+                    const PopupMenuItem(
+                      value: 'activate',
+                      child: Text('Ativar'),
+                    ),
+                  if (empresa.ativo)
+                    const PopupMenuItem(
+                      value: 'deactivate',
+                      child: Text('Inativar'),
+                    ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

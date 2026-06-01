@@ -1,9 +1,12 @@
 import 'package:techreport/features/company_admin/data/repositories/supabase_company_admin_repository.dart';
 import 'package:techreport/features/company_admin/domain/usecases/cancel_tecnico_convite.dart';
+import 'package:techreport/features/company_admin/domain/usecases/create_admin_empresa.dart';
+import 'package:techreport/features/company_admin/domain/usecases/create_empresa_convite.dart';
 import 'package:techreport/features/company_admin/domain/usecases/create_tecnico_convite.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_convites.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_empresas.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
+import 'package:techreport/features/company_admin/domain/usecases/update_admin_empresa.dart';
 import 'package:techreport/features/company_admin/domain/usecases/update_tecnico_equipe.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
@@ -71,6 +74,9 @@ class AppScope {
     required this.remoteEndpointRepository,
     required this.supabaseClientFactory,
     required this.listAdminEmpresas,
+    required this.createAdminEmpresa,
+    required this.createEmpresaConvite,
+    required this.updateAdminEmpresa,
     required this.listAdminTecnicos,
     required this.listAdminConvites,
     required this.createTecnicoConvite,
@@ -135,6 +141,9 @@ class AppScope {
     );
 
     final listAdminEmpresas = ListAdminEmpresas(companyAdminRepository);
+    final createAdminEmpresa = CreateAdminEmpresa(companyAdminRepository);
+    final createEmpresaConvite = CreateEmpresaConvite(companyAdminRepository);
+    final updateAdminEmpresa = UpdateAdminEmpresa(companyAdminRepository);
     final listAdminTecnicos = ListAdminTecnicos(companyAdminRepository);
     final listAdminConvites = ListAdminConvites(companyAdminRepository);
     final createTecnicoConvite = CreateTecnicoConvite(companyAdminRepository);
@@ -223,6 +232,9 @@ class AppScope {
       remoteEndpointRepository: remoteEndpointRepository,
       supabaseClientFactory: supabaseClientFactory,
       listAdminEmpresas: listAdminEmpresas,
+      createAdminEmpresa: createAdminEmpresa,
+      createEmpresaConvite: createEmpresaConvite,
+      updateAdminEmpresa: updateAdminEmpresa,
       listAdminTecnicos: listAdminTecnicos,
       listAdminConvites: listAdminConvites,
       createTecnicoConvite: createTecnicoConvite,
@@ -263,6 +275,9 @@ class AppScope {
   final LocalRemoteEndpointRepository remoteEndpointRepository;
   final SupabaseClientFactory supabaseClientFactory;
   final ListAdminEmpresas listAdminEmpresas;
+  final CreateAdminEmpresa createAdminEmpresa;
+  final CreateEmpresaConvite createEmpresaConvite;
+  final UpdateAdminEmpresa updateAdminEmpresa;
   final ListAdminTecnicos listAdminTecnicos;
   final ListAdminConvites listAdminConvites;
   final CreateTecnicoConvite createTecnicoConvite;

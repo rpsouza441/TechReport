@@ -271,6 +271,9 @@ class _CompanyShellState extends State<CompanyShell> {
         return AppAdminArea(
           viewModel: AppAdminViewModel(
             listEmpresas: widget.scope.listAdminEmpresas,
+            createEmpresa: widget.scope.createAdminEmpresa,
+            createEmpresaConvite: widget.scope.createEmpresaConvite,
+            updateEmpresa: widget.scope.updateAdminEmpresa,
           ),
         );
     }

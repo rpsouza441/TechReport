@@ -56,23 +56,25 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<CreateTecnicoConviteResult> createConvite({
+    required String email,
+    required String nome,
+    required AdminTecnicoPapel papel,
+  }) async {
+    return _createTecnicoConvite(email: email, nome: nome, papel: papel);
+  }
+
   Future<CreateTecnicoConviteResult?> inviteMember({
     required String email,
     required String nome,
     required AdminTecnicoPapel papel,
   }) async {
-    if (papel == AdminTecnicoPapel.adminEmpresa) {
-      errorMessage = 'Convites só podem ser gerente ou técnico.';
-      notifyListeners();
-      return null;
-    }
-
     isSubmitting = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      final result = await _createTecnicoConvite(
+      final result = await createConvite(
         email: email,
         nome: nome,
         papel: papel,
@@ -180,9 +182,9 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     }
 
     if (message.contains('StateError')) {
-      return 'Não foi possível carregar a equipe.';
+      return message.replaceFirst('Bad state: ', '');
     }
 
-    return 'Não foi possível concluir a operação.';
+    return message.replaceFirst('Exception: ', '');
   }
 }

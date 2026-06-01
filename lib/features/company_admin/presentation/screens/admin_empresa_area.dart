@@ -3,6 +3,7 @@ import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/admin_empresa_view_model.dart';
+import 'package:techreport/features/company_admin/presentation/screens/company_invite_member_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
@@ -50,7 +51,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
               child: FloatingActionButton.extended(
                 onPressed: widget.viewModel.isSubmitting
                     ? null
-                    : _openInviteDialog,
+                    : _openInviteScreen,
                 icon: const Icon(Icons.person_add_outlined),
                 label: const Text('Convidar'),
               ),
@@ -59,6 +60,48 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
         );
       },
     );
+  }
+
+  Future<void> _openInviteScreen() async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CompanyInviteMemberScreen(viewModel: widget.viewModel),
+      ),
+    );
+
+    if (!mounted || created != true) {
+      return;
+    }
+
+    await widget.viewModel.load();
+  }
+
+  Future<void> _confirmDeleteConvite(String conviteId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Excluir convite pendente?'),
+          content: const Text(
+            'O convite sera removido e o e-mail ficara livre para um novo convite.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await widget.viewModel.cancelInvite(conviteId);
+    }
   }
 
   Widget _buildBody(BuildContext context) {
@@ -97,7 +140,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
               convite: convite,
               onCancel: widget.viewModel.isSubmitting
                   ? null
-                  : () => widget.viewModel.cancelInvite(convite.id),
+                  : () => _confirmDeleteConvite(convite.id),
             ),
             const SizedBox(height: MetricSlateSpacing.sm),
           ],
@@ -134,22 +177,44 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
     );
   }
 
+  // Legacy dialog kept only as rollback reference while Sprint 8.5 migrates to
+  // the dedicated invite screen.
+  // ignore: unused_element
   Future<void> _openInviteDialog() async {
     final nomeController = TextEditingController();
     final emailController = TextEditingController();
     var papel = AdminTecnicoPapel.tecnico;
+    String? dialogError;
 
     final result = await showDialog<CreateTecnicoConviteResult?>(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setDialogState) {
             return AlertDialog(
               title: const Text('Convidar membro'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(
+                      'O convite não cria usuário no Supabase Auth. '
+                      'Primeiro gere o código; depois o convidado entra com '
+                      'e-mail, senha e código em "Aceitar convite".',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: MetricSlateSpacing.sm),
+                    if (dialogError != null) ...[
+                      Text(
+                        dialogError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      const SizedBox(height: MetricSlateSpacing.sm),
+                    ],
                     MetricSlateTextField(
                       controller: nomeController,
                       label: 'Nome',
@@ -162,6 +227,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                     ),
                     const SizedBox(height: MetricSlateSpacing.sm),
                     DropdownButtonFormField<AdminTecnicoPapel>(
+                      key: ValueKey(papel),
                       initialValue: papel,
                       decoration: const InputDecoration(
                         labelText: 'Papel inicial',
@@ -178,7 +244,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                       ],
                       onChanged: (value) {
                         if (value != null) {
-                          setState(() => papel = value);
+                          setDialogState(() => papel = value);
                         }
                       },
                     ),
@@ -192,13 +258,41 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                 ),
                 FilledButton(
                   onPressed: () async {
-                    final inviteResult = await widget.viewModel.inviteMember(
-                      email: emailController.text.trim(),
-                      nome: nomeController.text.trim(),
-                      papel: papel,
-                    );
-                    if (dialogContext.mounted) {
-                      Navigator.of(dialogContext).pop(inviteResult);
+                    final nome = nomeController.text.trim();
+                    final email = emailController.text.trim();
+
+                    if (nome.isEmpty) {
+                      setDialogState(
+                        () => dialogError = 'Informe o nome do convidado.',
+                      );
+                      return;
+                    }
+
+                    if (email.isEmpty || !email.contains('@')) {
+                      setDialogState(
+                        () => dialogError = 'Informe um e-mail válido.',
+                      );
+                      return;
+                    }
+
+                    setDialogState(() => dialogError = null);
+
+                    try {
+                      final inviteResult = await widget.viewModel.createConvite(
+                        email: email,
+                        nome: nome,
+                        papel: papel,
+                      );
+                      if (dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop(inviteResult);
+                      }
+                    } catch (error) {
+                      if (!dialogContext.mounted) {
+                        return;
+                      }
+                      setDialogState(
+                        () => dialogError = _inviteErrorMessage(error),
+                      );
                     }
                   },
                   child: const Text('Gerar convite'),
@@ -210,10 +304,17 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
       },
     );
 
+    final invitedEmail = emailController.text.trim();
     nomeController.dispose();
     emailController.dispose();
 
     if (!mounted || result == null) {
+      return;
+    }
+
+    await widget.viewModel.load();
+
+    if (!mounted) {
       return;
     }
 
@@ -225,8 +326,12 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
           content: SelectableText(
             'Código: ${result.codigoConvite}\n\n'
             'Válido até ${_formatDateTime(result.expiresAt)}.\n\n'
-            'Envie este código ao convidado. Ele deve entrar com o e-mail '
-            'convidado, senha e código em "Aceitar convite".',
+            '1. Crie o usuário $invitedEmail '
+            'no Supabase Auth (Authentication) com o mesmo e-mail, se ainda não existir.\n'
+            '2. Envie o código ao convidado.\n'
+            '3. No app: login → "Aceitar convite da empresa".\n\n'
+            'Até aceitar o convite, não haverá linha em public.tecnicos — '
+            'apenas em public.tecnico_convites.',
           ),
           actions: [
             FilledButton(
@@ -237,6 +342,35 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
         );
       },
     );
+  }
+
+  String _inviteErrorMessage(Object error) {
+    final message = error.toString();
+    const prefix = 'PostgrestException(message: ';
+    if (message.contains(prefix)) {
+      final start = message.indexOf(prefix) + prefix.length;
+      final end = message.indexOf(',', start);
+      if (end > start) {
+        return message.substring(start, end);
+      }
+    }
+
+    if (message.contains('digest(') || message.contains('function digest')) {
+      return 'Extensão pgcrypto indisponível na RPC. '
+          'Execute a migration 0010_fix_tecnico_convites_digest.sql no Supabase.';
+    }
+
+    if (message.contains('Could not find the function')) {
+      return 'RPC create_tecnico_convite não encontrada. '
+          'Aplique a migration 0009_tecnico_convites_equipe.sql no Supabase.';
+    }
+
+    if (message.contains('tecnico_convites')) {
+      return 'Tabela tecnico_convites não encontrada. '
+          'Aplique a migration 0009 no Supabase.';
+    }
+
+    return widget.viewModel.errorMessage ?? 'Não foi possível gerar o convite.';
   }
 
   String _formatDateTime(DateTime value) {

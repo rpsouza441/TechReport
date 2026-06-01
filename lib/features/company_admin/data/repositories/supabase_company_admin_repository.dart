@@ -24,13 +24,36 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
   }
 
   @override
+  Future<void> createEmpresa({required String nome}) async {
+    final client = await _requireClient();
+    await client.from('empresas').insert({'nome': nome.trim()});
+  }
+
+  @override
+  Future<void> updateEmpresa({
+    required String empresaId,
+    required bool ativo,
+  }) async {
+    final client = await _requireClient();
+    await client
+        .from('empresas')
+        .update({
+          'ativo': ativo,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', empresaId);
+  }
+
+  @override
   Future<List<AdminTecnicoResumo>> listTecnicos({
     required String empresaId,
   }) async {
     final client = await _requireClient();
     final rows = await client
         .from('tecnicos')
-        .select('id, empresa_id, nome, email, papel, ativo, must_change_password')
+        .select(
+          'id, empresa_id, nome, email, papel, ativo, must_change_password',
+        )
         .eq('empresa_id', empresaId)
         .order('nome');
 
@@ -72,6 +95,35 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
 
     if (response is! Map<String, dynamic>) {
       throw StateError('Resposta inválida ao criar convite.');
+    }
+
+    return CreateTecnicoConviteResult(
+      conviteId: response['convite_id'] as String,
+      codigoConvite: response['codigo_convite'] as String,
+      expiresAt: DateTime.parse(response['expires_at'] as String),
+    );
+  }
+
+  @override
+  Future<CreateTecnicoConviteResult> createEmpresaConvite({
+    required String empresaId,
+    required String email,
+    required String nome,
+    required AdminTecnicoPapel papel,
+  }) async {
+    final client = await _requireClient();
+    final response = await client.rpc(
+      'create_empresa_convite',
+      params: {
+        'p_empresa_id': empresaId,
+        'p_email': email.trim(),
+        'p_nome': nome.trim(),
+        'p_papel': _papelToRemote(papel),
+      },
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw StateError('Resposta invalida ao criar convite.');
     }
 
     return CreateTecnicoConviteResult(
