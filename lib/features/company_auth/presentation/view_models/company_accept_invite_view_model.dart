@@ -12,21 +12,25 @@ class CompanyAcceptInviteViewModel extends ChangeNotifier {
   bool isSubmitting = false;
   String? errorMessage;
   SessaoRemota? session;
+  bool pendingEmailConfirmation = false;
 
   Future<bool> submit({
     required String email,
     required String password,
     required String codigoConvite,
+    required bool createAccount,
   }) async {
     isSubmitting = true;
     errorMessage = null;
     session = null;
+    pendingEmailConfirmation = false;
     notifyListeners();
 
     final result = await _signInCompanyWithInvite(
       email: email,
       password: password,
       codigoConvite: codigoConvite,
+      createAccount: createAccount,
     );
 
     isSubmitting = false;
@@ -35,6 +39,13 @@ class CompanyAcceptInviteViewModel extends ChangeNotifier {
       session = result.session;
       notifyListeners();
       return true;
+    }
+
+    if (result.pendingEmailConfirmation) {
+      pendingEmailConfirmation = true;
+      errorMessage = null;
+      notifyListeners();
+      return false;
     }
 
     errorMessage = result.errorMessage;

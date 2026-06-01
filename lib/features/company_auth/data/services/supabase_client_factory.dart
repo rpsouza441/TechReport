@@ -57,6 +57,10 @@ class SupabaseClientFactory {
       return null;
     }
 
-    return SupabaseClient(endpoint.supabaseUrl, publicKey);
+    return SupabaseClient(
+      endpoint.supabaseUrl,
+      publicKey,
+      authOptions: const AuthClientOptions(authFlowType: AuthFlowType.implicit),
+    );
   }
 }

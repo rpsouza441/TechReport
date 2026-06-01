@@ -53,20 +53,27 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     }
 
-    final remoteSession = await buildRemoteSession(
-      client: client,
-      session: session,
-      user: user,
-    );
+    try {
+      await _acceptPendingInviteIfAny(client: client, user: user);
 
-    await _tokenStore.saveTokens(
-      accessToken: session.accessToken,
-      refreshToken: refreshToken,
-    );
+      final remoteSession = await buildRemoteSession(
+        client: client,
+        session: session,
+        user: user,
+      );
 
-    await _remoteSessionRepository.saveSession(remoteSession);
+      await _tokenStore.saveTokens(
+        accessToken: session.accessToken,
+        refreshToken: refreshToken,
+      );
 
-    return remoteSession;
+      await _remoteSessionRepository.saveSession(remoteSession);
+
+      return remoteSession;
+    } catch (_) {
+      await _clearRemoteState(client);
+      rethrow;
+    }
   }
 
   @override
@@ -104,30 +111,119 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     }
 
-    await _tokenStore.saveTokens(
-      accessToken: session.accessToken,
-      refreshToken: refreshToken,
-    );
+    try {
+      await _tokenStore.saveTokens(
+        accessToken: session.accessToken,
+        refreshToken: refreshToken,
+      );
+
+      try {
+        await client.rpc(
+          'accept_tecnico_convite',
+          params: {'p_codigo': codigoConvite.trim()},
+        );
+      } on PostgrestException catch (e) {
+        if (!_isAlreadyLinkedMessage(e.message) &&
+            !_isInviteAlreadyConsumedMessage(e.message)) {
+          throw RemoteAuthException(e.message);
+        }
+      }
+      await _tokenStore.clearPendingInvite();
+
+      final remoteSession = await buildRemoteSession(
+        client: client,
+        session: session,
+        user: user,
+      );
+
+      await _remoteSessionRepository.saveSession(remoteSession);
+
+      return remoteSession;
+    } catch (_) {
+      await _clearRemoteState(client);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SessaoRemota> signUpWithInvite({
+    required String email,
+    required String password,
+    required String codigoConvite,
+  }) async {
+    final client = await requireClient();
 
     try {
       await client.rpc(
-        'accept_tecnico_convite',
-        params: {'p_codigo': codigoConvite.trim()},
+        'validate_tecnico_convite',
+        params: {'p_email': email.trim(), 'p_codigo': codigoConvite.trim()},
       );
     } on PostgrestException catch (e) {
-      await _tokenStore.clearTokens();
       throw RemoteAuthException(e.message);
     }
 
-    final remoteSession = await buildRemoteSession(
-      client: client,
-      session: session,
-      user: user,
-    );
+    final AuthResponse response;
+    try {
+      response = await client.auth.signUp(
+        email: email.trim(),
+        password: password,
+      );
+    } on AuthApiException catch (e) {
+      throw mapAuthException(e);
+    }
 
-    await _remoteSessionRepository.saveSession(remoteSession);
+    final session = response.session;
+    final user = response.user;
 
-    return remoteSession;
+    if (session == null || user == null) {
+      await _tokenStore.savePendingInvite(
+        email: email,
+        codigoConvite: codigoConvite,
+      );
+      throw const RemoteAuthException(
+        'Conta criada. Confirme o e-mail e depois entre por "Aceitar convite".',
+      );
+    }
+
+    final refreshToken = session.refreshToken;
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw const RemoteAuthException(
+        'Refresh token remoto nÃ£o foi retornado.',
+      );
+    }
+
+    try {
+      await _tokenStore.saveTokens(
+        accessToken: session.accessToken,
+        refreshToken: refreshToken,
+      );
+
+      try {
+        await client.rpc(
+          'accept_tecnico_convite',
+          params: {'p_codigo': codigoConvite.trim()},
+        );
+      } on PostgrestException catch (e) {
+        if (!_isAlreadyLinkedMessage(e.message) &&
+            !_isInviteAlreadyConsumedMessage(e.message)) {
+          throw RemoteAuthException(e.message);
+        }
+      }
+      await _tokenStore.clearPendingInvite();
+
+      final remoteSession = await buildRemoteSession(
+        client: client,
+        session: session,
+        user: user,
+      );
+
+      await _remoteSessionRepository.saveSession(remoteSession);
+
+      return remoteSession;
+    } catch (_) {
+      await _clearRemoteState(client);
+      rethrow;
+    }
   }
 
   @override
@@ -262,6 +358,73 @@ class SupabaseAuthRepository implements AuthRepository {
     }
 
     return client;
+  }
+
+  Future<void> _clearRemoteState(SupabaseClient client) async {
+    try {
+      await client.auth.signOut();
+    } catch (_) {
+      // Best effort: local state is the important part here.
+    }
+
+    await _tokenStore.clearTokens();
+    await _remoteSessionRepository.deleteSession();
+  }
+
+  Future<void> _acceptPendingInviteIfAny({
+    required SupabaseClient client,
+    required User user,
+  }) async {
+    final pendingInvite = await _tokenStore.readPendingInvite();
+    if (pendingInvite == null) {
+      return;
+    }
+
+    final userEmail = user.email?.trim().toLowerCase();
+    if (userEmail == null || userEmail != pendingInvite.email) {
+      return;
+    }
+
+    final age = DateTime.now().difference(pendingInvite.createdAt);
+    if (age > const Duration(days: 7)) {
+      await _tokenStore.clearPendingInvite();
+      return;
+    }
+
+    try {
+      await client.rpc(
+        'accept_tecnico_convite',
+        params: {'p_codigo': pendingInvite.codigoConvite},
+      );
+      await _tokenStore.clearPendingInvite();
+    } on PostgrestException catch (e) {
+      final message = e.message.toLowerCase();
+      if (message.contains('expirado') ||
+          message.contains('cancel') ||
+          message.contains('invalido') ||
+          message.contains('inválido') ||
+          _isAlreadyLinkedMessage(message) ||
+          _isInviteAlreadyConsumedMessage(message)) {
+        await _tokenStore.clearPendingInvite();
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  bool _isAlreadyLinkedMessage(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('ja vinculado') ||
+        normalized.contains('já vinculado') ||
+        normalized.contains('vinculado a uma empresa');
+  }
+
+  bool _isInviteAlreadyConsumedMessage(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('convite nao esta pendente') ||
+        normalized.contains('convite não está pendente') ||
+        normalized.contains('convite ja aceito') ||
+        normalized.contains('convite já aceito');
   }
 
   RemoteAuthException mapAuthException(AuthApiException exception) {

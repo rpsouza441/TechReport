@@ -21,13 +21,20 @@ class SignInCompanyWithInvite {
     required String email,
     required String password,
     required String codigoConvite,
+    bool createAccount = false,
   }) async {
     try {
-      final session = await _authRepository.signInWithInvite(
-        email: email,
-        password: password,
-        codigoConvite: codigoConvite,
-      );
+      final session = createAccount
+          ? await _authRepository.signUpWithInvite(
+              email: email,
+              password: password,
+              codigoConvite: codigoConvite,
+            )
+          : await _authRepository.signInWithInvite(
+              email: email,
+              password: password,
+              codigoConvite: codigoConvite,
+            );
 
       await _remoteSessionRepository.saveSession(session);
 
@@ -37,6 +44,11 @@ class SignInCompanyWithInvite {
 
       return SignInCompanyWithInviteResult.success(session);
     } catch (e) {
+      final message = _friendlyMessage(e);
+      if (message.contains('Conta criada. Confirme o e-mail')) {
+        return SignInCompanyWithInviteResult.pendingEmailConfirmation(message);
+      }
+
       return SignInCompanyWithInviteResult.failure(_friendlyMessage(e));
     }
   }
@@ -52,6 +64,11 @@ class SignInCompanyWithInvite {
       }
     }
 
+    if (message.contains('asyncStorage') || message.contains('pkce')) {
+      return 'Nao foi possivel iniciar a criacao da conta. '
+          'Atualize o app e tente novamente.';
+    }
+
     return message.replaceFirst('RemoteAuthException: ', '');
   }
 }
@@ -59,6 +76,7 @@ class SignInCompanyWithInvite {
 class SignInCompanyWithInviteResult {
   const SignInCompanyWithInviteResult._({
     required this.success,
+    this.pendingEmailConfirmation = false,
     this.session,
     this.errorMessage,
   });
@@ -66,10 +84,18 @@ class SignInCompanyWithInviteResult {
   const SignInCompanyWithInviteResult.success(SessaoRemota session)
     : this._(success: true, session: session);
 
+  const SignInCompanyWithInviteResult.pendingEmailConfirmation(String message)
+    : this._(
+        success: false,
+        pendingEmailConfirmation: true,
+        errorMessage: message,
+      );
+
   const SignInCompanyWithInviteResult.failure(String errorMessage)
     : this._(success: false, errorMessage: errorMessage);
 
   final bool success;
+  final bool pendingEmailConfirmation;
   final SessaoRemota? session;
   final String? errorMessage;
 }
