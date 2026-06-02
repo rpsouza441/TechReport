@@ -11,6 +11,7 @@ class AdminEmpresaViewModel extends ChangeNotifier {
   AdminEmpresaViewModel({
     required this.empresaId,
     required this.currentTecnicoId,
+    required this.currentPapel,
     required ListAdminTecnicos listTecnicos,
     required ListAdminConvites listConvites,
     required CreateTecnicoConvite createTecnicoConvite,
@@ -24,6 +25,7 @@ class AdminEmpresaViewModel extends ChangeNotifier {
 
   final String empresaId;
   final String? currentTecnicoId;
+  final AdminTecnicoPapel currentPapel;
   final ListAdminTecnicos _listTecnicos;
   final ListAdminConvites _listConvites;
   final CreateTecnicoConvite _createTecnicoConvite;
@@ -35,6 +37,26 @@ class AdminEmpresaViewModel extends ChangeNotifier {
   String? errorMessage;
   List<AdminTecnicoResumo> tecnicos = [];
   List<AdminConviteResumo> convites = [];
+
+  bool get canInviteMembers =>
+      currentPapel == AdminTecnicoPapel.adminEmpresa ||
+      currentPapel == AdminTecnicoPapel.gerente;
+
+  List<AdminTecnicoPapel> get allowedInvitePapeis {
+    if (currentPapel == AdminTecnicoPapel.adminEmpresa) {
+      return const [
+        AdminTecnicoPapel.adminEmpresa,
+        AdminTecnicoPapel.gerente,
+        AdminTecnicoPapel.tecnico,
+      ];
+    }
+
+    if (currentPapel == AdminTecnicoPapel.gerente) {
+      return const [AdminTecnicoPapel.tecnico];
+    }
+
+    return const [];
+  }
 
   Future<void> load() async {
     isLoading = true;
@@ -61,6 +83,10 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     required String nome,
     required AdminTecnicoPapel papel,
   }) async {
+    if (!allowedInvitePapeis.contains(papel)) {
+      throw StateError('Sem permissao para convidar este papel.');
+    }
+
     return _createTecnicoConvite(email: email, nome: nome, papel: papel);
   }
 
@@ -114,7 +140,7 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     required AdminTecnicoResumo tecnico,
     required bool ativo,
   }) async {
-    if (tecnico.papel == AdminTecnicoPapel.adminEmpresa) {
+    if (!canManageTecnico(tecnico)) {
       return false;
     }
 
@@ -140,7 +166,7 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     required AdminTecnicoResumo tecnico,
     required bool mustChangePassword,
   }) async {
-    if (tecnico.papel == AdminTecnicoPapel.adminEmpresa) {
+    if (!canManageTecnico(tecnico)) {
       return false;
     }
 
@@ -166,8 +192,19 @@ class AdminEmpresaViewModel extends ChangeNotifier {
   }
 
   bool canManageTecnico(AdminTecnicoResumo tecnico) {
-    return tecnico.papel != AdminTecnicoPapel.adminEmpresa &&
-        tecnico.id != currentTecnicoId;
+    if (tecnico.id == currentTecnicoId) {
+      return false;
+    }
+
+    if (currentPapel == AdminTecnicoPapel.adminEmpresa) {
+      return tecnico.papel != AdminTecnicoPapel.adminEmpresa;
+    }
+
+    if (currentPapel == AdminTecnicoPapel.gerente) {
+      return tecnico.papel == AdminTecnicoPapel.tecnico;
+    }
+
+    return false;
   }
 
   String _friendlyError(Object error) {

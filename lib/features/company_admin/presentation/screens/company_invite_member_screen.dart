@@ -24,12 +24,15 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
-  AdminTecnicoPapel _papel = AdminTecnicoPapel.tecnico;
+  late AdminTecnicoPapel _papel;
   bool _isSubmitting = false;
   String? _errorMessage;
   CreateTecnicoConviteResult? _result;
 
   String get _email => _emailController.text.trim();
+
+  List<AdminTecnicoPapel> get _allowedPapeis =>
+      widget.viewModel.allowedInvitePapeis;
 
   String get _inviteLink {
     final code = _result?.codigoConvite ?? '';
@@ -48,6 +51,14 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _papel = _allowedPapeis.contains(AdminTecnicoPapel.tecnico)
+        ? AdminTecnicoPapel.tecnico
+        : _allowedPapeis.first;
+  }
+
+  @override
   void dispose() {
     _nomeController.dispose();
     _emailController.dispose();
@@ -58,22 +69,44 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
   Widget build(BuildContext context) {
     final result = _result;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(result == null ? 'Novo convite' : 'Convite criado'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: result == null ? _buildForm(context) : _buildSuccess(),
+    return PopScope<bool>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          return;
+        }
+        _close();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: _isSubmitting ? null : _close,
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Voltar',
+          ),
+          title: Text(result == null ? 'Novo convite' : 'Convite criado'),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: result == null ? _buildForm(context) : _buildSuccess(),
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _close() {
+    if (_isSubmitting) {
+      return;
+    }
+
+    Navigator.of(context).pop(_result != null);
   }
 
   Widget _buildForm(BuildContext context) {
@@ -105,19 +138,12 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
             DropdownButtonFormField<AdminTecnicoPapel>(
               initialValue: _papel,
               decoration: const InputDecoration(labelText: 'Papel'),
-              items: const [
-                DropdownMenuItem(
-                  value: AdminTecnicoPapel.adminEmpresa,
-                  child: Text('Admin da empresa'),
-                ),
-                DropdownMenuItem(
-                  value: AdminTecnicoPapel.gerente,
-                  child: Text('Gerente'),
-                ),
-                DropdownMenuItem(
-                  value: AdminTecnicoPapel.tecnico,
-                  child: Text('Tecnico'),
-                ),
+              items: [
+                for (final papel in _allowedPapeis)
+                  DropdownMenuItem(
+                    value: papel,
+                    child: Text(_papelLabel(papel)),
+                  ),
               ],
               onChanged: _isSubmitting
                   ? null
@@ -186,7 +212,7 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
           ),
           const SizedBox(height: MetricSlateSpacing.lg),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: _close,
             child: const Text('Voltar para equipe'),
           ),
         ],
@@ -259,9 +285,17 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
     }
 
     if (message.contains('Could not find the function')) {
-      return 'Fluxo de convites indisponivel. Aplique as migrations 0009 a 0011.';
+      return 'Fluxo de convites indisponivel. Aplique as migrations 0009 a 0014.';
     }
 
     return 'Nao foi possivel gerar o convite.';
+  }
+
+  String _papelLabel(AdminTecnicoPapel papel) {
+    return switch (papel) {
+      AdminTecnicoPapel.adminEmpresa => 'Admin da empresa',
+      AdminTecnicoPapel.gerente => 'Gerente',
+      AdminTecnicoPapel.tecnico => 'Tecnico',
+    };
   }
 }

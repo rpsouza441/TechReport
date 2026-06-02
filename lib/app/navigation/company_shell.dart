@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/di/app_scope.dart';
+import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/presentation/screens/admin_empresa_area.dart';
 import 'package:techreport/features/company_admin/presentation/screens/app_admin_area.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/admin_empresa_view_model.dart';
@@ -239,7 +240,8 @@ class _CompanyShellState extends State<CompanyShell> {
     return [
       if (session.hasCompanyContext) CompanyArea.rats,
       CompanyArea.profile,
-      if (session.hasCompanyContext && session.isAdminEmpresa)
+      if (session.hasCompanyContext &&
+          (session.isAdminEmpresa || session.isGerente))
         CompanyArea.adminEmpresa,
       if (session.isAppAdmin) CompanyArea.appAdmin,
     ];
@@ -260,6 +262,7 @@ class _CompanyShellState extends State<CompanyShell> {
           viewModel: AdminEmpresaViewModel(
             empresaId: widget.session.empresaId!,
             currentTecnicoId: widget.session.tecnicoId,
+            currentPapel: _adminPapelFor(widget.session),
             listTecnicos: widget.scope.listAdminTecnicos,
             listConvites: widget.scope.listAdminConvites,
             createTecnicoConvite: widget.scope.createTecnicoConvite,
@@ -277,6 +280,14 @@ class _CompanyShellState extends State<CompanyShell> {
           ),
         );
     }
+  }
+
+  AdminTecnicoPapel _adminPapelFor(SessaoRemota session) {
+    return switch (session.papelEmpresa) {
+      SessaoRemotaPapelEmpresa.adminEmpresa => AdminTecnicoPapel.adminEmpresa,
+      SessaoRemotaPapelEmpresa.gerente => AdminTecnicoPapel.gerente,
+      _ => AdminTecnicoPapel.tecnico,
+    };
   }
 
   Widget _buildRatsArea() {

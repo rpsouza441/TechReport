@@ -38,7 +38,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
               onRefresh: widget.viewModel.load,
               child: _buildBody(context),
             ),
-            if (widget.viewModel.isSubmitting)
+            if (widget.viewModel.isSubmitting || widget.viewModel.isLoading)
               const Positioned(
                 top: 0,
                 left: 0,
@@ -48,13 +48,15 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
             Positioned(
               right: MetricSlateSpacing.lg,
               bottom: MetricSlateSpacing.lg,
-              child: FloatingActionButton.extended(
-                onPressed: widget.viewModel.isSubmitting
-                    ? null
-                    : _openInviteScreen,
-                icon: const Icon(Icons.person_add_outlined),
-                label: const Text('Convidar'),
-              ),
+              child: widget.viewModel.canInviteMembers
+                  ? FloatingActionButton.extended(
+                      onPressed: widget.viewModel.isSubmitting
+                          ? null
+                          : _openInviteScreen,
+                      icon: const Icon(Icons.person_add_outlined),
+                      label: const Text('Convidar'),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         );
@@ -152,9 +154,11 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
         ),
         const SizedBox(height: MetricSlateSpacing.sm),
         if (widget.viewModel.tecnicos.isEmpty)
-          const TechReportStateView.empty(
+          TechReportStateView.empty(
             title: 'Equipe vazia',
-            message: 'Convide o primeiro técnico ou gerente.',
+            message: widget.viewModel.currentPapel == AdminTecnicoPapel.gerente
+                ? 'Nenhum técnico vinculado à empresa.'
+                : 'Convide o primeiro técnico ou gerente.',
           )
         else
           for (final tecnico in widget.viewModel.tecnicos) ...[
@@ -494,18 +498,65 @@ class _TecnicoCard extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              TechReportStatusChip(
-                label: tecnico.ativo ? 'Ativo' : 'Inativo',
-                tone: tecnico.ativo
-                    ? TechReportStatusTone.success
-                    : TechReportStatusTone.neutral,
-              ),
-              if (canManage) ...[
-                const SizedBox(height: MetricSlateSpacing.xxs),
-                PopupMenuButton<String>(
+          _TecnicoActions(
+            ativo: tecnico.ativo,
+            canManage: canManage,
+            mustChangePassword: tecnico.mustChangePassword,
+            onToggleAtivo: onToggleAtivo,
+            onToggleMustChangePassword: onToggleMustChangePassword,
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _papelLabel(AdminTecnicoPapel papel) {
+    return switch (papel) {
+      AdminTecnicoPapel.adminEmpresa => 'Admin empresa',
+      AdminTecnicoPapel.gerente => 'Gerente',
+      AdminTecnicoPapel.tecnico => 'Técnico',
+    };
+  }
+}
+
+class _TecnicoActions extends StatelessWidget {
+  const _TecnicoActions({
+    required this.ativo,
+    required this.canManage,
+    required this.mustChangePassword,
+    required this.onToggleAtivo,
+    required this.onToggleMustChangePassword,
+  });
+
+  final bool ativo;
+  final bool canManage;
+  final bool mustChangePassword;
+  final ValueChanged<bool> onToggleAtivo;
+  final ValueChanged<bool> onToggleMustChangePassword;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 112,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: TechReportStatusChip(
+              label: ativo ? 'Ativo' : 'Inativo',
+              tone: ativo
+                  ? TechReportStatusTone.success
+                  : TechReportStatusTone.neutral,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 40,
+          height: 40,
+          child: canManage
+              ? PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
                   onSelected: (value) {
                     switch (value) {
                       case 'activate':
@@ -519,41 +570,31 @@ class _TecnicoCard extends StatelessWidget {
                     }
                   },
                   itemBuilder: (context) => [
-                    if (!tecnico.ativo)
+                    if (!ativo)
                       const PopupMenuItem(
                         value: 'activate',
                         child: Text('Ativar'),
                       ),
-                    if (tecnico.ativo)
+                    if (ativo)
                       const PopupMenuItem(
                         value: 'deactivate',
                         child: Text('Desativar'),
                       ),
-                    if (!tecnico.mustChangePassword)
+                    if (!mustChangePassword)
                       const PopupMenuItem(
                         value: 'must_change_on',
                         child: Text('Exigir troca de senha'),
                       ),
-                    if (tecnico.mustChangePassword)
+                    if (mustChangePassword)
                       const PopupMenuItem(
                         value: 'must_change_off',
                         child: Text('Remover exigência de senha'),
                       ),
                   ],
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
+                )
+              : null,
+        ),
+      ],
     );
-  }
-
-  String _papelLabel(AdminTecnicoPapel papel) {
-    return switch (papel) {
-      AdminTecnicoPapel.adminEmpresa => 'Admin empresa',
-      AdminTecnicoPapel.gerente => 'Gerente',
-      AdminTecnicoPapel.tecnico => 'Técnico',
-    };
   }
 }

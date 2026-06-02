@@ -561,14 +561,25 @@ class SupabaseAuthRepository implements AuthRepository {
   }) async {
     final profile = await client
         .from('tecnicos')
-        .select('id, empresa_id, nome, email, papel, must_change_password')
+        .select(
+          'id, empresa_id, nome, email, papel, ativo, must_change_password',
+        )
         .eq('user_id', user.id)
-        .eq('ativo', true)
+        .order('ativo', ascending: false)
+        .limit(1)
         .maybeSingle();
 
     if (profile == null) {
       throw const RemoteAuthException(
         'Conta remota autenticada, mas não vinculada a uma empresa TechReport.',
+      );
+    }
+
+    final ativo = profile['ativo'];
+    if (ativo is bool && !ativo) {
+      throw const RemoteAuthException(
+        'Conta remota autenticada, mas desativada nesta empresa. '
+        'Fale com o administrador.',
       );
     }
 
