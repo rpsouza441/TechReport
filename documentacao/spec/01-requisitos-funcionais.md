@@ -95,11 +95,12 @@ vinculada.
 | RF-06.5 | Area admin global (`app_admin`) | Implementado |
 | RF-06.6 | Area equipe (`admin_empresa`) — listagens e convites | Implementado |
 | RF-06.7 | Fluxo de convite/cadastro de tecnico por app | Implementado |
+| RF-06.8 | Gerente gerencia tecnicos em equipe limitada | Implementado |
 
 **Confirmado:** migration `0006_admin_roles_base.sql`, telas em
 `company_admin/`.
 
-**Confirmado:** Sprint 8.5 possui migrations `0009` a `0012`, RPCs, telas e
+**Confirmado:** Sprint 8.5 possui migrations `0009` a `0014`, RPCs, telas e
 use cases para equipe/convites. Foi validado que conta criada em `auth.users`
 sem convite pendente nao vira membro automaticamente. O fechamento exige QA
 manual/RLS e testes.

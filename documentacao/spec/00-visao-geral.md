@@ -89,7 +89,7 @@ Objetivos (`docs/sprint8.2/README.md`):
 
 **Confirmado — Sprint 8.5 implementada no codigo:**
 
-- migrations `0009` a `0012` criam/ajustam `tecnico_convites` e RPCs;
+- migrations `0009` a `0014` criam/ajustam `tecnico_convites` e RPCs;
 - app possui telas/use cases para convites, aceite de convite e equipe;
 - ainda precisa de QA manual/RLS e cobertura automatizada antes de marcar como
   release candidate.

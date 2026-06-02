@@ -60,7 +60,7 @@ Confirmado como **nao implementado** (referencia `docs/prompt.md` e codigo):
 
 **Status:** implementado no codigo em nivel operacional inicial.
 
-**Confirmado:** migrations `0009` a `0012`, `CompanyAdminRepository`, telas
+**Confirmado:** migrations `0009` a `0014`, `CompanyAdminRepository`, telas
 admin e tela de aceite de convite cobrem listagem, criacao, cancelamento,
 validacao e aceite de convites.
 
@@ -126,7 +126,7 @@ Codigo envia `responsavel_documento` no payload e a migration `0008` esta
 versionada.
 
 **Risco residual:** ambientes Supabase que nao aplicaram a migration ainda podem
-falhar no sync. A acao operacional e aplicar migrations ate `0012`.
+falhar no sync. A acao operacional e aplicar migrations ate `0014`.
 
 ---
 
@@ -223,5 +223,63 @@ e-mail, mas ainda nao oferece botao para reenviar confirmacao.
 
 **Acao futura:** avaliar suporte via Supabase Auth/SMTP e adicionar acao
 `Reenviar confirmacao` sem salvar senha localmente.
+
+---
+
+## P-16 - Perfil empresa editavel e nome da empresa
+
+**Pendencia observada na validacao Sprint 8.5:** `Meu perfil` permite trocar
+senha, mas ainda nao permite editar dados do proprio usuario, como nome.
+
+**Tambem observado:** o campo empresa mostra apenas `Vinculada`, sem exibir o
+nome da empresa.
+
+**Acao futura:** permitir edicao segura do proprio nome e exibir nome da empresa
+quando a sessao remota possuir esse dado ou quando o app puder consulta-lo sem
+quebrar RLS.
+
+---
+
+## P-17 - Gerente com equipe limitada
+
+**Decisao atual:** gerente pode acessar a area Equipe em modo limitado.
+
+**Permitido para gerente:**
+
+- visualizar tecnicos da propria empresa;
+- convidar apenas `tecnico`;
+- ativar/inativar `tecnico`;
+- exigir/remover troca de senha de `tecnico`.
+
+**Nao permitido para gerente:**
+
+- convidar `gerente`;
+- convidar `admin_empresa`;
+- ativar/inativar `gerente` ou `admin_empresa`;
+- exigir/remover troca de senha de `gerente` ou `admin_empresa`;
+- alterar admins da empresa.
+
+---
+
+## P-18 - Configuracao Supabase some apos flutter run
+
+**Observacao de validacao:** durante o desenvolvimento, foi percebido que apos
+rodar `flutter run` depois de atualizacoes, os dados salvos do servidor Supabase
+podem sumir do app.
+
+**Impacto:** o usuario/desenvolvedor precisa informar novamente URL/chave
+publica, atrasando testes do modo empresa.
+
+**Hipoteses a investigar:**
+
+- reinstalacao/debug limpando storage local do app;
+- mudanca de app id/package/applicationId entre builds;
+- storage usado para endpoint remoto diferente do storage de tokens;
+- hot restart/hot reload vs reinstall completo;
+- limpeza de dados do emulador/dispositivo pelo tooling.
+
+**Acao futura:** mapear onde `RemoteEndpointRepository` persiste URL/chave,
+testar `flutter run` vs reinstall limpo, e decidir se configuracao de servidor
+deve ter backup/import ou modo dev mais estavel.
 
 ---

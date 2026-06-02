@@ -12,7 +12,7 @@
 | --- | --- |
 | **Tecnico local** | Usuario do modo local, sem conta remota |
 | **Tecnico empresa** | Usuario autenticado vinculado a `public.tecnicos` |
-| **Gerente** | Tecnico com papel `gerente`; leitura ampliada de RATs da empresa |
+| **Gerente** | Tecnico com papel `gerente`; leitura ampliada de RATs da empresa e equipe limitada |
 | **Admin empresa** | Papel `admin_empresa`; administracao da equipe e convites |
 | **App admin** | Administrador global em `public.app_admins` |
 | **Operador Supabase** | Aplica migrations e seed fora do app (nao e ator da UI) |

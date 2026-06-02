@@ -76,10 +76,10 @@ Formulario e lista usam `RatRepository` diretamente via view models
 | `ListAdminEmpresas` | Lista empresas (app admin) |
 | `ListAdminTecnicos` | Lista tecnicos |
 | `ListAdminConvites` | Lista convites da empresa |
-| `CreateTecnicoConvite` | Cria convite para tecnico/gerente/admin empresa conforme permissao |
+| `CreateTecnicoConvite` | Cria convite conforme permissao: admin empresa convida admin/gerente/tecnico; gerente convida apenas tecnico |
 | `CreateEmpresaConvite` | Cria convite de admin empresa a partir do app admin |
 | `CancelTecnicoConvite` | Cancela convite pendente |
-| `UpdateTecnicoEquipe` | Atualiza flags permitidas de membro da equipe |
+| `UpdateTecnicoEquipe` | Atualiza flags permitidas: admin empresa altera gerente/tecnico; gerente altera apenas tecnico |
 | `CreateAdminEmpresa` / `UpdateAdminEmpresa` | Operacoes de administracao global sobre empresas/admins |
 
 ## Servicos de infra (data layer)

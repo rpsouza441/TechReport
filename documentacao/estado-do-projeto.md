@@ -24,7 +24,7 @@ O TechReport esta em desenvolvimento ativo.
 - login remoto com Supabase Auth;
 - sessao remota sem tokens puros no dominio;
 - schema Supabase: empresas, tecnicos, rats, app_admins e convites (migrations
-  0001-0012);
+  0001-0014);
 - fila local de sync para RAT;
 - upload/download incremental de RATs;
 - status de sync na lista;
@@ -127,4 +127,6 @@ Decisoes fechadas:
 - convite cancelado antes da confirmacao de e-mail nao cria membro fantasma;
 - admin global gerencia empresas/admins globais/admins empresa;
 - admin da empresa convida `admin_empresa`, `gerente` e `tecnico`;
-- gerente/tecnico nao gerenciam equipe.
+- gerente ve equipe em modo limitado e pode convidar/ativar/inativar/exigir
+  troca de senha apenas de `tecnico`;
+- tecnico nao gerencia equipe.

@@ -133,7 +133,7 @@ storage para tokens:
 
 ### `public.tecnico_convites`
 
-**Confirmado** — migrations 0009 a 0012:
+**Confirmado** — migrations 0009 a 0014:
 
 - `id`, `empresa_id`, `email`, `nome`, `papel`, `status`;
 - `codigo_digest`, `created_by`, `created_at`, `expires_at`, `accepted_at`;

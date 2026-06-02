@@ -67,7 +67,7 @@
 | Papel | Leitura RAT | Escrita RAT | Admin |
 | --- | --- | --- | --- |
 | `tecnico` | Proprios | Proprios | Nao |
-| `gerente` | Empresa | Proprios (nao edita de outro tecnico) | Nao |
+| `gerente` | Empresa | Proprios (nao edita de outro tecnico) | Equipe limitada: gerencia tecnicos |
 | `admin_empresa` | Empresa | Conforme policy | Equipe (parcial) |
 | `app_admin` | Global conforme RLS | Nao operacional de campo | Global |
 

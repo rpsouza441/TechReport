@@ -50,7 +50,7 @@ Banco local: `tech_report_local.sqlite` (Drift).
 3. No app: modo empresa → informe URL e chave publica → login.
 
 **Importante:** para testar sync de `responsavelDocumento` e convites/equipe,
-aplique todas as migrations ate `0012` em ordem numerica.
+aplique todas as migrations ate `0014` em ordem numerica.
 
 ## Verificacao estatica
 
