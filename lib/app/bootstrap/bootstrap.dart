@@ -1,12 +1,26 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../di/app_scope.dart';
 import '../navigation/tech_report_app.dart';
 import '../theme/metric_slate_theme.dart';
+import '../../shared/infra/debug/app_error_log.dart';
+import '../../shared/infra/debug/local_database_debug_log.dart';
 
 void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
+  _configureGlobalErrorHandling();
   runApp(const _TechReportBootstrapApp());
+}
+
+void _configureGlobalErrorHandling() {
+  FlutterError.onError = AppErrorLog.flutterError;
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    AppErrorLog.uncaught(error, stackTrace);
+    return true;
+  };
 }
 
 class _TechReportBootstrapApp extends StatefulWidget {
@@ -23,7 +37,23 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
   @override
   void initState() {
     super.initState();
-    _scopeFuture = Future<AppScope>(AppScope.create);
+    _scopeFuture = _createScope();
+  }
+
+  Future<AppScope> _createScope() async {
+    LocalDatabaseDebugLog.info('bootstrap.scope.start');
+    try {
+      final scope = await AppScope.create();
+      LocalDatabaseDebugLog.info('bootstrap.scope.created');
+      return scope;
+    } catch (error, stackTrace) {
+      LocalDatabaseDebugLog.error(
+        'bootstrap.scope.failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   @override
@@ -37,6 +67,10 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
         }
 
         final error = snapshot.error;
+        final errorMessage = kReleaseMode
+            ? 'Nao foi possivel abrir os dados locais deste dispositivo. '
+                  'Sera necessario redefinir os dados locais ou entrar novamente.'
+            : '$error';
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: MetricSlateTheme.light(),
@@ -68,7 +102,7 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          Text('$error', textAlign: TextAlign.center),
+                          Text(errorMessage, textAlign: TextAlign.center),
                         ],
                       ),
               ),

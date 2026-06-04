@@ -32,9 +32,11 @@ dependencies:
     sdk: flutter
 
   drift: ^2.32.1
-  drift_flutter: ^0.3.0
+  sqlite3: ^3.3.1
+  crypto: ^3.0.6
   flutter_secure_storage:  ^10.0.0
   path_provider: ^2.1.5
+  path: ^1.9.1
   supabase_flutter: ^2.0.0
   uuid: ^4.5.3
 
@@ -58,6 +60,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+# SQLite3MultipleCiphers para criptografia do banco local.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

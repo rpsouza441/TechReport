@@ -30,6 +30,8 @@ import 'package:techreport/features/sync/domain/repositories/sync_checkpoint_rep
 import 'package:techreport/features/sync/domain/repositories/sync_queue_repository.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
+import 'package:techreport/shared/infra/database/open_encrypted_database.dart';
+import 'package:techreport/shared/infra/debug/local_database_debug_log.dart';
 import 'package:techreport/shared/infra/security/local_pin_secret_store.dart';
 
 import 'package:techreport/features/company_auth/data/repositories/local_remote_endpoint_repository.dart';
@@ -100,163 +102,182 @@ class AppScope {
     required this.downloadRemoteRats,
   });
 
-  factory AppScope.create() {
-    final database = TechReportLocalDatabase();
-    final pinSecretRepository = LocalPinSecretStore();
-    final tecnicoLocalRepository = DriftTecnicoLocalRepository(database);
-    final sessaoLocalRepository = DriftSessaoLocalRepository(database);
-    final ratRepository = DriftRatRepository(database);
-    final assinaturaRepository = DriftAssinaturaRepository(database);
-    final localSignatureAssetStore = LocalSignatureAssetStore();
-    final localDataExportShareService = LocalDataExportShareService(
-      ratRepository: ratRepository,
-      assinaturaRepository: assinaturaRepository,
-      localSignatureAssetStore: localSignatureAssetStore,
-    );
-    final localDataImportParser = LocalDataImportParser();
-    final previewLocalDataImport = PreviewLocalDataImport(
-      ratRepository: ratRepository,
-    );
-    final applyLocalDataImport = ApplyLocalDataImport(
-      ratRepository: ratRepository,
-      assinaturaRepository: assinaturaRepository,
-      localSignatureAssetStore: localSignatureAssetStore,
-    );
-    final shareRatLocally = ShareRatLocally(
-      ratRepository: ratRepository,
-      assinaturaRepository: assinaturaRepository,
-    );
-    final ratPdfShareService = RatPdfShareService(
-      localSignatureAssetStore: localSignatureAssetStore,
-    );
-    final remoteEndpointRepository = LocalRemoteEndpointRepository();
-    final secureTokenStore = FlutterSecureTokenStore();
+  static Future<AppScope> create() async {
+    LocalDatabaseDebugLog.info('appScope.create.start');
+    try {
+      LocalDatabaseDebugLog.info('appScope.database.build.start');
+      final database = await buildEncryptedDatabase();
+      LocalDatabaseDebugLog.info('appScope.database.build.done');
+      LocalDatabaseDebugLog.info('appScope.repositories.create.start');
 
-    final supabaseClientFactory = SupabaseClientFactory(
-      endpointRepository: remoteEndpointRepository,
-      tokenStore: secureTokenStore,
-    );
-    final companyAdminRepository = SupabaseCompanyAdminRepository(
-      clientFactory: supabaseClientFactory,
-    );
+      final pinSecretRepository = LocalPinSecretStore();
+      final tecnicoLocalRepository = DriftTecnicoLocalRepository(database);
+      final sessaoLocalRepository = DriftSessaoLocalRepository(database);
+      final ratRepository = DriftRatRepository(database);
+      final assinaturaRepository = DriftAssinaturaRepository(database);
+      final localSignatureAssetStore = LocalSignatureAssetStore();
+      final localDataExportShareService = LocalDataExportShareService(
+        ratRepository: ratRepository,
+        assinaturaRepository: assinaturaRepository,
+        localSignatureAssetStore: localSignatureAssetStore,
+      );
+      final localDataImportParser = LocalDataImportParser();
+      final previewLocalDataImport = PreviewLocalDataImport(
+        ratRepository: ratRepository,
+      );
+      final applyLocalDataImport = ApplyLocalDataImport(
+        ratRepository: ratRepository,
+        assinaturaRepository: assinaturaRepository,
+        localSignatureAssetStore: localSignatureAssetStore,
+      );
+      final shareRatLocally = ShareRatLocally(
+        ratRepository: ratRepository,
+        assinaturaRepository: assinaturaRepository,
+      );
+      final ratPdfShareService = RatPdfShareService(
+        localSignatureAssetStore: localSignatureAssetStore,
+      );
+      final remoteEndpointRepository = LocalRemoteEndpointRepository();
+      final secureTokenStore = FlutterSecureTokenStore();
 
-    final listAdminEmpresas = ListAdminEmpresas(companyAdminRepository);
-    final createAdminEmpresa = CreateAdminEmpresa(companyAdminRepository);
-    final createEmpresaConvite = CreateEmpresaConvite(companyAdminRepository);
-    final updateAdminEmpresa = UpdateAdminEmpresa(companyAdminRepository);
-    final listAdminTecnicos = ListAdminTecnicos(companyAdminRepository);
-    final listAdminConvites = ListAdminConvites(companyAdminRepository);
-    final createTecnicoConvite = CreateTecnicoConvite(companyAdminRepository);
-    final cancelTecnicoConvite = CancelTecnicoConvite(companyAdminRepository);
-    final updateTecnicoEquipe = UpdateTecnicoEquipe(companyAdminRepository);
-    final syncQueueRepository = DriftSyncQueueRepository(database);
-    final remoteRatRepository = SupabaseRemoteRatRepository(
-      clientFactory: supabaseClientFactory,
-    );
-    final enqueueRatSync = EnqueueRatSync(queueRepository: syncQueueRepository);
-    final syncCheckpointRepository = LocalSyncCheckpointRepository();
-    final downloadRemoteRats = DownloadRemoteRats(
-      remoteRatRepository: remoteRatRepository,
-      ratRepository: ratRepository,
-      checkpointRepository: syncCheckpointRepository,
-    );
-    final processSyncQueue = ProcessSyncQueue(
-      queueRepository: syncQueueRepository,
-      remoteRatRepository: remoteRatRepository,
-    );
-    final remoteSessionRepository = LocalRemoteSessionRepository();
-    final authRepository = SupabaseAuthRepository(
-      clientFactory: supabaseClientFactory,
-      tokenStore: secureTokenStore,
-      remoteSessionRepository: remoteSessionRepository,
-    );
-    final appModeRepository = LocalAppModeRepository();
-    final selectAppMode = SelectAppMode(appModeRepository);
+      final supabaseClientFactory = SupabaseClientFactory(
+        endpointRepository: remoteEndpointRepository,
+        tokenStore: secureTokenStore,
+      );
+      final companyAdminRepository = SupabaseCompanyAdminRepository(
+        clientFactory: supabaseClientFactory,
+      );
 
-    final bootstrapCompanySession = BootstrapCompanySession(
-      appModeRepository: appModeRepository,
-      authRepository: authRepository,
-    );
-    final changeCompanyPassword = ChangeCompanyPassword(
-      authRepository: authRepository,
-    );
-    final signInCompany = SignInCompany(
-      authRepository: authRepository,
-      remoteSessionRepository: remoteSessionRepository,
-      appModeRepository: appModeRepository,
-    );
+      final listAdminEmpresas = ListAdminEmpresas(companyAdminRepository);
+      final createAdminEmpresa = CreateAdminEmpresa(companyAdminRepository);
+      final createEmpresaConvite = CreateEmpresaConvite(companyAdminRepository);
+      final updateAdminEmpresa = UpdateAdminEmpresa(companyAdminRepository);
+      final listAdminTecnicos = ListAdminTecnicos(companyAdminRepository);
+      final listAdminConvites = ListAdminConvites(companyAdminRepository);
+      final createTecnicoConvite = CreateTecnicoConvite(companyAdminRepository);
+      final cancelTecnicoConvite = CancelTecnicoConvite(companyAdminRepository);
+      final updateTecnicoEquipe = UpdateTecnicoEquipe(companyAdminRepository);
+      final syncQueueRepository = DriftSyncQueueRepository(database);
+      final remoteRatRepository = SupabaseRemoteRatRepository(
+        clientFactory: supabaseClientFactory,
+      );
+      final enqueueRatSync = EnqueueRatSync(
+        queueRepository: syncQueueRepository,
+      );
+      final syncCheckpointRepository = LocalSyncCheckpointRepository();
+      final downloadRemoteRats = DownloadRemoteRats(
+        remoteRatRepository: remoteRatRepository,
+        ratRepository: ratRepository,
+        checkpointRepository: syncCheckpointRepository,
+      );
+      final processSyncQueue = ProcessSyncQueue(
+        queueRepository: syncQueueRepository,
+        remoteRatRepository: remoteRatRepository,
+      );
+      final remoteSessionRepository = LocalRemoteSessionRepository();
+      final authRepository = SupabaseAuthRepository(
+        clientFactory: supabaseClientFactory,
+        tokenStore: secureTokenStore,
+        remoteSessionRepository: remoteSessionRepository,
+      );
+      final appModeRepository = LocalAppModeRepository();
+      final selectAppMode = SelectAppMode(appModeRepository);
 
-    final signInCompanyWithInvite = SignInCompanyWithInvite(
-      authRepository: authRepository,
-      remoteSessionRepository: remoteSessionRepository,
-      appModeRepository: appModeRepository,
-    );
+      final bootstrapCompanySession = BootstrapCompanySession(
+        appModeRepository: appModeRepository,
+        authRepository: authRepository,
+      );
+      final changeCompanyPassword = ChangeCompanyPassword(
+        authRepository: authRepository,
+      );
+      final signInCompany = SignInCompany(
+        authRepository: authRepository,
+        remoteSessionRepository: remoteSessionRepository,
+        appModeRepository: appModeRepository,
+      );
 
-    final signOutCompany = SignOutCompany(
-      authRepository: authRepository,
-      remoteSessionRepository: remoteSessionRepository,
-      appModeRepository: appModeRepository,
-    );
+      final signInCompanyWithInvite = SignInCompanyWithInvite(
+        authRepository: authRepository,
+        remoteSessionRepository: remoteSessionRepository,
+        appModeRepository: appModeRepository,
+      );
 
-    return AppScope(
-      database: database,
-      assinaturaRepository: assinaturaRepository,
-      applyLocalDataImport: applyLocalDataImport,
-      localDataImportParser: localDataImportParser,
-      localSignatureAssetStore: localSignatureAssetStore,
-      localDataExportShareService: localDataExportShareService,
-      previewLocalDataImport: previewLocalDataImport,
-      ratPdfShareService: ratPdfShareService,
-      sessaoLocalRepository: sessaoLocalRepository,
-      shareRatLocally: shareRatLocally,
-      tecnicoLocalRepository: tecnicoLocalRepository,
-      ratRepository: ratRepository,
-      appSessionViewModel: AppSessionViewModel(
-        bootstrapLocalSession: BootstrapLocalSession(sessaoLocalRepository),
-        changeLocalPin: ChangeLocalPin(
-          pinSecretRepository: pinSecretRepository,
-          sessaoLocalRepository: sessaoLocalRepository,
-          tecnicoLocalRepository: tecnicoLocalRepository,
+      final signOutCompany = SignOutCompany(
+        authRepository: authRepository,
+        remoteSessionRepository: remoteSessionRepository,
+        appModeRepository: appModeRepository,
+      );
+
+      final scope = AppScope(
+        database: database,
+        assinaturaRepository: assinaturaRepository,
+        applyLocalDataImport: applyLocalDataImport,
+        localDataImportParser: localDataImportParser,
+        localSignatureAssetStore: localSignatureAssetStore,
+        localDataExportShareService: localDataExportShareService,
+        previewLocalDataImport: previewLocalDataImport,
+        ratPdfShareService: ratPdfShareService,
+        sessaoLocalRepository: sessaoLocalRepository,
+        shareRatLocally: shareRatLocally,
+        tecnicoLocalRepository: tecnicoLocalRepository,
+        ratRepository: ratRepository,
+        appSessionViewModel: AppSessionViewModel(
+          bootstrapLocalSession: BootstrapLocalSession(sessaoLocalRepository),
+          changeLocalPin: ChangeLocalPin(
+            pinSecretRepository: pinSecretRepository,
+            sessaoLocalRepository: sessaoLocalRepository,
+            tecnicoLocalRepository: tecnicoLocalRepository,
+          ),
+          completeLocalOnboarding: CompleteLocalOnboarding(
+            pinSecretRepository: pinSecretRepository,
+            tecnicoLocalRepository: tecnicoLocalRepository,
+            sessaoLocalRepository: sessaoLocalRepository,
+          ),
+          lockLocalSession: LockLocalSession(sessaoLocalRepository),
+          unlockLocalSession: UnlockLocalSession(
+            sessaoLocalRepository,
+            pinSecretRepository: pinSecretRepository,
+          ),
         ),
-        completeLocalOnboarding: CompleteLocalOnboarding(
-          pinSecretRepository: pinSecretRepository,
-          tecnicoLocalRepository: tecnicoLocalRepository,
-          sessaoLocalRepository: sessaoLocalRepository,
-        ),
-        lockLocalSession: LockLocalSession(sessaoLocalRepository),
-        unlockLocalSession: UnlockLocalSession(
-          sessaoLocalRepository,
-          pinSecretRepository: pinSecretRepository,
-        ),
-      ),
-      remoteEndpointRepository: remoteEndpointRepository,
-      supabaseClientFactory: supabaseClientFactory,
-      listAdminEmpresas: listAdminEmpresas,
-      createAdminEmpresa: createAdminEmpresa,
-      createEmpresaConvite: createEmpresaConvite,
-      updateAdminEmpresa: updateAdminEmpresa,
-      listAdminTecnicos: listAdminTecnicos,
-      listAdminConvites: listAdminConvites,
-      createTecnicoConvite: createTecnicoConvite,
-      cancelTecnicoConvite: cancelTecnicoConvite,
-      updateTecnicoEquipe: updateTecnicoEquipe,
-      signInCompanyWithInvite: signInCompanyWithInvite,
-      syncQueueRepository: syncQueueRepository,
-      syncCheckpointRepository: syncCheckpointRepository,
-      downloadRemoteRats: downloadRemoteRats,
-      remoteRatRepository: remoteRatRepository,
-      enqueueRatSync: enqueueRatSync,
-      processSyncQueue: processSyncQueue,
-      secureTokenStore: secureTokenStore,
-      remoteSessionRepository: remoteSessionRepository,
-      authRepository: authRepository,
-      appModeRepository: appModeRepository,
-      selectAppMode: selectAppMode,
-      bootstrapCompanySession: bootstrapCompanySession,
-      changeCompanyPassword: changeCompanyPassword,
-      signInCompany: signInCompany,
-      signOutCompany: signOutCompany,
-    );
+        remoteEndpointRepository: remoteEndpointRepository,
+        supabaseClientFactory: supabaseClientFactory,
+        listAdminEmpresas: listAdminEmpresas,
+        createAdminEmpresa: createAdminEmpresa,
+        createEmpresaConvite: createEmpresaConvite,
+        updateAdminEmpresa: updateAdminEmpresa,
+        listAdminTecnicos: listAdminTecnicos,
+        listAdminConvites: listAdminConvites,
+        createTecnicoConvite: createTecnicoConvite,
+        cancelTecnicoConvite: cancelTecnicoConvite,
+        updateTecnicoEquipe: updateTecnicoEquipe,
+        signInCompanyWithInvite: signInCompanyWithInvite,
+        syncQueueRepository: syncQueueRepository,
+        syncCheckpointRepository: syncCheckpointRepository,
+        downloadRemoteRats: downloadRemoteRats,
+        remoteRatRepository: remoteRatRepository,
+        enqueueRatSync: enqueueRatSync,
+        processSyncQueue: processSyncQueue,
+        secureTokenStore: secureTokenStore,
+        remoteSessionRepository: remoteSessionRepository,
+        authRepository: authRepository,
+        appModeRepository: appModeRepository,
+        selectAppMode: selectAppMode,
+        bootstrapCompanySession: bootstrapCompanySession,
+        changeCompanyPassword: changeCompanyPassword,
+        signInCompany: signInCompany,
+        signOutCompany: signOutCompany,
+      );
+
+      LocalDatabaseDebugLog.info('appScope.create.done');
+      return scope;
+    } catch (error, stackTrace) {
+      LocalDatabaseDebugLog.error(
+        'appScope.create.failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   final TechReportLocalDatabase database;

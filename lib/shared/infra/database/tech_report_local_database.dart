@@ -1,5 +1,9 @@
+// ATENCAO DEV: ao aplicar mudanca de criptografia em ambiente de
+// desenvolvimento, limpar dados/cache do app antes de testar.
+// Storage persistente do Android: app data / data / br.dev.rodrigopinheiro.techreport
+// Em prod: migracao real necessaria antes de ativar criptografia.
+
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
 
 part 'tech_report_local_database.g.dart';
 
@@ -100,14 +104,11 @@ class SyncQueueItems extends Table {
   tables: [TecnicoLocals, SessaoLocals, Rats, Assinaturas, SyncQueueItems],
 )
 class TechReportLocalDatabase extends _$TechReportLocalDatabase {
-  TechReportLocalDatabase()
-    : super(
-        driftDatabase(
-          name: 'tech_report_local',
-          native: const DriftNativeOptions(),
-        ),
-      );
+  /// Construtor principal - recebe QueryExecutor do openEncryptedDatabase().
+  TechReportLocalDatabase(super.executor);
 
+  /// Cria banco com criptografia via SQLite3MultipleCiphers.
+  /// O [executor] deve ser aberto via openEncryptedDatabase() com PRAGMA key.
   @override
   int get schemaVersion => 7;
 
