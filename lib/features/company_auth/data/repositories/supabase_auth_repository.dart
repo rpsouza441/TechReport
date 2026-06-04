@@ -578,8 +578,7 @@ class SupabaseAuthRepository implements AuthRepository {
     final ativo = profile['ativo'];
     if (ativo is bool && !ativo) {
       throw const RemoteAuthException(
-        'Conta remota autenticada, mas desativada nesta empresa. '
-        'Fale com o administrador.',
+        'Seu acesso está desativado. Fale com o administrador.',
       );
     }
 
