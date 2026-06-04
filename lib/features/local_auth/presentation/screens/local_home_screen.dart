@@ -295,112 +295,15 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
   }
 
   Future<void> _showChangePinDialog(BuildContext parentContext) async {
-    final currentPinController = TextEditingController();
-    final newPinController = TextEditingController();
-    final confirmationController = TextEditingController();
     final hasPin = widget.viewModel.pinConfigured;
-    var isSubmitting = false;
-    String? errorMessage;
-
-    final changed = await showDialog<bool>(
-      context: parentContext,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> submit() async {
-              setDialogState(() {
-                isSubmitting = true;
-              });
-
-              final success = await widget.viewModel.changePin(
-                currentPin: hasPin ? currentPinController.text : null,
-                newPin: newPinController.text,
-                confirmation: confirmationController.text,
-              );
-
-              if (!context.mounted) {
-                return;
-              }
-
-              if (success) {
-                Navigator.of(context).pop(true);
-                return;
-              }
-
-              setDialogState(() {
-                isSubmitting = false;
-                errorMessage = widget.viewModel.errorMessage;
-              });
-            }
-
-            return AlertDialog(
-              title: Text(hasPin ? 'Trocar PIN' : 'Criar PIN'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (hasPin) ...[
-                    TextField(
-                      controller: currentPinController,
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'PIN atual'),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  TextField(
-                    controller: newPinController,
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Novo PIN com 4 dígitos',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: confirmationController,
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirmação do novo PIN',
-                    ),
-                  ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      errorMessage!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  child: const Text('Cancelar'),
-                ),
-                FilledButton(
-                  onPressed: isSubmitting ? null : submit,
-                  child: isSubmitting
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Salvar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final changed = await Navigator.of(parentContext).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => LocalPinScreen(
+          hasPin: hasPin,
+          viewModel: widget.viewModel,
+        ),
+      ),
     );
-
-    currentPinController.dispose();
-    newPinController.dispose();
-    confirmationController.dispose();
 
     if (!parentContext.mounted || changed != true) {
       return;
@@ -522,6 +425,160 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
     return '${value.day.toString().padLeft(2, '0')}/'
         '${value.month.toString().padLeft(2, '0')}/'
         '${value.year}';
+  }
+}
+
+class LocalPinScreen extends StatefulWidget {
+  const LocalPinScreen({
+    super.key,
+    required this.hasPin,
+    required this.viewModel,
+  });
+
+  final bool hasPin;
+  final AppSessionViewModel viewModel;
+
+  @override
+  State<LocalPinScreen> createState() => _LocalPinScreenState();
+}
+
+class _LocalPinScreenState extends State<LocalPinScreen> {
+  final _currentPinController = TextEditingController();
+  final _newPinController = TextEditingController();
+  final _confirmationController = TextEditingController();
+
+  bool _isSubmitting = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _currentPinController.dispose();
+    _newPinController.dispose();
+    _confirmationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = widget.hasPin ? 'Trocar PIN' : 'Criar PIN';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        bottom: _isSubmitting
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(3),
+                child: LinearProgressIndicator(minHeight: 3),
+              )
+            : null,
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.hasPin
+                  ? 'Informe o PIN atual e escolha um novo PIN.'
+                  : 'Crie um PIN de 4 dígitos para proteger o modo local.',
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            if (_errorMessage != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (widget.hasPin) ...[
+              TextField(
+                controller: _currentPinController,
+                enabled: !_isSubmitting,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'PIN atual',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            TextField(
+              controller: _newPinController,
+              enabled: !_isSubmitting,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Novo PIN com 4 dígitos',
+                prefixIcon: Icon(Icons.pin_outlined),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _confirmationController,
+              enabled: !_isSubmitting,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Confirmação do novo PIN',
+                prefixIcon: Icon(Icons.pin_outlined),
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: _isSubmitting ? null : _submit,
+              child: Text(_isSubmitting ? 'Salvando...' : 'Salvar'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+              child: const Text('Voltar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    final success = await widget.viewModel.changePin(
+      currentPin: widget.hasPin ? _currentPinController.text : null,
+      newPin: _newPinController.text,
+      confirmation: _confirmationController.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = false;
+      _errorMessage =
+          widget.viewModel.errorMessage ?? 'Não foi possível alterar o PIN.';
+    });
   }
 }
 

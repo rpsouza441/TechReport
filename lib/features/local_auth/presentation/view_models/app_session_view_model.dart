@@ -123,6 +123,7 @@ class AppSessionViewModel extends ChangeNotifier {
   }
 
   Future<void> lock() async {
+    _errorMessage = null;
     _session = await _lockLocalSession();
     notifyListeners();
   }
