@@ -27,7 +27,7 @@ QueryExecutor openEncryptedDatabase(String hexKey, {File? databaseFile}) {
       },
     );
 
-    _encryptPlaintextDatabaseIfNeeded(file, escapedKey);
+    _prepareDatabaseEncryptionIfNeeded(file, escapedKey);
 
     return NativeDatabase.createInBackground(
       file,
@@ -45,13 +45,10 @@ QueryExecutor openEncryptedDatabase(String hexKey, {File? databaseFile}) {
 
           LocalDatabaseDebugLog.info(
             'database.native.key.apply.start',
-            data: {
-              'keyFormat': 'hex-as-passphrase',
-              'keyLength': hexKey.length,
-            },
+            data: {'keyFormat': 'raw-hex', 'keyLength': hexKey.length},
           );
 
-          rawDb.execute("PRAGMA key = '$escapedKey';");
+          rawDb.execute("PRAGMA key = 'raw:$escapedKey';");
           final sqliteMasterCount = rawDb.select(
             'SELECT count(*) AS count FROM sqlite_master;',
           );
@@ -91,7 +88,7 @@ Future<File> resolveLocalDatabaseFile() async {
   return File(p.join(dir.path, 'tech_report_local.db'));
 }
 
-void _encryptPlaintextDatabaseIfNeeded(File file, String escapedKey) {
+void _prepareDatabaseEncryptionIfNeeded(File file, String escapedKey) {
   if (!file.existsSync() || file.lengthSync() == 0) {
     LocalDatabaseDebugLog.info('database.preEncryption.skip.emptyOrMissing');
     return;
@@ -121,16 +118,66 @@ void _encryptPlaintextDatabaseIfNeeded(File file, String escapedKey) {
       );
     }
 
-    db.execute("PRAGMA rekey = '$escapedKey';");
+    db.execute("PRAGMA rekey = 'raw:$escapedKey';");
 
     LocalDatabaseDebugLog.info(
       'database.preEncryption.rekey.done',
-      data: {'sizeAfterRekeyBytes': file.lengthSync()},
+      data: {'keyFormat': 'raw-hex', 'sizeAfterRekeyBytes': file.lengthSync()},
+    );
+  } on SqliteException catch (error) {
+    _rekeyLegacyPassphraseDatabaseIfNeeded(
+      file,
+      escapedKey,
+      plaintextErrorMessage: error.message,
+    );
+  } finally {
+    db.close();
+  }
+}
+
+void _rekeyLegacyPassphraseDatabaseIfNeeded(
+  File file,
+  String escapedKey, {
+  required String plaintextErrorMessage,
+}) {
+  final db = sqlite3.open(file.path);
+  try {
+    db.execute("PRAGMA key = '$escapedKey';");
+    final sqliteMasterCount = db.select(
+      'SELECT count(*) AS count FROM sqlite_master;',
+    );
+
+    LocalDatabaseDebugLog.info(
+      'database.preEncryption.legacyPassphrase.detected',
+      data: {
+        'sqliteMasterCount': _rowsToLogData(sqliteMasterCount),
+        'sizeBeforeRekeyBytes': file.lengthSync(),
+      },
+    );
+
+    try {
+      db.execute('PRAGMA wal_checkpoint(TRUNCATE);');
+    } catch (error, stackTrace) {
+      LocalDatabaseDebugLog.error(
+        'database.preEncryption.legacyPassphrase.walCheckpoint.failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    db.execute("PRAGMA rekey = 'raw:$escapedKey';");
+
+    LocalDatabaseDebugLog.info(
+      'database.preEncryption.legacyPassphrase.rekey.done',
+      data: {'keyFormat': 'raw-hex', 'sizeAfterRekeyBytes': file.lengthSync()},
     );
   } on SqliteException catch (error) {
     LocalDatabaseDebugLog.info(
       'database.preEncryption.skip.notPlaintext',
-      data: {'message': error.message},
+      data: {
+        'plaintextMessage': plaintextErrorMessage,
+        'legacyPassphraseMessage': error.message,
+      },
     );
   } finally {
     db.close();
