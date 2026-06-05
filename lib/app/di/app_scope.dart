@@ -128,14 +128,13 @@ class AppScope {
       final applyLocalDataImport = ApplyLocalDataImport(
         ratRepository: ratRepository,
         assinaturaRepository: assinaturaRepository,
-        localSignatureAssetStore: localSignatureAssetStore,
       );
       final shareRatLocally = ShareRatLocally(
         ratRepository: ratRepository,
         assinaturaRepository: assinaturaRepository,
       );
       final ratPdfShareService = RatPdfShareService(
-        localSignatureAssetStore: localSignatureAssetStore,
+        assinaturaRepository: assinaturaRepository,
       );
       final remoteEndpointRepository = LocalRemoteEndpointRepository();
       final secureTokenStore = FlutterSecureTokenStore();

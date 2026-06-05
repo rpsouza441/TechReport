@@ -468,7 +468,7 @@ class _LocalPinScreenState extends State<LocalPinScreen> {
         title: Text(title),
         bottom: _isSubmitting
             ? const PreferredSize(
-                preferredSize: Size.fromHeight(3),
+ preferredSize: Size.fromHeight(3),
                 child: LinearProgressIndicator(minHeight: 3),
               )
             : null,
@@ -484,8 +484,8 @@ class _LocalPinScreenState extends State<LocalPinScreen> {
             const SizedBox(height: 8),
             Text(
               widget.hasPin
-                  ? 'Informe o PIN atual e escolha um novo PIN.'
-                  : 'Crie um PIN de 4 dígitos para proteger o modo local.',
+                  ? 'Informe o PIN atual. Deixe o novo PIN vazio para removê-lo.'
+                  : 'Crie um PIN de 4 a 8 dígitos para proteger o modo local.',
               style: theme.textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
@@ -509,9 +509,11 @@ class _LocalPinScreenState extends State<LocalPinScreen> {
                 enabled: !_isSubmitting,
                 keyboardType: TextInputType.number,
                 obscureText: true,
+                maxLength: 8,
                 decoration: const InputDecoration(
                   labelText: 'PIN atual',
                   prefixIcon: Icon(Icons.lock_outline),
+                  counterText: '',
                 ),
               ),
               const SizedBox(height: 16),
@@ -521,9 +523,11 @@ class _LocalPinScreenState extends State<LocalPinScreen> {
               enabled: !_isSubmitting,
               keyboardType: TextInputType.number,
               obscureText: true,
+              maxLength: 8,
               decoration: const InputDecoration(
-                labelText: 'Novo PIN com 4 dígitos',
+                labelText: 'Novo PIN (4 a 8 dígitos ou vazio para remover)',
                 prefixIcon: Icon(Icons.pin_outlined),
+                counterText: '',
               ),
             ),
             const SizedBox(height: 16),
@@ -532,9 +536,11 @@ class _LocalPinScreenState extends State<LocalPinScreen> {
               enabled: !_isSubmitting,
               keyboardType: TextInputType.number,
               obscureText: true,
+              maxLength: 8,
               decoration: const InputDecoration(
                 labelText: 'Confirmação do novo PIN',
                 prefixIcon: Icon(Icons.pin_outlined),
+                counterText: '',
               ),
             ),
             const SizedBox(height: 24),

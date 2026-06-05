@@ -68,7 +68,35 @@ class ChangeLocalPin {
       }
     }
 
-    if (trimmedNewPin.length != 4) {
+    if (trimmedNewPin.isEmpty) {
+      if (trimmedConfirmation.isNotEmpty) {
+        return const ChangeLocalPinResult.failure(
+          ChangeLocalPinFailure.confirmationMismatch,
+        );
+      }
+
+      await _pinSecretRepository.deletePin();
+
+      final now = DateTime.now();
+      final updatedSession = session.copyWith(
+        pinConfigured: false,
+        status: SessaoLocalStatus.unlocked,
+        lastUnlockedAt: now,
+        updatedAt: now,
+      );
+      await _sessaoLocalRepository.saveSession(updatedSession);
+
+      final tecnico = await _tecnicoLocalRepository.getCurrent();
+      if (tecnico != null) {
+        await _tecnicoLocalRepository.save(
+          tecnico.copyWith(pinConfigured: false, updatedAt: now),
+        );
+      }
+
+      return ChangeLocalPinResult.success(updatedSession);
+    }
+
+    if (trimmedNewPin.length < 4 || trimmedNewPin.length > 8) {
       return const ChangeLocalPinResult.failure(
         ChangeLocalPinFailure.invalidNewPin,
       );

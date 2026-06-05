@@ -56,9 +56,11 @@ class _LocalUnlockScreenState extends State<LocalUnlockScreen> {
                           controller: _pinController,
                           keyboardType: TextInputType.number,
                           obscureText: true,
+                          maxLength: 8,
                           decoration: const InputDecoration(
                             labelText: 'PIN',
                             prefixIcon: Icon(Icons.pin_outlined),
+                            counterText: '',
                           ),
                           onSubmitted: (_) => _submit(),
                         ),

@@ -113,7 +113,7 @@ class AppSessionViewModel extends ChangeNotifier {
 
     final result = await _unlockLocalSession(pin);
     if (!result.success) {
-      _errorMessage = 'PIN inválido. Use 4 dígitos para desbloquear.';
+      _errorMessage = 'PIN inválido. Use 4 a 8 dígitos para desbloquear.';
       notifyListeners();
       return;
     }
@@ -144,7 +144,7 @@ class AppSessionViewModel extends ChangeNotifier {
     if (!result.success) {
       _errorMessage = switch (result.failure) {
         ChangeLocalPinFailure.invalidCurrentPin => 'PIN atual inválido.',
-        ChangeLocalPinFailure.invalidNewPin => 'Defina um PIN com 4 dígitos.',
+        ChangeLocalPinFailure.invalidNewPin => 'Defina um PIN com 4 a 8 dígitos.',
         ChangeLocalPinFailure.confirmationMismatch =>
           'A confirmação do PIN não confere.',
         ChangeLocalPinFailure.missingSession => 'Sessão local não encontrada.',
@@ -177,8 +177,8 @@ class AppSessionViewModel extends ChangeNotifier {
       return null;
     }
 
-    if ((pin ?? '').trim().length != 4) {
-      return 'Defina um PIN com 4 dígitos.';
+    if ((pin ?? '').trim().length < 4 || (pin ?? '').trim().length > 8) {
+      return 'Defina um PIN com 4 a 8 dígitos.';
     }
 
     if (pin != pinConfirmation) {
