@@ -42,7 +42,10 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
                     statusFilter &
                     retryAtFilter;
               })
-              ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)])
+              ..orderBy([
+                (tbl) => OrderingTerm.asc(tbl.createdAt),
+                (tbl) => OrderingTerm.asc(tbl.id),
+              ])
               ..limit(limit))
             .get();
 
@@ -149,6 +152,27 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
         .get();
 
     return rows.map(_toEntity).toList();
+  }
+
+  @override
+  Future<bool> hasPendingItem({
+    required String empresaId,
+    required String usuarioId,
+    required domain.SyncEntityType entityType,
+    required String entityId,
+  }) async {
+    final row = await (_database.select(_database.syncQueueItems)
+          ..where((tbl) =>
+              tbl.empresaId.equals(empresaId) &
+              tbl.usuarioId.equals(usuarioId) &
+              tbl.entityType.equals(entityType.name) &
+              tbl.entityId.equals(entityId) &
+              (tbl.status.equals(domain.SyncItemStatus.pending.name) |
+                  tbl.status.equals(domain.SyncItemStatus.processing.name)))
+          ..limit(1))
+        .getSingleOrNull();
+
+    return row != null;
   }
 
   domain.SyncItem _toEntity(SyncQueueItem row) {

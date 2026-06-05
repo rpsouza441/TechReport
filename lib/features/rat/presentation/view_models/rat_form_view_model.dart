@@ -408,6 +408,19 @@ class RatFormViewModel extends ChangeNotifier {
 
     final currentSignatures = await _assinaturaRepository.listByRatId(ratId);
     for (final assinatura in currentSignatures) {
+      // Enfileira delete remoto antes de remover localmente.
+      // Se a assinatura já syncou, o Storage/tabela remota fica órfã
+      // sem este step.
+      final remoteSession = _remoteSession;
+      if (remoteSession != null && remoteSession.hasCompanyContext) {
+        await _enqueueAssinaturaSync?.delete(
+          assinatura,
+          empresaId: remoteSession.empresaId!,
+          usuarioId: remoteSession.usuarioId,
+          ratId: ratId,
+        );
+      }
+
       if (assinatura.storageMode == StorageMode.localFile) {
         await _localSignatureAssetStore.delete(assinatura.assetRef);
       }

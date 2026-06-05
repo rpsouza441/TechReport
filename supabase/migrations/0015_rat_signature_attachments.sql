@@ -1,7 +1,10 @@
 -- 15: rat_signature_attachments
 -- Sincronização remota de assinaturas de RAT via Supabase Storage privado.
--- RLS: admins_empresa, gerentes e técnicos da empresa podem ler;
--- admins_empresa e gerentes podem modificar.
+-- RLS:
+--   - Leitura:  admins_empresa, gerentes e técnicos da empresa
+--   - Escrita:  admins_empresa e gerentes
+--     (técnicos sincronizam a própria assinatura via upsert da tabela
+--      rat_signature_attachments quando a versão é criada pelo app)
 -- Schema: tecnicos.papel em ('admin_empresa', 'gerente', 'tecnico')
 
 -- 1) Bucket privado para assinaturas

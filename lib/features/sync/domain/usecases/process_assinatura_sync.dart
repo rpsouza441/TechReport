@@ -36,8 +36,13 @@ class ProcessAssinaturaSync {
     // upsert — le bytes do repositório local
     final bytes = await _assinaturaRepository.readBytes(assinaturaId);
     if (bytes == null) {
-      // Assinatura pode ter sido removida entre enqueue e process
-      return;
+      // Assinatura pode ter sido removida entre enqueue e process.
+      // Marca como falha para não perder o item silenciosamente;
+      // retry posterior pode encontrar os bytes se o RAT já syncou.
+      throw StateError(
+        'Assinatura $assinaturaId não encontrada localmente. '
+        'Aguarde o RAT syncar antes de tentar novamente.',
+      );
     }
 
     final mimeType = payload['mimeType'] as String? ?? 'image/png';

@@ -30,4 +30,14 @@ abstract class SyncQueueRepository {
     required String usuarioId,
     int limit = 50,
   });
+
+  /// Retorna true se já existe um item pendente (status = pending ou
+  /// processing) para a entityType + entityId givena, dentro da empresa.
+  /// Usado para deduplicar itens de sync antes de enfileirar.
+  Future<bool> hasPendingItem({
+    required String empresaId,
+    required String usuarioId,
+    required SyncEntityType entityType,
+    required String entityId,
+  });
 }

@@ -21,6 +21,19 @@ class EnqueueAssinaturaSync {
     required String usuarioId,
     required String ratId,
   }) async {
+    // Deduplicação: se já existe item pendente/processing para esta
+    // assinatura, não enfileira novamente. O upsert remoto vai
+    // sobrescrever o conteúdo anterior.
+    final alreadyPending = await _queueRepository.hasPendingItem(
+      empresaId: empresaId,
+      usuarioId: usuarioId,
+      entityType: SyncEntityType.assinatura,
+      entityId: assinatura.id,
+    );
+    if (alreadyPending) {
+      return;
+    }
+
     final now = DateTime.now();
 
     await _queueRepository.enqueue(
@@ -52,6 +65,18 @@ class EnqueueAssinaturaSync {
     required String usuarioId,
     required String ratId,
   }) async {
+    // Deduplicação: delete enfileirado substitui upsert pendente se existir.
+    // Se já há um delete pendente, não enfileira novamente.
+    final alreadyPending = await _queueRepository.hasPendingItem(
+      empresaId: empresaId,
+      usuarioId: usuarioId,
+      entityType: SyncEntityType.assinatura,
+      entityId: assinatura.id,
+    );
+    if (alreadyPending) {
+      return;
+    }
+
     final now = DateTime.now();
 
     await _queueRepository.enqueue(
