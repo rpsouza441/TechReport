@@ -232,9 +232,13 @@ class RatFormViewModel extends ChangeNotifier {
     _signaturePreviewBytes = null;
 
     if (_assinatura case final assinatura?) {
-      _signaturePreviewBytes = await _localSignatureAssetStore.read(
-        assinatura.assetRef,
-      );
+      if (assinatura.storageMode == StorageMode.inlineBinary) {
+        _signaturePreviewBytes = await _assinaturaRepository.readBytes(assinatura.id);
+      } else if (assinatura.storageMode == StorageMode.localFile) {
+        _signaturePreviewBytes = await _localSignatureAssetStore.read(
+          assinatura.assetRef,
+        );
+      }
     }
 
     _isLoadingSignature = false;
@@ -408,21 +412,27 @@ class RatFormViewModel extends ChangeNotifier {
 
     final now = DateTime.now();
     final assinaturaId = 'assinatura-${now.microsecondsSinceEpoch}';
-    final assetRef = await _localSignatureAssetStore.savePng(
+
+    await _assinaturaRepository.saveBytes(
       assinaturaId: assinaturaId,
       bytes: bytes,
+      assetRef: 'signatures/$assinaturaId.png',
+      ratId: ratId,
     );
 
     final assinatura = Assinatura(
       id: assinaturaId,
       ratId: ratId,
-      storageMode: StorageMode.localFile,
-      assetRef: assetRef,
+      storageMode: StorageMode.inlineBinary,
+      assetRef: 'signatures/$assinaturaId.png',
+      data: bytes,
+      sizeBytes: bytes.length,
+      sha256: null,
+      mimeType: 'image/png',
       createdAt: now,
       updatedAt: now,
     );
 
-    await _assinaturaRepository.save(assinatura);
     _assinatura = assinatura;
     _signaturePreviewBytes = bytes;
     notifyListeners();

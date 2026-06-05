@@ -2701,6 +2701,48 @@ class $AssinaturasTable extends Assinaturas
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _dataBlobMeta = const VerificationMeta(
+    'dataBlob',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> dataBlob = GeneratedColumn<Uint8List>(
+    'data_blob',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sha256Meta = const VerificationMeta('sha256');
+  @override
+  late final GeneratedColumn<String> sha256 = GeneratedColumn<String>(
+    'sha256',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2740,6 +2782,10 @@ class $AssinaturasTable extends Assinaturas
     ratId,
     storageMode,
     assetRef,
+    dataBlob,
+    sizeBytes,
+    sha256,
+    mimeType,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2788,6 +2834,30 @@ class $AssinaturasTable extends Assinaturas
     } else if (isInserting) {
       context.missing(_assetRefMeta);
     }
+    if (data.containsKey('data_blob')) {
+      context.handle(
+        _dataBlobMeta,
+        dataBlob.isAcceptableOrUnknown(data['data_blob']!, _dataBlobMeta),
+      );
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    }
+    if (data.containsKey('sha256')) {
+      context.handle(
+        _sha256Meta,
+        sha256.isAcceptableOrUnknown(data['sha256']!, _sha256Meta),
+      );
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2835,6 +2905,22 @@ class $AssinaturasTable extends Assinaturas
         DriftSqlType.string,
         data['${effectivePrefix}asset_ref'],
       )!,
+      dataBlob: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}data_blob'],
+      ),
+      sizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size_bytes'],
+      ),
+      sha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sha256'],
+      ),
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2861,6 +2947,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
   final String ratId;
   final String storageMode;
   final String assetRef;
+  final Uint8List? dataBlob;
+  final int? sizeBytes;
+  final String? sha256;
+  final String? mimeType;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -2869,6 +2959,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
     required this.ratId,
     required this.storageMode,
     required this.assetRef,
+    this.dataBlob,
+    this.sizeBytes,
+    this.sha256,
+    this.mimeType,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -2880,6 +2974,18 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
     map['rat_id'] = Variable<String>(ratId);
     map['storage_mode'] = Variable<String>(storageMode);
     map['asset_ref'] = Variable<String>(assetRef);
+    if (!nullToAbsent || dataBlob != null) {
+      map['data_blob'] = Variable<Uint8List>(dataBlob);
+    }
+    if (!nullToAbsent || sizeBytes != null) {
+      map['size_bytes'] = Variable<int>(sizeBytes);
+    }
+    if (!nullToAbsent || sha256 != null) {
+      map['sha256'] = Variable<String>(sha256);
+    }
+    if (!nullToAbsent || mimeType != null) {
+      map['mime_type'] = Variable<String>(mimeType);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
@@ -2894,6 +3000,18 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
       ratId: Value(ratId),
       storageMode: Value(storageMode),
       assetRef: Value(assetRef),
+      dataBlob: dataBlob == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataBlob),
+      sizeBytes: sizeBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sizeBytes),
+      sha256: sha256 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sha256),
+      mimeType: mimeType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mimeType),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -2912,6 +3030,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
       ratId: serializer.fromJson<String>(json['ratId']),
       storageMode: serializer.fromJson<String>(json['storageMode']),
       assetRef: serializer.fromJson<String>(json['assetRef']),
+      dataBlob: serializer.fromJson<Uint8List?>(json['dataBlob']),
+      sizeBytes: serializer.fromJson<int?>(json['sizeBytes']),
+      sha256: serializer.fromJson<String?>(json['sha256']),
+      mimeType: serializer.fromJson<String?>(json['mimeType']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -2925,6 +3047,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
       'ratId': serializer.toJson<String>(ratId),
       'storageMode': serializer.toJson<String>(storageMode),
       'assetRef': serializer.toJson<String>(assetRef),
+      'dataBlob': serializer.toJson<Uint8List?>(dataBlob),
+      'sizeBytes': serializer.toJson<int?>(sizeBytes),
+      'sha256': serializer.toJson<String?>(sha256),
+      'mimeType': serializer.toJson<String?>(mimeType),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -2936,6 +3062,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
     String? ratId,
     String? storageMode,
     String? assetRef,
+    Value<Uint8List?> dataBlob = const Value.absent(),
+    Value<int?> sizeBytes = const Value.absent(),
+    Value<String?> sha256 = const Value.absent(),
+    Value<String?> mimeType = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -2944,6 +3074,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
     ratId: ratId ?? this.ratId,
     storageMode: storageMode ?? this.storageMode,
     assetRef: assetRef ?? this.assetRef,
+    dataBlob: dataBlob.present ? dataBlob.value : this.dataBlob,
+    sizeBytes: sizeBytes.present ? sizeBytes.value : this.sizeBytes,
+    sha256: sha256.present ? sha256.value : this.sha256,
+    mimeType: mimeType.present ? mimeType.value : this.mimeType,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -2956,6 +3090,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
           ? data.storageMode.value
           : this.storageMode,
       assetRef: data.assetRef.present ? data.assetRef.value : this.assetRef,
+      dataBlob: data.dataBlob.present ? data.dataBlob.value : this.dataBlob,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+      sha256: data.sha256.present ? data.sha256.value : this.sha256,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -2969,6 +3107,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
           ..write('ratId: $ratId, ')
           ..write('storageMode: $storageMode, ')
           ..write('assetRef: $assetRef, ')
+          ..write('dataBlob: $dataBlob, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('sha256: $sha256, ')
+          ..write('mimeType: $mimeType, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -2982,6 +3124,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
     ratId,
     storageMode,
     assetRef,
+    $driftBlobEquality.hash(dataBlob),
+    sizeBytes,
+    sha256,
+    mimeType,
     createdAt,
     updatedAt,
     deletedAt,
@@ -2994,6 +3140,10 @@ class Assinatura extends DataClass implements Insertable<Assinatura> {
           other.ratId == this.ratId &&
           other.storageMode == this.storageMode &&
           other.assetRef == this.assetRef &&
+          $driftBlobEquality.equals(other.dataBlob, this.dataBlob) &&
+          other.sizeBytes == this.sizeBytes &&
+          other.sha256 == this.sha256 &&
+          other.mimeType == this.mimeType &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -3004,6 +3154,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
   final Value<String> ratId;
   final Value<String> storageMode;
   final Value<String> assetRef;
+  final Value<Uint8List?> dataBlob;
+  final Value<int?> sizeBytes;
+  final Value<String?> sha256;
+  final Value<String?> mimeType;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -3013,6 +3167,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
     this.ratId = const Value.absent(),
     this.storageMode = const Value.absent(),
     this.assetRef = const Value.absent(),
+    this.dataBlob = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.sha256 = const Value.absent(),
+    this.mimeType = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3023,6 +3181,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
     required String ratId,
     required String storageMode,
     required String assetRef,
+    this.dataBlob = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.sha256 = const Value.absent(),
+    this.mimeType = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
@@ -3038,6 +3200,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
     Expression<String>? ratId,
     Expression<String>? storageMode,
     Expression<String>? assetRef,
+    Expression<Uint8List>? dataBlob,
+    Expression<int>? sizeBytes,
+    Expression<String>? sha256,
+    Expression<String>? mimeType,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -3048,6 +3214,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
       if (ratId != null) 'rat_id': ratId,
       if (storageMode != null) 'storage_mode': storageMode,
       if (assetRef != null) 'asset_ref': assetRef,
+      if (dataBlob != null) 'data_blob': dataBlob,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (sha256 != null) 'sha256': sha256,
+      if (mimeType != null) 'mime_type': mimeType,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -3060,6 +3230,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
     Value<String>? ratId,
     Value<String>? storageMode,
     Value<String>? assetRef,
+    Value<Uint8List?>? dataBlob,
+    Value<int?>? sizeBytes,
+    Value<String?>? sha256,
+    Value<String?>? mimeType,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -3070,6 +3244,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
       ratId: ratId ?? this.ratId,
       storageMode: storageMode ?? this.storageMode,
       assetRef: assetRef ?? this.assetRef,
+      dataBlob: dataBlob ?? this.dataBlob,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      sha256: sha256 ?? this.sha256,
+      mimeType: mimeType ?? this.mimeType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -3091,6 +3269,18 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
     }
     if (assetRef.present) {
       map['asset_ref'] = Variable<String>(assetRef.value);
+    }
+    if (dataBlob.present) {
+      map['data_blob'] = Variable<Uint8List>(dataBlob.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (sha256.present) {
+      map['sha256'] = Variable<String>(sha256.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -3114,6 +3304,10 @@ class AssinaturasCompanion extends UpdateCompanion<Assinatura> {
           ..write('ratId: $ratId, ')
           ..write('storageMode: $storageMode, ')
           ..write('assetRef: $assetRef, ')
+          ..write('dataBlob: $dataBlob, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('sha256: $sha256, ')
+          ..write('mimeType: $mimeType, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -5097,6 +5291,10 @@ typedef $$AssinaturasTableCreateCompanionBuilder =
       required String ratId,
       required String storageMode,
       required String assetRef,
+      Value<Uint8List?> dataBlob,
+      Value<int?> sizeBytes,
+      Value<String?> sha256,
+      Value<String?> mimeType,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
@@ -5108,6 +5306,10 @@ typedef $$AssinaturasTableUpdateCompanionBuilder =
       Value<String> ratId,
       Value<String> storageMode,
       Value<String> assetRef,
+      Value<Uint8List?> dataBlob,
+      Value<int?> sizeBytes,
+      Value<String?> sha256,
+      Value<String?> mimeType,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -5140,6 +5342,26 @@ class $$AssinaturasTableFilterComposer
 
   ColumnFilters<String> get assetRef => $composableBuilder(
     column: $table.assetRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get dataBlob => $composableBuilder(
+    column: $table.dataBlob,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5188,6 +5410,26 @@ class $$AssinaturasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<Uint8List> get dataBlob => $composableBuilder(
+    column: $table.dataBlob,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5226,6 +5468,18 @@ class $$AssinaturasTableAnnotationComposer
 
   GeneratedColumn<String> get assetRef =>
       $composableBuilder(column: $table.assetRef, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get dataBlob =>
+      $composableBuilder(column: $table.dataBlob, builder: (column) => column);
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  GeneratedColumn<String> get sha256 =>
+      $composableBuilder(column: $table.sha256, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5278,6 +5532,10 @@ class $$AssinaturasTableTableManager
                 Value<String> ratId = const Value.absent(),
                 Value<String> storageMode = const Value.absent(),
                 Value<String> assetRef = const Value.absent(),
+                Value<Uint8List?> dataBlob = const Value.absent(),
+                Value<int?> sizeBytes = const Value.absent(),
+                Value<String?> sha256 = const Value.absent(),
+                Value<String?> mimeType = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5287,6 +5545,10 @@ class $$AssinaturasTableTableManager
                 ratId: ratId,
                 storageMode: storageMode,
                 assetRef: assetRef,
+                dataBlob: dataBlob,
+                sizeBytes: sizeBytes,
+                sha256: sha256,
+                mimeType: mimeType,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -5298,6 +5560,10 @@ class $$AssinaturasTableTableManager
                 required String ratId,
                 required String storageMode,
                 required String assetRef,
+                Value<Uint8List?> dataBlob = const Value.absent(),
+                Value<int?> sizeBytes = const Value.absent(),
+                Value<String?> sha256 = const Value.absent(),
+                Value<String?> mimeType = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5307,6 +5573,10 @@ class $$AssinaturasTableTableManager
                 ratId: ratId,
                 storageMode: storageMode,
                 assetRef: assetRef,
+                dataBlob: dataBlob,
+                sizeBytes: sizeBytes,
+                sha256: sha256,
+                mimeType: mimeType,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

@@ -7,16 +7,16 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
-import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
+import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 
 class RatPdfShareService {
   RatPdfShareService({
-    required LocalSignatureAssetStore localSignatureAssetStore,
-  }) : _localSignatureAssetStore = localSignatureAssetStore;
+    required AssinaturaRepository assinaturaRepository,
+  }) : _assinaturaRepository = assinaturaRepository;
 
-  final LocalSignatureAssetStore _localSignatureAssetStore;
+  final AssinaturaRepository _assinaturaRepository;
 
   Future<void> share(ShareRatLocallyResult shareData) async {
     final pdfBytes = await _buildPdf(shareData);
@@ -168,11 +168,11 @@ class RatPdfShareService {
   }
 
   Future<Uint8List?> _loadAssinaturaBytes(Assinatura? assinatura) async {
-    if (assinatura == null || assinatura.storageMode != StorageMode.localFile) {
+    if (assinatura == null) {
       return null;
     }
 
-    return _localSignatureAssetStore.read(assinatura.assetRef);
+    return _assinaturaRepository.readBytes(assinatura.id);
   }
 
   Future<File> _saveTemporaryPdf({

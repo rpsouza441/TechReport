@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:techreport/features/local_auth/domain/entities/local_import_result.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
-import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 
@@ -13,14 +13,11 @@ class ApplyLocalDataImport {
   ApplyLocalDataImport({
     required RatRepository ratRepository,
     required AssinaturaRepository assinaturaRepository,
-    required LocalSignatureAssetStore localSignatureAssetStore,
   }) : _ratRepository = ratRepository,
-       _assinaturaRepository = assinaturaRepository,
-       _localSignatureAssetStore = localSignatureAssetStore;
+       _assinaturaRepository = assinaturaRepository;
 
   final RatRepository _ratRepository;
   final AssinaturaRepository _assinaturaRepository;
-  final LocalSignatureAssetStore _localSignatureAssetStore;
 
   Future<LocalImportResult> call({
     required Map<String, dynamic> payload,
@@ -150,21 +147,25 @@ class ApplyLocalDataImport {
         return null;
       }
 
+      final bytes = base64Decode(bytesBase64);
       final id = json['id'] as String;
-      final assetRef = await _localSignatureAssetStore.savePng(
-        assinaturaId: id,
-        bytes: base64Decode(bytesBase64),
-      );
+      final sha256Hash = sha256.convert(bytes).toString();
 
-      return Assinatura(
+      final assinatura = Assinatura(
         id: id,
         ratId: ratId,
-        storageMode: StorageMode.localFile,
-        assetRef: assetRef,
+        storageMode: StorageMode.inlineBinary,
+        assetRef: json['assetRef'] as String? ?? 'import/$id.png',
+        data: bytes,
+        sizeBytes: bytes.length,
+        sha256: sha256Hash,
+        mimeType: 'image/png',
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
         deletedAt: _optionalDate(json['deletedAt'] as String?),
       );
+
+      return assinatura;
     } catch (_) {
       return null;
     }

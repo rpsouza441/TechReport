@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:techreport/app/theme/metric_slate_theme.dart';
@@ -20,10 +22,10 @@ void main() {
   late ShareRatLocally shareRatLocally;
 
   setUp(() {
-    signatureStore = LocalSignatureAssetStore();
-    pdfService = RatPdfShareService(localSignatureAssetStore: signatureStore);
-    ratRepository = _StubRatRepository([]);
     assinaturaRepository = _StubAssinaturaRepository();
+    pdfService = RatPdfShareService(assinaturaRepository: assinaturaRepository);
+    ratRepository = _StubRatRepository([]);
+    signatureStore = LocalSignatureAssetStore();
     shareRatLocally = ShareRatLocally(
       ratRepository: ratRepository,
       assinaturaRepository: assinaturaRepository,
@@ -122,6 +124,17 @@ class _StubRatRepository implements RatRepository {
 class _StubAssinaturaRepository implements AssinaturaRepository {
   @override
   Future<List<Assinatura>> listByRatId(String ratId) async => [];
+
+  @override
+  Future<Uint8List?> readBytes(String id) async => null;
+
+  @override
+  Future<void> saveBytes({
+    required String assinaturaId,
+    required Uint8List bytes,
+    required String assetRef,
+    required String ratId,
+  }) async {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

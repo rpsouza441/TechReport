@@ -73,6 +73,10 @@ class Assinaturas extends Table {
   TextColumn get ratId => text()();
   TextColumn get storageMode => text()();
   TextColumn get assetRef => text()();
+  BlobColumn get dataBlob => blob().nullable()();
+  IntColumn get sizeBytes => integer().nullable()();
+  TextColumn get sha256 => text().nullable()();
+  TextColumn get mimeType => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -110,7 +114,7 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
   /// Cria banco com criptografia via SQLite3MultipleCiphers.
   /// O [executor] deve ser aberto via openEncryptedDatabase() com PRAGMA key.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -172,6 +176,12 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
           rats.responsavelDocumento,
         );
       }
+      if (from < 8) {
+        await _addAssinaturaColumnIfMissing(m, 'data_blob', assinaturas.dataBlob);
+        await _addAssinaturaColumnIfMissing(m, 'size_bytes', assinaturas.sizeBytes);
+        await _addAssinaturaColumnIfMissing(m, 'sha256', assinaturas.sha256);
+        await _addAssinaturaColumnIfMissing(m, 'mime_type', assinaturas.mimeType);
+      }
     },
   );
 
@@ -190,6 +200,24 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
 
   Future<bool> _ratsHasColumn(String columnName) async {
     final rows = await customSelect('PRAGMA table_info(rats)').get();
+    return rows.any((row) => row.data['name'] == columnName);
+  }
+
+  Future<void> _addAssinaturaColumnIfMissing(
+    Migrator migrator,
+    String columnName,
+    GeneratedColumn column,
+  ) async {
+    final exists = await _assinaturasHasColumn(columnName);
+    if (exists) {
+      return;
+    }
+
+    await migrator.addColumn(assinaturas, column);
+  }
+
+  Future<bool> _assinaturasHasColumn(String columnName) async {
+    final rows = await customSelect('PRAGMA table_info(assinaturas)').get();
     return rows.any((row) => row.data['name'] == columnName);
   }
 }

@@ -101,9 +101,13 @@ class LocalDataExportShareService {
   }
 
   Future<Map<String, Object?>> _assinaturaToJson(Assinatura assinatura) async {
-    final bytes = assinatura.storageMode == StorageMode.localFile
-        ? await _localSignatureAssetStore.read(assinatura.assetRef)
-        : null;
+    Uint8List? bytes;
+
+    if (assinatura.storageMode == StorageMode.inlineBinary) {
+      bytes = await _assinaturaRepository.readBytes(assinatura.id);
+    } else if (assinatura.storageMode == StorageMode.localFile) {
+      bytes = await _localSignatureAssetStore.read(assinatura.assetRef);
+    }
 
     return <String, Object?>{
       'id': assinatura.id,
