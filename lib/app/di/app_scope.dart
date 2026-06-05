@@ -6,25 +6,35 @@ import 'package:techreport/features/company_admin/domain/usecases/create_tecnico
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_convites.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_empresas.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_empresa_admin_convites.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_empresa_admins.dart';
 import 'package:techreport/features/company_admin/domain/usecases/update_admin_empresa.dart';
+import 'package:techreport/features/company_admin/domain/usecases/update_empresa_admin.dart';
 import 'package:techreport/features/company_admin/domain/usecases/update_tecnico_equipe.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_sessao_local_repository.dart';
 import 'package:techreport/features/local_auth/data/repositories/drift_tecnico_local_repository.dart';
 import 'package:techreport/features/local_auth/data/services/local_data_import_parser.dart';
+import 'package:techreport/features/local_auth/data/services/local_backup_parser.dart';
+import 'package:techreport/features/local_auth/data/services/local_backup_service.dart';
 import 'package:techreport/features/local_auth/data/services/local_data_export_share_service.dart';
 import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
+import 'package:techreport/features/local_auth/domain/usecases/apply_local_backup.dart';
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_data_import.dart';
+import 'package:techreport/features/local_auth/domain/usecases/preview_local_backup.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/rat/domain/repositories/remote_rat_repository.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/repositories/drift_assinatura_repository.dart';
+import 'package:techreport/features/signature/data/repositories/supabase_remote_assinatura_repository.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
+import 'package:techreport/features/signature/domain/repositories/remote_assinatura_repository.dart';
 import 'package:techreport/features/sync/data/repositories/drift_sync_queue_repository.dart';
 import 'package:techreport/features/rat/data/repositories/supabase_remote_rat_repository.dart';
 import 'package:techreport/features/sync/data/repositories/local_sync_checkpoint_repository.dart';
+import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/repositories/sync_checkpoint_repository.dart';
 import 'package:techreport/features/sync/domain/repositories/sync_queue_repository.dart';
@@ -84,10 +94,14 @@ class AppScope {
     required this.createTecnicoConvite,
     required this.cancelTecnicoConvite,
     required this.updateTecnicoEquipe,
+    required this.listEmpresaAdmins,
+    required this.listEmpresaAdminConvites,
+    required this.updateEmpresaAdmin,
     required this.signInCompanyWithInvite,
     required this.syncQueueRepository,
     required this.remoteRatRepository,
     required this.enqueueRatSync,
+    required this.enqueueAssinaturaSync,
     required this.processSyncQueue,
     required this.secureTokenStore,
     required this.remoteSessionRepository,
@@ -156,11 +170,21 @@ class AppScope {
       final createTecnicoConvite = CreateTecnicoConvite(companyAdminRepository);
       final cancelTecnicoConvite = CancelTecnicoConvite(companyAdminRepository);
       final updateTecnicoEquipe = UpdateTecnicoEquipe(companyAdminRepository);
+      final listEmpresaAdmins = ListEmpresaAdmins(companyAdminRepository);
+      final listEmpresaAdminConvites =
+          ListEmpresaAdminConvites(companyAdminRepository);
+      final updateEmpresaAdmin = UpdateEmpresaAdmin(companyAdminRepository);
       final syncQueueRepository = DriftSyncQueueRepository(database);
       final remoteRatRepository = SupabaseRemoteRatRepository(
         clientFactory: supabaseClientFactory,
       );
+      final remoteAssinaturaRepository = SupabaseRemoteAssinaturaRepository(
+        clientFactory: supabaseClientFactory,
+      );
       final enqueueRatSync = EnqueueRatSync(
+        queueRepository: syncQueueRepository,
+      );
+      final enqueueAssinaturaSync = EnqueueAssinaturaSync(
         queueRepository: syncQueueRepository,
       );
       final syncCheckpointRepository = LocalSyncCheckpointRepository();
@@ -172,6 +196,8 @@ class AppScope {
       final processSyncQueue = ProcessSyncQueue(
         queueRepository: syncQueueRepository,
         remoteRatRepository: remoteRatRepository,
+        assinaturaRepository: assinaturaRepository,
+        remoteAssinaturaRepository: remoteAssinaturaRepository,
       );
       final remoteSessionRepository = LocalRemoteSessionRepository();
       final authRepository = SupabaseAuthRepository(
@@ -249,12 +275,16 @@ class AppScope {
         createTecnicoConvite: createTecnicoConvite,
         cancelTecnicoConvite: cancelTecnicoConvite,
         updateTecnicoEquipe: updateTecnicoEquipe,
+        listEmpresaAdmins: listEmpresaAdmins,
+        listEmpresaAdminConvites: listEmpresaAdminConvites,
+        updateEmpresaAdmin: updateEmpresaAdmin,
         signInCompanyWithInvite: signInCompanyWithInvite,
         syncQueueRepository: syncQueueRepository,
         syncCheckpointRepository: syncCheckpointRepository,
         downloadRemoteRats: downloadRemoteRats,
         remoteRatRepository: remoteRatRepository,
         enqueueRatSync: enqueueRatSync,
+        enqueueAssinaturaSync: enqueueAssinaturaSync,
         processSyncQueue: processSyncQueue,
         secureTokenStore: secureTokenStore,
         remoteSessionRepository: remoteSessionRepository,
@@ -303,10 +333,14 @@ class AppScope {
   final CreateTecnicoConvite createTecnicoConvite;
   final CancelTecnicoConvite cancelTecnicoConvite;
   final UpdateTecnicoEquipe updateTecnicoEquipe;
+  final ListEmpresaAdmins listEmpresaAdmins;
+  final ListEmpresaAdminConvites listEmpresaAdminConvites;
+  final UpdateEmpresaAdmin updateEmpresaAdmin;
   final SignInCompanyWithInvite signInCompanyWithInvite;
   final SyncQueueRepository syncQueueRepository;
   final RemoteRatRepository remoteRatRepository;
   final EnqueueRatSync enqueueRatSync;
+  final EnqueueAssinaturaSync enqueueAssinaturaSync;
   final ProcessSyncQueue processSyncQueue;
   final FlutterSecureTokenStore secureTokenStore;
   final LocalRemoteSessionRepository remoteSessionRepository;

@@ -7,6 +7,7 @@ import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
+import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
@@ -31,6 +32,7 @@ class RatListScreen extends StatefulWidget {
     required this.shareRatLocally,
     this.remoteSession,
     this.enqueueRatSync,
+    this.enqueueAssinaturaSync,
     this.processSyncQueue,
     this.downloadRemoteRats,
     this.embedded = false,
@@ -44,6 +46,7 @@ class RatListScreen extends StatefulWidget {
   final ShareRatLocally shareRatLocally;
   final SessaoRemota? remoteSession;
   final EnqueueRatSync? enqueueRatSync;
+  final EnqueueAssinaturaSync? enqueueAssinaturaSync;
   final ProcessSyncQueue? processSyncQueue;
   final DownloadRemoteRats? downloadRemoteRats;
   final bool embedded;
@@ -290,6 +293,7 @@ class _RatListScreenState extends State<RatListScreen> {
             shareRatLocally: widget.shareRatLocally,
             remoteSession: widget.remoteSession,
             enqueueRatSync: widget.enqueueRatSync,
+            enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
             processSyncQueue: widget.processSyncQueue,
             downloadRemoteRats: widget.downloadRemoteRats,
           ),
@@ -315,6 +319,7 @@ class _RatListScreenState extends State<RatListScreen> {
             initialRat: rat,
             remoteSession: widget.remoteSession,
             enqueueRatSync: widget.enqueueRatSync,
+            enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
             processSyncQueue: widget.processSyncQueue,
             downloadRemoteRats: widget.downloadRemoteRats,
           ),

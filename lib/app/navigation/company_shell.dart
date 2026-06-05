@@ -278,6 +278,11 @@ class _CompanyShellState extends State<CompanyShell> {
             createEmpresaConvite: widget.scope.createEmpresaConvite,
             updateEmpresa: widget.scope.updateAdminEmpresa,
           ),
+          listEmpresaAdmins: widget.scope.listEmpresaAdmins,
+          listEmpresaAdminConvites: widget.scope.listEmpresaAdminConvites,
+          createEmpresaConvite: widget.scope.createEmpresaConvite,
+          cancelTecnicoConvite: widget.scope.cancelTecnicoConvite,
+          updateEmpresaAdmin: widget.scope.updateEmpresaAdmin,
         );
     }
   }
@@ -305,6 +310,7 @@ class _CompanyShellState extends State<CompanyShell> {
       shareRatLocally: widget.scope.shareRatLocally,
       remoteSession: widget.session,
       enqueueRatSync: widget.scope.enqueueRatSync,
+      enqueueAssinaturaSync: widget.scope.enqueueAssinaturaSync,
       processSyncQueue: widget.scope.processSyncQueue,
       downloadRemoteRats: widget.scope.downloadRemoteRats,
       embedded: true,

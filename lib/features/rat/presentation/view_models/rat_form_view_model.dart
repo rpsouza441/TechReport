@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
+import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
@@ -26,6 +27,7 @@ class RatFormViewModel extends ChangeNotifier {
     Rat? initialRat,
     SessaoRemota? remoteSession,
     EnqueueRatSync? enqueueRatSync,
+    EnqueueAssinaturaSync? enqueueAssinaturaSync,
     ProcessSyncQueue? processSyncQueue,
     DownloadRemoteRats? downloadRemoteRats,
   }) : _ratRepository = ratRepository,
@@ -52,6 +54,7 @@ class RatFormViewModel extends ChangeNotifier {
        _remoteSession = remoteSession,
        _processSyncQueue = processSyncQueue,
        _enqueueRatSync = enqueueRatSync,
+       _enqueueAssinaturaSync = enqueueAssinaturaSync,
        _downloadRemoteRats = downloadRemoteRats,
        _isSaved = initialRat != null;
 
@@ -63,6 +66,7 @@ class RatFormViewModel extends ChangeNotifier {
   final Rat? _initialRat;
   final SessaoRemota? _remoteSession;
   final EnqueueRatSync? _enqueueRatSync;
+  final EnqueueAssinaturaSync? _enqueueAssinaturaSync;
   final ProcessSyncQueue? _processSyncQueue;
   final DownloadRemoteRats? _downloadRemoteRats;
   final String ratId;
@@ -436,6 +440,22 @@ class RatFormViewModel extends ChangeNotifier {
     _assinatura = assinatura;
     _signaturePreviewBytes = bytes;
     notifyListeners();
+
+    final remoteSession = _remoteSession;
+    final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
+    final assinaturaEmpresaId = isCompanyMode ? remoteSession!.empresaId : null;
+    final assinaturaUsuarioId = isCompanyMode ? remoteSession!.usuarioId : null;
+
+    if (isCompanyMode) {
+      await _enqueueAssinaturaSync?.upsert(
+        assinatura,
+        empresaId: assinaturaEmpresaId!,
+        usuarioId: assinaturaUsuarioId!,
+        ratId: ratId,
+      );
+      _syncInBackground(assinaturaEmpresaId!);
+    }
+
     return true;
   }
 

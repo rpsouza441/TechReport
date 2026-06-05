@@ -191,6 +191,8 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
     switch (value) {
       case 'rat':
         return domain.SyncEntityType.rat;
+      case 'assinatura':
+        return domain.SyncEntityType.assinatura;
       default:
         throw ArgumentError('SyncEntityType invalido: $value');
     }

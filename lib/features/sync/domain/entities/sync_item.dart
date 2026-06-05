@@ -1,4 +1,4 @@
-enum SyncEntityType { rat }
+enum SyncEntityType { rat, assinatura }
 
 enum SyncOperation { upsert, delete }
 
