@@ -28,7 +28,11 @@ class SupabaseRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
 
     await client.storage
         .from(_bucket)
-        .uploadBinary(path, Uint8List.fromList(bytes));
+        .uploadBinary(
+          path,
+          Uint8List.fromList(bytes),
+          fileOptions: const FileOptions(upsert: true),
+        );
 
     return path;
   }
@@ -91,6 +95,17 @@ class SupabaseRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
   }
 
   @override
+  Future<void> deleteStorageObject(String storagePath) async {
+    final client = await _requireClient();
+
+    try {
+      await client.storage.from(_bucket).remove([storagePath]);
+    } catch (_) {
+      // Objeto já não existe no bucket — operação idempotente, seguir.
+    }
+  }
+
+  @override
   Future<void> markDeleted({
     required String empresaId,
     required String ratId,
@@ -98,6 +113,24 @@ class SupabaseRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
   }) async {
     final client = await _requireClient();
 
+    // 1. Buscar storage_path da assinatura ativa (sem deleted_at) para deletar o PNG.
+    final rows = await client
+        .from('rat_signature_attachments')
+        .select('storage_path')
+        .eq('empresa_id', empresaId)
+        .eq('rat_id', ratId)
+        .eq('assinatura_id', assinaturaId)
+        .isFilter('deleted_at', null)
+        .limit(1);
+
+    if (rows.isNotEmpty) {
+      final storagePath = rows.first['storage_path'] as String?;
+      if (storagePath != null && storagePath.isNotEmpty) {
+        await deleteStorageObject(storagePath);
+      }
+    }
+
+    // 2. Marcar deleted_at na metadata (não apaga a linha).
     await client.from('rat_signature_attachments').update({
       'deleted_at': DateTime.now().toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),

@@ -27,6 +27,8 @@ abstract class RemoteAssinaturaRepository {
 
   Future<bool> objectExists(String storagePath);
 
+  Future<void> deleteStorageObject(String storagePath);
+
   Future<void> markDeleted({
     required String empresaId,
     required String ratId,

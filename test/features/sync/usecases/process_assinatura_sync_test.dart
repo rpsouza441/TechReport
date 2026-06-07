@@ -55,6 +55,12 @@ class _StubRemoteAssinaturaRepository
     implements RemoteAssinaturaRepository {
   final List<_UploadCall> uploads = [];
   final List<_DeleteCall> deletes = [];
+  final List<String> storageDeletes = [];
+
+  @override
+  Future<void> deleteStorageObject(String storagePath) async {
+    storageDeletes.add(storagePath);
+  }
 
   @override
   Future<String> uploadSignature({
@@ -294,6 +300,22 @@ void main() {
       expect(remoteRepo.deletes.first.empresaId, 'emp-1');
       expect(remoteRepo.deletes.first.ratId, 'rat-1');
       expect(remoteRepo.deletes.first.assinaturaId, 'assinatura-1');
+    });
+  });
+
+  group('RemoteAssinaturaRepository.deleteStorageObject', () {
+    test('chama storage.remove com o path correto', () async {
+      await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
+
+      expect(remoteRepo.storageDeletes, hasLength(1));
+      expect(remoteRepo.storageDeletes.first, 'emp-1/rat-1/assinatura-1/v1.png');
+    });
+
+    test('deleteStorageObject é idempotente — chamar duas vezes não quebra', () async {
+      await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
+      await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
+
+      expect(remoteRepo.storageDeletes, hasLength(2));
     });
   });
 }

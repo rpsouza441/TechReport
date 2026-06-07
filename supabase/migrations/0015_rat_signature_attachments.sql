@@ -166,3 +166,21 @@ create policy "rat_signatures_update_membros"
         and t.ativo = true
     )
   );
+
+-- Delete: membros ativos da empresa removem objeto do bucket
+-- Necessário para hard-delete do PNG antigo ao re-assinar RAT.
+-- Idempotente: remove() do Supabase Storage não lança se objeto não existe.
+create policy "rat_signatures_delete_membros"
+  on storage.objects
+  for delete
+  using (
+    bucket_id = 'rat-signatures'
+    and
+    exists (
+      select 1 from public.tecnicos t
+      where t.empresa_id = (storage.foldername(name))[1]::uuid
+        and t.user_id = (select auth.uid())
+        and t.papel in ('admin_empresa', 'gerente', 'tecnico')
+        and t.ativo = true
+    )
+  );
