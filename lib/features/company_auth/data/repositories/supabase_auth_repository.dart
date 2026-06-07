@@ -519,6 +519,18 @@ class SupabaseAuthRepository implements AuthRepository {
     }
   }
 
+  @override
+  Future<void> resendConfirmationEmail({required String email}) async {
+    // PENDENTE: supabase_flutter 2.0.0 nao expõe resendConfirmationEmail
+    // no SDK cliente. Alternativas: upgrade do SDK (se disponivel) ou acionar
+    // via Edge Function/ RPC no servidor Supabase. ate' implementacao, retorna
+    // erro amigavel sem expor detalhes internos.
+    throw const RemoteAuthException(
+      'Reenvio de confirmação não disponível neste momento. '
+      'Aguarde alguns minutos ou verifique sua caixa de spam.',
+    );
+  }
+
   RemoteAuthException _mapChangePasswordException(AuthApiException exception) {
     final message = exception.message.toLowerCase();
     if (message.contains('session')) {

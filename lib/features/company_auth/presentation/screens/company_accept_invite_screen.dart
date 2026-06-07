@@ -33,6 +33,15 @@ class _CompanyAcceptInviteScreenState extends State<CompanyAcceptInviteScreen> {
   bool _createAccount = true;
 
   @override
+  void initState() {
+    super.initState();
+    final preFillCodigo = widget.viewModel.codigo;
+    if (preFillCodigo != null && preFillCodigo.isNotEmpty) {
+      _codigoController.text = preFillCodigo;
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -251,6 +260,7 @@ class _CompanyAcceptInviteScreenState extends State<CompanyAcceptInviteScreen> {
       await Navigator.of(context).pushReplacement<void, void>(
         MaterialPageRoute(
           builder: (_) => CompanyInviteEmailConfirmationScreen(
+            viewModel: widget.viewModel,
             email: _emailController.text.trim(),
             codigoConvite: _codigoController.text.trim(),
           ),
@@ -269,56 +279,113 @@ class _CompanyAcceptInviteScreenState extends State<CompanyAcceptInviteScreen> {
   }
 }
 
-class CompanyInviteEmailConfirmationScreen extends StatelessWidget {
+class CompanyInviteEmailConfirmationScreen extends StatefulWidget {
   const CompanyInviteEmailConfirmationScreen({
     super.key,
+    required this.viewModel,
     required this.email,
     required this.codigoConvite,
   });
 
+  final CompanyAcceptInviteViewModel viewModel;
   final String email;
   final String codigoConvite;
 
   @override
+  State<CompanyInviteEmailConfirmationScreen> createState() =>
+      _CompanyInviteEmailConfirmationScreenState();
+}
+
+class _CompanyInviteEmailConfirmationScreenState
+    extends State<CompanyInviteEmailConfirmationScreen> {
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Confirme o e-mail')),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: TechReportCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const TechReportFormHeader(
-                      icon: Icons.mark_email_read_outlined,
-                      title: 'Conta criada',
-                      subtitle:
-                          'Confirme o e-mail antes de concluir o convite.',
+    return AnimatedBuilder(
+      animation: widget.viewModel,
+      builder: (context, _) {
+        final isResending = widget.viewModel.isResendingConfirmation;
+        final successMsg = widget.viewModel.resendSuccessMessage;
+        final errorMsg = widget.viewModel.errorMessage;
+
+        return Scaffold(
+          appBar: AppBar(title: const Text('Confirme o e-mail')),
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: TechReportCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const TechReportFormHeader(
+                          icon: Icons.mark_email_read_outlined,
+                          title: 'Conta criada',
+                          subtitle:
+                              'Confirme o e-mail antes de concluir o convite.',
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.lg),
+                        SelectableText(
+                          'Enviamos a confirmacao para:\n${widget.email}\n\n'
+                          'Depois de confirmar o e-mail, volte ao login da empresa '
+                          'e entre com este e-mail e senha. O app vai concluir o '
+                          'convite automaticamente.\n\n'
+                          'Codigo salvo:\n${widget.codigoConvite}',
+                        ),
+                        if (successMsg != null) ...[
+                          const SizedBox(height: MetricSlateSpacing.md),
+                          Container(
+                            padding: const EdgeInsets.all(
+                              MetricSlateSpacing.md,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.green.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Text(
+                              successMsg,
+                              style: const TextStyle(color: Colors.green),
+                            ),
+                          ),
+                        ],
+                        if (errorMsg != null) ...[
+                          const SizedBox(height: MetricSlateSpacing.md),
+                          TechReportErrorBanner(message: errorMsg),
+                        ],
+                        const SizedBox(height: MetricSlateSpacing.lg),
+                        FilledButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Ja confirmei'),
+                        ),
+                        const SizedBox(height: MetricSlateSpacing.sm),
+                        OutlinedButton(
+                          onPressed: isResending
+                              ? null
+                              : () => widget.viewModel.resendConfirmationEmail(
+                                    email: widget.email,
+                                  ),
+                          child: isResending
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Reenviar confirmacao'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: MetricSlateSpacing.lg),
-                    SelectableText(
-                      'Enviamos a confirmacao para:\n$email\n\n'
-                      'Depois de confirmar o e-mail, volte ao login da empresa '
-                      'e entre com este e-mail e senha. O app vai concluir o '
-                      'convite automaticamente.\n\n'
-                      'Codigo salvo:\n$codigoConvite',
-                    ),
-                    const SizedBox(height: MetricSlateSpacing.lg),
-                    FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Ja confirmei'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

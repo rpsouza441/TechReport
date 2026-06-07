@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
 import 'package:techreport/app/theme/metric_slate_theme.dart';
@@ -32,7 +34,6 @@ class _TechReportAppState extends State<TechReportApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _appLinks = AppLinks();
   Uri? _pendingDeepLink;
-  bool _deepLinkHandled = false;
 
   @override
   void initState() {
@@ -45,19 +46,59 @@ class _TechReportAppState extends State<TechReportApp> {
     );
 
     bootstrapViewModel.bootstrap();
+    bootstrapViewModel.addListener(_scheduleDeepLinkAttempt);
 
     _appLinks.uriLinkStream.listen((uri) {
       _pendingDeepLink = uri;
+      _scheduleDeepLinkAttempt();
     });
+
+    unawaited(_readInitialDeepLink());
+  }
+
+  @override
+  void dispose() {
+    bootstrapViewModel.removeListener(_scheduleDeepLinkAttempt);
+    super.dispose();
+  }
+
+  Future<void> _readInitialDeepLink() async {
+    try {
+      final uri = await _appLinks.getInitialLink();
+      if (uri == null) return;
+      _pendingDeepLink = uri;
+      _scheduleDeepLinkAttempt();
+    } catch (_) {
+      // Deep link invalido ou indisponivel nao deve quebrar o bootstrap.
+    }
+  }
+
+  void _scheduleDeepLinkAttempt() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryHandleDeepLink());
+  }
+
+  void _tryHandleDeepLink() {
+    if (_pendingDeepLink == null) return;
+    if (bootstrapViewModel.status == AppBootstrapStatus.loading) return;
+    _handleDeepLink();
   }
 
   void _handleDeepLink() {
     final uri = _pendingDeepLink;
     if (uri == null) return;
 
-    _pendingDeepLink = null;
+    if (uri.scheme != 'techreport' || uri.host != 'convite') {
+      _pendingDeepLink = null;
+      return;
+    }
 
-    if (uri.scheme != 'techreport' || uri.host != 'convite') return;
+    final navigator = _navigatorKey.currentState;
+    if (navigator == null) {
+      _scheduleDeepLinkAttempt();
+      return;
+    }
+
+    _pendingDeepLink = null;
 
     final codigoParam = uri.queryParameters['codigo'];
     final codigo = (codigoParam != null && codigoParam.trim().isNotEmpty)
@@ -70,12 +111,12 @@ class _TechReportAppState extends State<TechReportApp> {
       codigo: codigo,
     );
 
-    Navigator.of(context).push(
+    navigator.push(
       MaterialPageRoute<void>(
         builder: (context) => CompanyAcceptInviteScreen(
           viewModel: viewModel,
           onAccepted: bootstrapViewModel.unlockCompany,
-          onCancel: () => Navigator.of(context).pop(),
+          onCancel: () => navigator.pop(),
         ),
       ),
     );
@@ -95,12 +136,6 @@ class _TechReportAppState extends State<TechReportApp> {
       home: AnimatedBuilder(
         animation: Listenable.merge([bootstrapViewModel, themeViewModel]),
         builder: (context, _) {
-          if (!_deepLinkHandled && bootstrapViewModel.status != AppBootstrapStatus.loading) {
-            _deepLinkHandled = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _handleDeepLink();
-            });
-          }
           return AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,

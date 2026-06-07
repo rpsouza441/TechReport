@@ -27,4 +27,6 @@ abstract class AuthRepository {
   Future<SessaoRemota?> currentSession();
 
   Future<void> changePassword(String newPassword);
+
+  Future<void> resendConfirmationEmail({required String email});
 }
