@@ -121,10 +121,16 @@ class AppAdminInviteCompanyAdminScreen extends StatefulWidget {
     super.key,
     required this.viewModel,
     required this.empresa,
-  });
+    this.inviteCallback,
+  }) : assert(
+          inviteCallback != null || viewModel != null,
+          'Forneca viewModel ou inviteCallback.',
+        );
 
-  final AppAdminViewModel viewModel;
+  final AppAdminViewModel? viewModel;
   final AdminEmpresaResumo empresa;
+  final Future<CreateTecnicoConviteResult?> Function(String nome, String email)?
+      inviteCallback;
 
   @override
   State<AppAdminInviteCompanyAdminScreen> createState() =>
@@ -303,11 +309,17 @@ class _AppAdminInviteCompanyAdminScreenState
       _errorMessage = null;
     });
 
-    final result = await widget.viewModel.inviteAdminEmpresa(
-      empresa: widget.empresa,
-      nome: nome,
-      email: email,
-    );
+    CreateTecnicoConviteResult? result;
+
+    if (widget.inviteCallback != null) {
+      result = await widget.inviteCallback!(nome, email);
+    } else {
+      result = await widget.viewModel!.inviteAdminEmpresa(
+        empresa: widget.empresa,
+        nome: nome,
+        email: email,
+      );
+    }
 
     if (!mounted) return;
 
@@ -315,7 +327,7 @@ class _AppAdminInviteCompanyAdminScreenState
       _isSubmitting = false;
       _result = result;
       _errorMessage = result == null
-          ? widget.viewModel.errorMessage ?? 'Nao foi possivel gerar o convite.'
+          ? widget.viewModel?.errorMessage ?? 'Nao foi possivel gerar o convite.'
           : null;
     });
   }

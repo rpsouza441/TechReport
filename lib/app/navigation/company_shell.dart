@@ -63,53 +63,66 @@ class _CompanyShellState extends State<CompanyShell> {
   late CompanyArea _selectedArea;
   RatListViewModel? _ratListViewModel;
   bool _isSyncing = false;
+  bool _isSigningOut = false;
 
   Future<void> _signOut() async {
-    final session = widget.session;
-    final empresaId = session.empresaId;
+    setState(() {
+      _isSigningOut = true;
+    });
 
-    if (empresaId == null || !session.hasCompanyContext) {
-      await widget.onSignOut();
-      return;
-    }
-    final pendingCount = await widget.scope.syncQueueRepository.countPending(
-      empresaId: empresaId,
-      usuarioId: session.usuarioId,
-    );
+    try {
+      final session = widget.session;
+      final empresaId = session.empresaId;
 
-    if (pendingCount == 0) {
-      await widget.onSignOut();
-      return;
-    }
+      if (empresaId == null || !session.hasCompanyContext) {
+        await widget.onSignOut();
+        return;
+      }
+      final pendingCount = await widget.scope.syncQueueRepository.countPending(
+        empresaId: empresaId,
+        usuarioId: session.usuarioId,
+      );
 
-    final decision = await _showLogoutPendingDialog(pendingCount);
-    if (decision == null || decision == LogoutPendingDecision.cancel) {
-      return;
-    }
+      if (pendingCount == 0) {
+        await widget.onSignOut();
+        return;
+      }
 
-    if (decision == LogoutPendingDecision.exitAnyway) {
-      await widget.onSignOut();
-      return;
-    }
-    await _syncNow();
-    final remainingCount = await widget.scope.syncQueueRepository.countPending(
-      empresaId: empresaId,
-      usuarioId: session.usuarioId,
-    );
-    if (remainingCount == 0) {
-      await widget.onSignOut();
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Ainda há $remainingCount item(ns) aguardando sincronização.',
+      final decision = await _showLogoutPendingDialog(pendingCount);
+      if (decision == null || decision == LogoutPendingDecision.cancel) {
+        return;
+      }
+
+      if (decision == LogoutPendingDecision.exitAnyway) {
+        await widget.onSignOut();
+        return;
+      }
+      await _syncNow();
+      final remainingCount = await widget.scope.syncQueueRepository.countPending(
+        empresaId: empresaId,
+        usuarioId: session.usuarioId,
+      );
+      if (remainingCount == 0) {
+        await widget.onSignOut();
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Ainda há $remainingCount item(ns) aguardando sincronização.',
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningOut = false;
+        });
+      }
+    }
   }
 
   Future<LogoutPendingDecision?> _showLogoutPendingDialog(int count) {
@@ -180,10 +193,16 @@ class _CompanyShellState extends State<CompanyShell> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_companyAreaLabel(_selectedArea)),
+        bottom: _isSigningOut
+            ? const PreferredSize(
+ preferredSize: Size.zero,
+                child: LinearProgressIndicator(),
+              )
+            : null,
         actions: [
           if (_selectedArea == CompanyArea.rats && _ratListViewModel != null)
             IconButton(
-              onPressed: _isSyncing ? null : _syncNow,
+              onPressed: _isSyncing || _isSigningOut ? null : _syncNow,
               icon: _isSyncing
                   ? const SizedBox.square(
                       dimension: 20,
@@ -194,13 +213,18 @@ class _CompanyShellState extends State<CompanyShell> {
             ),
           if (widget.session.hasCompanyContext)
             IconButton(
-              onPressed: _isSyncing ? null : _openSyncCenter,
+              onPressed: _isSyncing || _isSigningOut ? null : _openSyncCenter,
               icon: const Icon(Icons.sync_alt_outlined),
               tooltip: 'Central de sincronização',
             ),
           IconButton(
-            onPressed: _isSyncing ? null : _signOut,
-            icon: const Icon(Icons.logout),
+            onPressed: _isSigningOut ? null : _signOut,
+            icon: _isSigningOut
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.logout),
             tooltip: 'Sair',
           ),
         ],
@@ -256,6 +280,7 @@ class _CompanyShellState extends State<CompanyShell> {
           session: widget.session,
           changePassword: widget.scope.changeCompanyPassword,
           onPasswordChanged: widget.onSignOut,
+          themeViewModel: widget.scope.appThemeViewModel,
         );
       case CompanyArea.adminEmpresa:
         return AdminEmpresaArea(
@@ -283,6 +308,7 @@ class _CompanyShellState extends State<CompanyShell> {
           createEmpresaConvite: widget.scope.createEmpresaConvite,
           cancelTecnicoConvite: widget.scope.cancelTecnicoConvite,
           updateEmpresaAdmin: widget.scope.updateEmpresaAdmin,
+          updateAdminEmpresa: widget.scope.updateAdminEmpresa,
         );
     }
   }

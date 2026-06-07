@@ -1,17 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_empresa_resumo.dart';
+import 'package:techreport/features/company_admin/domain/usecases/cancel_tecnico_convite.dart';
+import 'package:techreport/features/company_admin/domain/usecases/create_empresa_convite.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_empresa_admin_convites.dart';
+import 'package:techreport/features/company_admin/domain/usecases/list_empresa_admins.dart';
+import 'package:techreport/features/company_admin/domain/usecases/update_admin_empresa.dart';
+import 'package:techreport/features/company_admin/domain/usecases/update_empresa_admin.dart';
+import 'package:techreport/features/company_admin/presentation/screens/app_admin_company_detail_screen.dart';
 import 'package:techreport/features/company_admin/presentation/screens/app_admin_company_form_screen.dart';
+import 'package:techreport/features/company_admin/presentation/view_models/app_admin_company_detail_view_model.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 class AppAdminArea extends StatefulWidget {
-  const AppAdminArea({super.key, required this.viewModel});
+  const AppAdminArea({
+    super.key,
+    required this.viewModel,
+    required this.listEmpresaAdmins,
+    required this.listEmpresaAdminConvites,
+    required this.createEmpresaConvite,
+    required this.cancelTecnicoConvite,
+    required this.updateEmpresaAdmin,
+    required this.updateAdminEmpresa,
+  });
 
   final AppAdminViewModel viewModel;
+  final ListEmpresaAdmins listEmpresaAdmins;
+  final ListEmpresaAdminConvites listEmpresaAdminConvites;
+  final CreateEmpresaConvite createEmpresaConvite;
+  final CancelTecnicoConvite cancelTecnicoConvite;
+  final UpdateEmpresaAdmin updateEmpresaAdmin;
+  final UpdateAdminEmpresa updateAdminEmpresa;
 
   @override
   State<AppAdminArea> createState() => _AppAdminAreaState();
@@ -112,6 +134,7 @@ class _AppAdminAreaState extends State<AppAdminArea> {
             _EmpresaCard(
               empresa: empresa,
               isSubmitting: widget.viewModel.isSubmitting,
+              onTap: () => _openDetailScreen(empresa),
               onInviteAdmin: () => _openInviteAdminScreen(empresa),
               onToggleAtivo: (ativo) => widget.viewModel.setEmpresaAtiva(
                 empresa: empresa,
@@ -160,18 +183,42 @@ class _AppAdminAreaState extends State<AppAdminArea> {
       ),
     );
   }
+
+  Future<void> _openDetailScreen(AdminEmpresaResumo empresa) async {
+    final updatedEmpresa = await Navigator.of(context).push<AdminEmpresaResumo>(
+      MaterialPageRoute(
+        builder: (_) => AppAdminCompanyDetailScreen(
+          viewModel: AppAdminCompanyDetailViewModel(
+            empresa: empresa,
+            listEmpresaAdmins: widget.listEmpresaAdmins,
+            listEmpresaAdminConvites: widget.listEmpresaAdminConvites,
+            createEmpresaConvite: widget.createEmpresaConvite,
+            cancelTecnicoConvite: widget.cancelTecnicoConvite,
+            updateEmpresaAdmin: widget.updateEmpresaAdmin,
+            updateAdminEmpresa: widget.updateAdminEmpresa,
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || updatedEmpresa == null) return;
+
+    widget.viewModel.syncEmpresa(updatedEmpresa);
+  }
 }
 
 class _EmpresaCard extends StatelessWidget {
   const _EmpresaCard({
     required this.empresa,
     required this.isSubmitting,
+    required this.onTap,
     required this.onInviteAdmin,
     required this.onToggleAtivo,
   });
 
   final AdminEmpresaResumo empresa;
   final bool isSubmitting;
+  final VoidCallback onTap;
   final VoidCallback onInviteAdmin;
   final ValueChanged<bool> onToggleAtivo;
 
@@ -180,6 +227,7 @@ class _EmpresaCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return TechReportCard(
+      onTap: isSubmitting ? null : onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -206,11 +254,18 @@ class _EmpresaCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              TechReportStatusChip(
-                label: empresa.ativo ? 'Ativa' : 'Inativa',
-                tone: empresa.ativo
-                    ? TechReportStatusTone.success
-                    : TechReportStatusTone.neutral,
+              ActionChip(
+                label: Text(empresa.ativo ? 'Ativa' : 'Inativa'),
+                avatar: Icon(
+                  empresa.ativo ? Icons.check_circle : Icons.cancel_outlined,
+                  size: 16,
+                  color: empresa.ativo
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline,
+                ),
+                onPressed: isSubmitting
+                    ? null
+                    : () => onToggleAtivo(!empresa.ativo),
               ),
               const SizedBox(height: MetricSlateSpacing.xxs),
               PopupMenuButton<String>(

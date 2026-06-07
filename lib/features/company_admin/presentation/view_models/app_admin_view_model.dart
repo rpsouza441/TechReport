@@ -64,6 +64,14 @@ class AppAdminViewModel extends ChangeNotifier {
     }
   }
 
+  void syncEmpresa(AdminEmpresaResumo empresa) {
+    empresas = [
+      for (final item in empresas)
+        item.id == empresa.id ? empresa : item,
+    ];
+    notifyListeners();
+  }
+
   Future<bool> setEmpresaAtiva({
     required AdminEmpresaResumo empresa,
     required bool ativo,
