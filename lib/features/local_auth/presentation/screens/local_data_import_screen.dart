@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
+import 'package:techreport/features/local_auth/domain/entities/local_backup_preview.dart';
 import 'package:techreport/features/local_auth/domain/entities/local_import_preview.dart';
 import 'package:techreport/features/local_auth/domain/entities/local_import_result.dart';
 import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
@@ -29,7 +29,7 @@ class LocalDataImportScreen extends StatelessWidget {
         final isLoading = viewModel.isLoading;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Importar dados locais')),
+          appBar: AppBar(title: const Text('Importar backup local')),
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -40,19 +40,22 @@ class LocalDataImportScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const TechReportFormHeader(
+                        TechReportFormHeader(
                           icon: Icons.upload_file_outlined,
                           title: 'Importar backup',
-                          subtitle:
-                              'Revise o arquivo JSON antes de importar. RATs já existentes não serão duplicadas.',
+                          subtitle: viewModel.isLegacy
+                              ? 'Arquivo legado detectado. RATs já existentes não serão duplicadas.'
+                              : 'Revise o backup antes de importar. RATs já existentes não serão duplicadas.',
                         ),
                         const SizedBox(height: MetricSlateSpacing.lg),
                         FilledButton.icon(
-                          onPressed: isLoading
-                              ? null
-                              : () => _selectBackup(context),
+                          onPressed: isLoading ? null : () => _selectBackup(),
                           icon: const Icon(Icons.file_open_outlined, size: 20),
-                          label: const Text('Selecionar backup JSON'),
+                          label: Text(
+                            viewModel.isLegacy
+                                ? 'Selecionar backup JSON'
+                                : 'Selecionar backup',
+                          ),
                         ),
                         if (isLoading) ...[
                           const SizedBox(height: MetricSlateSpacing.lg),
@@ -74,7 +77,10 @@ class LocalDataImportScreen extends StatelessWidget {
                           ),
                         ] else if (preview != null) ...[
                           const SizedBox(height: MetricSlateSpacing.lg),
-                          _ImportPreviewSection(preview: preview),
+                          _ImportPreviewSection(
+                            preview: preview,
+                            isLegacy: viewModel.isLegacy,
+                          ),
                           const SizedBox(height: MetricSlateSpacing.lg),
                           FilledButton.icon(
                             onPressed: preview.canApply && !isLoading
@@ -112,10 +118,10 @@ class LocalDataImportScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _selectBackup(BuildContext context) async {
+  Future<void> _selectBackup() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const ['json'],
+      allowedExtensions: const ['techreport-backup', 'json'],
       withData: true,
     );
 
@@ -126,16 +132,14 @@ class LocalDataImportScreen extends StatelessWidget {
     final file = result.files.single;
     final bytes = file.bytes;
     final path = file.path;
+
     if (bytes == null && path == null) {
-      await viewModel.previewRawJson('');
+      viewModel.reset();
       return;
     }
 
-    final rawJson = bytes != null
-        ? utf8.decode(bytes)
-        : await File(path!).readAsString();
-
-    await viewModel.previewRawJson(rawJson);
+    final data = bytes ?? await File(path!).readAsBytes();
+    await viewModel.loadBackup(data);
   }
 
   Future<void> _confirmOverwriteConflicts(BuildContext context) async {
@@ -170,9 +174,13 @@ class LocalDataImportScreen extends StatelessWidget {
 }
 
 class _ImportPreviewSection extends StatelessWidget {
-  const _ImportPreviewSection({required this.preview});
+  const _ImportPreviewSection({
+    required this.preview,
+    required this.isLegacy,
+  });
 
   final LocalImportPreview preview;
+  final bool isLegacy;
 
   @override
   Widget build(BuildContext context) {
@@ -180,10 +188,28 @@ class _ImportPreviewSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const TechReportSectionHeader(
+          TechReportSectionHeader(
             title: 'Resumo do backup',
             padding: EdgeInsets.zero,
           ),
+          if (!isLegacy && preview is LocalBackupPreview) ...[
+            TechReportInfoRow(
+              label: 'Versão do app',
+              value: (preview as LocalBackupPreview).appVersion,
+              dense: true,
+            ),
+            TechReportInfoRow(
+              label: 'Schema do banco',
+              value: '${(preview as LocalBackupPreview).databaseSchemaVersion}',
+              dense: true,
+            ),
+            TechReportInfoRow(
+              label: 'Checksum válido',
+              value: (preview as LocalBackupPreview).checksumsValid ? 'Sim' : 'Não',
+              dense: true,
+            ),
+            const SizedBox(height: 8),
+          ],
           TechReportInfoRow(
             label: 'RATs no arquivo',
             value: '${preview.totalRats}',

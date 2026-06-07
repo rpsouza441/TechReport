@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:app_links/app_links.dart';
 import 'package:techreport/app/theme/metric_slate_theme.dart';
 
 import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
@@ -29,6 +30,9 @@ class TechReportApp extends StatefulWidget {
 class _TechReportAppState extends State<TechReportApp> {
   late final AppBootstrapViewModel bootstrapViewModel;
   final _navigatorKey = GlobalKey<NavigatorState>();
+  final _appLinks = AppLinks();
+  Uri? _pendingDeepLink;
+  bool _deepLinkHandled = false;
 
   @override
   void initState() {
@@ -41,18 +45,62 @@ class _TechReportAppState extends State<TechReportApp> {
     );
 
     bootstrapViewModel.bootstrap();
+
+    _appLinks.uriLinkStream.listen((uri) {
+      _pendingDeepLink = uri;
+    });
+  }
+
+  void _handleDeepLink() {
+    final uri = _pendingDeepLink;
+    if (uri == null) return;
+
+    _pendingDeepLink = null;
+
+    if (uri.scheme != 'techreport' || uri.host != 'convite') return;
+
+    final codigoParam = uri.queryParameters['codigo'];
+    final codigo = (codigoParam != null && codigoParam.trim().isNotEmpty)
+        ? codigoParam.trim().toUpperCase()
+        : null;
+
+    final viewModel = CompanyAcceptInviteViewModel(
+      signInCompanyWithInvite: widget.scope.signInCompanyWithInvite,
+      authRepository: widget.scope.authRepository,
+      codigo: codigo,
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => CompanyAcceptInviteScreen(
+          viewModel: viewModel,
+          onAccepted: bootstrapViewModel.unlockCompany,
+          onCancel: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeViewModel = widget.scope.appThemeViewModel;
+
     return MaterialApp(
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Tech Report',
-      theme: MetricSlateTheme.light(),
+      theme: themeViewModel.loaded
+          ? themeViewModel.currentTheme
+          : MetricSlateTheme.light(),
       home: AnimatedBuilder(
-        animation: bootstrapViewModel,
+        animation: Listenable.merge([bootstrapViewModel, themeViewModel]),
         builder: (context, _) {
+          if (!_deepLinkHandled && bootstrapViewModel.status != AppBootstrapStatus.loading) {
+            _deepLinkHandled = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _handleDeepLink();
+            });
+          }
           return AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,
@@ -116,6 +164,8 @@ class AppShell extends StatelessWidget {
           viewModel: scope.appSessionViewModel,
           assinaturaRepository: scope.assinaturaRepository,
           applyLocalDataImport: scope.applyLocalDataImport,
+          localBackupParser: scope.localBackupParser,
+          localBackupService: scope.localBackupService,
           localDataImportParser: scope.localDataImportParser,
           localDataExportShareService: scope.localDataExportShareService,
           localSignatureAssetStore: scope.localSignatureAssetStore,
@@ -125,6 +175,8 @@ class AppShell extends StatelessWidget {
           shareRatLocally: scope.shareRatLocally,
           onLocalLocked: bootstrapViewModel.syncLocalStatus,
           onSwitchMode: bootstrapViewModel.chooseCompany,
+          themeViewModel: scope.appThemeViewModel,
+          tecnicoLocalRepository: scope.tecnicoLocalRepository,
         );
 
       case AppBootstrapStatus.remoteEndpointRequired:
@@ -179,6 +231,7 @@ class AppShell extends StatelessWidget {
         builder: (context) => CompanyAcceptInviteScreen(
           viewModel: CompanyAcceptInviteViewModel(
             signInCompanyWithInvite: scope.signInCompanyWithInvite,
+            authRepository: scope.authRepository,
           ),
           onAccepted: bootstrapViewModel.unlockCompany,
           onCancel: () => Navigator.of(context).pop(),

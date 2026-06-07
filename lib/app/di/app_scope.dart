@@ -1,3 +1,6 @@
+import 'package:techreport/app/theme/app_theme_repository.dart';
+import 'package:techreport/app/theme/app_theme_view_model.dart';
+import 'package:techreport/features/local_auth/domain/usecases/update_tecnico_local.dart';
 import 'package:techreport/features/company_admin/data/repositories/supabase_company_admin_repository.dart';
 import 'package:techreport/features/company_admin/domain/usecases/cancel_tecnico_convite.dart';
 import 'package:techreport/features/company_admin/domain/usecases/create_admin_empresa.dart';
@@ -30,7 +33,6 @@ import 'package:techreport/features/signature/data/repositories/drift_assinatura
 import 'package:techreport/features/signature/data/repositories/supabase_remote_assinatura_repository.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
-import 'package:techreport/features/signature/domain/repositories/remote_assinatura_repository.dart';
 import 'package:techreport/features/sync/data/repositories/drift_sync_queue_repository.dart';
 import 'package:techreport/features/rat/data/repositories/supabase_remote_rat_repository.dart';
 import 'package:techreport/features/sync/data/repositories/local_sync_checkpoint_repository.dart';
@@ -82,6 +84,7 @@ class AppScope {
     required this.sessaoLocalRepository,
     required this.shareRatLocally,
     required this.tecnicoLocalRepository,
+    required this.updateTecnicoLocal,
     required this.appSessionViewModel,
     required this.remoteEndpointRepository,
     required this.supabaseClientFactory,
@@ -114,6 +117,11 @@ class AppScope {
     required this.signOutCompany,
     required this.syncCheckpointRepository,
     required this.downloadRemoteRats,
+    required this.localBackupService,
+    required this.localBackupParser,
+    required this.previewLocalBackup,
+    required this.applyLocalBackup,
+    required this.appThemeViewModel,
   });
 
   static Future<AppScope> create() async {
@@ -126,6 +134,7 @@ class AppScope {
 
       final pinSecretRepository = LocalPinSecretStore();
       final tecnicoLocalRepository = DriftTecnicoLocalRepository(database);
+      final updateTecnicoLocal = UpdateTecnicoLocal(tecnicoLocalRepository);
       final sessaoLocalRepository = DriftSessaoLocalRepository(database);
       final ratRepository = DriftRatRepository(database);
       final assinaturaRepository = DriftAssinaturaRepository(database);
@@ -142,6 +151,21 @@ class AppScope {
       final applyLocalDataImport = ApplyLocalDataImport(
         ratRepository: ratRepository,
         assinaturaRepository: assinaturaRepository,
+      );
+      final localBackupParser = LocalBackupParser(
+        legacyParser: localDataImportParser,
+      );
+      final localBackupService = LocalBackupService(
+        ratRepository: ratRepository,
+        assinaturaRepository: assinaturaRepository,
+        localSignatureAssetStore: localSignatureAssetStore,
+      );
+      final previewLocalBackup = PreviewLocalBackup(
+        parser: localBackupParser,
+      );
+      final applyLocalBackup = ApplyLocalBackup(
+        parser: localBackupParser,
+        applyLocalDataImport: applyLocalDataImport,
       );
       final shareRatLocally = ShareRatLocally(
         ratRepository: ratRepository,
@@ -233,6 +257,12 @@ class AppScope {
         appModeRepository: appModeRepository,
       );
 
+      final appThemeRepository = AppThemeRepository();
+      final appThemeViewModel = AppThemeViewModel(
+        repository: appThemeRepository,
+      );
+      await appThemeViewModel.load();
+
       final scope = AppScope(
         database: database,
         assinaturaRepository: assinaturaRepository,
@@ -245,6 +275,7 @@ class AppScope {
         sessaoLocalRepository: sessaoLocalRepository,
         shareRatLocally: shareRatLocally,
         tecnicoLocalRepository: tecnicoLocalRepository,
+        updateTecnicoLocal: updateTecnicoLocal,
         ratRepository: ratRepository,
         appSessionViewModel: AppSessionViewModel(
           bootstrapLocalSession: BootstrapLocalSession(sessaoLocalRepository),
@@ -295,6 +326,11 @@ class AppScope {
         changeCompanyPassword: changeCompanyPassword,
         signInCompany: signInCompany,
         signOutCompany: signOutCompany,
+        localBackupService: localBackupService,
+        localBackupParser: localBackupParser,
+        previewLocalBackup: previewLocalBackup,
+        applyLocalBackup: applyLocalBackup,
+        appThemeViewModel: appThemeViewModel,
       );
 
       LocalDatabaseDebugLog.info('appScope.create.done');
@@ -320,6 +356,7 @@ class AppScope {
   final SessaoLocalRepository sessaoLocalRepository;
   final ShareRatLocally shareRatLocally;
   final TecnicoLocalRepository tecnicoLocalRepository;
+  final UpdateTecnicoLocal updateTecnicoLocal;
   final RatRepository ratRepository;
   final AppSessionViewModel appSessionViewModel;
   final LocalRemoteEndpointRepository remoteEndpointRepository;
@@ -353,6 +390,11 @@ class AppScope {
   final SignOutCompany signOutCompany;
   final SyncCheckpointRepository syncCheckpointRepository;
   final DownloadRemoteRats downloadRemoteRats;
+  final LocalBackupService localBackupService;
+  final LocalBackupParser localBackupParser;
+  final PreviewLocalBackup previewLocalBackup;
+  final ApplyLocalBackup applyLocalBackup;
+  final AppThemeViewModel appThemeViewModel;
 
   Future<void> dispose() async {
     await database.close();
