@@ -47,12 +47,12 @@ class CompanyShell extends StatefulWidget {
   const CompanyShell({
     super.key,
     required this.scope,
-    required this.session,
+    required this.sessionNotifier,
     required this.onSignOut,
   });
 
   final AppScope scope;
-  final SessaoRemota session;
+  final ValueNotifier<SessaoRemota?> sessionNotifier;
   final Future<void> Function() onSignOut;
 
   @override
@@ -60,27 +60,35 @@ class CompanyShell extends StatefulWidget {
 }
 
 class _CompanyShellState extends State<CompanyShell> {
+  SessaoRemota? get session => widget.sessionNotifier.value;
+
   late CompanyArea _selectedArea;
   RatListViewModel? _ratListViewModel;
   bool _isSyncing = false;
   bool _isSigningOut = false;
 
   Future<void> _signOut() async {
+    final currentSession = session;
+    if (currentSession == null) {
+      await widget.onSignOut();
+      return;
+    }
+
     setState(() {
       _isSigningOut = true;
     });
 
     try {
-      final session = widget.session;
-      final empresaId = session.empresaId;
+      final empresaId = currentSession.empresaId;
 
-      if (empresaId == null || !session.hasCompanyContext) {
+      if (empresaId == null || !currentSession.hasCompanyContext) {
         await widget.onSignOut();
         return;
       }
-      final pendingCount = await widget.scope.syncQueueRepository.countPending(
+      final pendingCount =
+          await widget.scope.syncQueueRepository.countPending(
         empresaId: empresaId,
-        usuarioId: session.usuarioId,
+        usuarioId: currentSession.usuarioId,
       );
 
       if (pendingCount == 0) {
@@ -89,7 +97,8 @@ class _CompanyShellState extends State<CompanyShell> {
       }
 
       final decision = await _showLogoutPendingDialog(pendingCount);
-      if (decision == null || decision == LogoutPendingDecision.cancel) {
+      if (decision == null ||
+          decision == LogoutPendingDecision.cancel) {
         return;
       }
 
@@ -98,9 +107,10 @@ class _CompanyShellState extends State<CompanyShell> {
         return;
       }
       await _syncNow();
-      final remainingCount = await widget.scope.syncQueueRepository.countPending(
+      final remainingCount =
+          await widget.scope.syncQueueRepository.countPending(
         empresaId: empresaId,
-        usuarioId: session.usuarioId,
+        usuarioId: currentSession.usuarioId,
       );
       if (remainingCount == 0) {
         await widget.onSignOut();
@@ -138,8 +148,8 @@ class _CompanyShellState extends State<CompanyShell> {
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(LogoutPendingDecision.cancel),
+              onPressed: () => Navigator.of(dialogContext)
+                  .pop(LogoutPendingDecision.cancel),
               child: const Text('Cancelar'),
             ),
             TextButton(
@@ -163,29 +173,52 @@ class _CompanyShellState extends State<CompanyShell> {
   @override
   void initState() {
     super.initState();
-    _selectedArea = _initialArea(widget.session);
-    _ratListViewModel = _createRatListViewModel(widget.session);
+    widget.sessionNotifier.addListener(_onSessionChanged);
+    final currentSession = session;
+    if (currentSession != null) {
+      _selectedArea = _initialArea(currentSession);
+      _ratListViewModel = _createRatListViewModel(currentSession);
+    } else {
+      _selectedArea = CompanyArea.profile;
+    }
   }
 
   @override
   void didUpdateWidget(covariant CompanyShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.session != widget.session) {
-      _ratListViewModel?.dispose();
-      _ratListViewModel = _createRatListViewModel(widget.session);
-      _selectedArea = _initialArea(widget.session);
+    if (oldWidget.sessionNotifier != widget.sessionNotifier) {
+      oldWidget.sessionNotifier.removeListener(_onSessionChanged);
+      widget.sessionNotifier.addListener(_onSessionChanged);
+    }
+    _ratListViewModel?.dispose();
+    final currentSession = session;
+    if (currentSession != null) {
+      _ratListViewModel = _createRatListViewModel(currentSession);
+      _selectedArea = _initialArea(currentSession);
     }
   }
 
   @override
   void dispose() {
+    widget.sessionNotifier.removeListener(_onSessionChanged);
     _ratListViewModel?.dispose();
     super.dispose();
   }
 
+  void _onSessionChanged() {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final areas = _areasFor(widget.session);
+    final currentSession = session;
+    if (currentSession == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final areas = _areasFor(currentSession);
     if (!areas.contains(_selectedArea)) {
       _selectedArea = areas.first;
     }
@@ -195,7 +228,7 @@ class _CompanyShellState extends State<CompanyShell> {
         title: Text(_companyAreaLabel(_selectedArea)),
         bottom: _isSigningOut
             ? const PreferredSize(
- preferredSize: Size.zero,
+                preferredSize: Size.zero,
                 child: LinearProgressIndicator(),
               )
             : null,
@@ -211,11 +244,16 @@ class _CompanyShellState extends State<CompanyShell> {
                   : const Icon(Icons.sync),
               tooltip: 'Sincronizar',
             ),
-          if (widget.session.hasCompanyContext)
-            IconButton(
-              onPressed: _isSyncing || _isSigningOut ? null : _openSyncCenter,
-              icon: const Icon(Icons.sync_alt_outlined),
-              tooltip: 'Central de sincronização',
+          if (currentSession.hasCompanyContext)
+            Semantics(
+              label: 'Acessar central de sincronização',
+              button: true,
+              child: IconButton(
+                onPressed:
+                    _isSyncing || _isSigningOut ? null : _openSyncCenter,
+                icon: const Icon(Icons.sync_alt_outlined),
+                tooltip: 'Central de sincronização',
+              ),
             ),
           IconButton(
             onPressed: _isSigningOut ? null : _signOut,
@@ -229,7 +267,7 @@ class _CompanyShellState extends State<CompanyShell> {
           ),
         ],
       ),
-      body: _buildArea(_selectedArea),
+      body: _buildArea(_selectedArea, currentSession),
       bottomNavigationBar: NavigationBar(
         selectedIndex: areas.indexOf(_selectedArea),
         onDestinationSelected: (index) {
@@ -271,13 +309,14 @@ class _CompanyShellState extends State<CompanyShell> {
     ];
   }
 
-  Widget _buildArea(CompanyArea area) {
+  Widget _buildArea(CompanyArea area, SessaoRemota currentSession) {
     switch (area) {
       case CompanyArea.rats:
-        return _buildRatsArea();
+        return _buildRatsArea(currentSession);
       case CompanyArea.profile:
         return CompanyHomeScreen(
-          session: widget.session,
+          sessionNotifier: widget.sessionNotifier,
+          scope: widget.scope,
           changePassword: widget.scope.changeCompanyPassword,
           onPasswordChanged: widget.onSignOut,
           themeViewModel: widget.scope.appThemeViewModel,
@@ -285,9 +324,9 @@ class _CompanyShellState extends State<CompanyShell> {
       case CompanyArea.adminEmpresa:
         return AdminEmpresaArea(
           viewModel: AdminEmpresaViewModel(
-            empresaId: widget.session.empresaId!,
-            currentTecnicoId: widget.session.tecnicoId,
-            currentPapel: _adminPapelFor(widget.session),
+            empresaId: currentSession.empresaId!,
+            currentTecnicoId: currentSession.tecnicoId,
+            currentPapel: _adminPapelFor(currentSession),
             listTecnicos: widget.scope.listAdminTecnicos,
             listConvites: widget.scope.listAdminConvites,
             createTecnicoConvite: widget.scope.createTecnicoConvite,
@@ -321,25 +360,27 @@ class _CompanyShellState extends State<CompanyShell> {
     };
   }
 
-  Widget _buildRatsArea() {
+  Widget _buildRatsArea(SessaoRemota currentSession) {
     final viewModel = _ratListViewModel;
     if (viewModel == null) {
       return const Center(child: Text('Sessão sem empresa vinculada.'));
     }
 
-    return RatListScreen(
-      viewModel: viewModel,
-      assinaturaRepository: widget.scope.assinaturaRepository,
-      localSignatureAssetStore: widget.scope.localSignatureAssetStore,
-      ratPdfShareService: widget.scope.ratPdfShareService,
-      ratRepository: widget.scope.ratRepository,
-      shareRatLocally: widget.scope.shareRatLocally,
-      remoteSession: widget.session,
-      enqueueRatSync: widget.scope.enqueueRatSync,
-      enqueueAssinaturaSync: widget.scope.enqueueAssinaturaSync,
-      processSyncQueue: widget.scope.processSyncQueue,
-      downloadRemoteRats: widget.scope.downloadRemoteRats,
-      embedded: true,
+    return Scaffold(
+      body: RatListScreen(
+        viewModel: viewModel,
+        assinaturaRepository: widget.scope.assinaturaRepository,
+        localSignatureAssetStore: widget.scope.localSignatureAssetStore,
+        ratPdfShareService: widget.scope.ratPdfShareService,
+        ratRepository: widget.scope.ratRepository,
+        shareRatLocally: widget.scope.shareRatLocally,
+        remoteSession: currentSession,
+        enqueueRatSync: widget.scope.enqueueRatSync,
+        enqueueAssinaturaSync: widget.scope.enqueueAssinaturaSync,
+        processSyncQueue: widget.scope.processSyncQueue,
+        downloadRemoteRats: widget.scope.downloadRemoteRats,
+        embedded: true,
+      ),
     );
   }
 
@@ -374,8 +415,11 @@ class _CompanyShellState extends State<CompanyShell> {
   }
 
   Future<void> _syncNow() async {
-    final empresaId = widget.session.empresaId;
-    if (empresaId == null || !widget.session.hasCompanyContext) {
+    final currentSession = session;
+    if (currentSession == null) return;
+
+    final empresaId = currentSession.empresaId;
+    if (empresaId == null || !currentSession.hasCompanyContext) {
       return;
     }
 
@@ -384,19 +428,19 @@ class _CompanyShellState extends State<CompanyShell> {
     });
 
     final papel =
-        widget.session.papelEmpresa?.name ??
-        widget.session.papelGlobal?.name ??
+        currentSession.papelEmpresa?.name ??
+        currentSession.papelGlobal?.name ??
         'unknown';
 
     try {
       await widget.scope.processSyncQueue.call(
         empresaId: empresaId,
-        usuarioId: widget.session.usuarioId,
+        usuarioId: currentSession.usuarioId,
         retryFailed: true,
       );
       await widget.scope.downloadRemoteRats.call(
         empresaId: empresaId,
-        usuarioId: widget.session.usuarioId,
+        usuarioId: currentSession.usuarioId,
         papel: papel,
       );
       await _ratListViewModel?.load();
@@ -416,7 +460,10 @@ class _CompanyShellState extends State<CompanyShell> {
   }
 
   void _openSyncCenter() {
-    final empresaId = widget.session.empresaId;
+    final currentSession = session;
+    if (currentSession == null) return;
+
+    final empresaId = currentSession.empresaId;
     if (empresaId == null) return;
 
     Navigator.of(context).push<void>(
@@ -426,7 +473,7 @@ class _CompanyShellState extends State<CompanyShell> {
             queueRepository: widget.scope.syncQueueRepository,
             processSyncQueue: widget.scope.processSyncQueue,
             empresaId: empresaId,
-            usuarioId: widget.session.usuarioId,
+            usuarioId: currentSession.usuarioId,
           ),
         ),
       ),
