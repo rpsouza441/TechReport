@@ -19,6 +19,7 @@ import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.d
 import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
 import '../../presentation/view_models/rat_list_view_model.dart';
+import '../widgets/rat_list_filter_bar.dart';
 import 'rat_form_screen.dart';
 import 'rat_pdf_preview_screen.dart';
 
@@ -128,91 +129,7 @@ class _RatListScreenState extends State<RatListScreen> {
   }
 
   Widget _buildFilterBar(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: scheme.surfaceContainerLow,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          MetricSlateSpacing.md,
-          MetricSlateSpacing.sm,
-          MetricSlateSpacing.md,
-          MetricSlateSpacing.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Buscar cliente ou descrição',
-                prefixIcon: Icon(Icons.search, size: 22),
-              ),
-              onChanged: widget.viewModel.setQuery,
-            ),
-            const SizedBox(height: MetricSlateSpacing.sm),
-            Wrap(
-              spacing: MetricSlateSpacing.sm,
-              runSpacing: MetricSlateSpacing.sm,
-              children: [
-                SizedBox(
-                  width: 180,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Status do RAT',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<RatStatus?>(
-                          isExpanded: true,
-                          value: widget.viewModel.statusFilter,
-                          hint: const Text('Todos'),
-                          items: const [
-                            DropdownMenuItem(value: null, child: Text('Todos')),
-                            DropdownMenuItem(
-                              value: RatStatus.draft,
-                              child: Text('Rascunho'),
-                            ),
-                            DropdownMenuItem(
-                              value: RatStatus.finalizado,
-                              child: Text('Finalizado'),
-                            ),
-                            DropdownMenuItem(
-                              value: RatStatus.enviado,
-                              child: Text('Enviado'),
-                            ),
-                            DropdownMenuItem(
-                              value: RatStatus.arquivado,
-                              child: Text('Arquivado'),
-                            ),
-                          ],
-                          onChanged: widget.viewModel.setStatusFilter,
-                        ),
-                      ),
-                      Divider(height: 1, color: scheme.outline),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: _DateRangeField(
-                    dateFrom: widget.viewModel.dateFrom,
-                    dateTo: widget.viewModel.dateTo,
-                    onChanged: widget.viewModel.setDateRange,
-                    onClear: widget.viewModel.clearDateRange,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    return RatListFilterBar(viewModel: widget.viewModel);
   }
 
   Widget _buildList(BuildContext context) {
@@ -415,120 +332,6 @@ class _RatListScreenState extends State<RatListScreen> {
   }
 }
 
-class _DateRangeField extends StatelessWidget {
-  const _DateRangeField({
-    required this.dateFrom,
-    required this.dateTo,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  final DateTime? dateFrom;
-  final DateTime? dateTo;
-  final void Function({DateTime? from, DateTime? to}) onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasRange = dateFrom != null || dateTo != null;
-
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: 'Período',
-        isDense: true,
-        suffixIcon: hasRange
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 18),
-                onPressed: onClear,
-                padding: EdgeInsets.zero,
-              )
-            : null,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              label: 'Data de inicio: ${dateFrom != null ? _fmt(dateFrom!) : 'nao definida'}',
-              button: true,
-              child: InkWell(
-                onTap: () => _pickDate(context, isFrom: true),
-                borderRadius: BorderRadius.circular(4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    dateFrom != null ? _fmt(dateFrom!) : 'De',
-                    style: TextStyle(
-                      color: dateFrom != null
-                          ? Theme.of(context).textTheme.bodyMedium?.color
-                          : Theme.of(context).hintColor,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          const Text('—'),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Semantics(
-              label: 'Data de fim: ${dateTo != null ? _fmt(dateTo!) : 'nao definida'}',
-              button: true,
-              child: InkWell(
-                onTap: () => _pickDate(context, isFrom: false),
-                borderRadius: BorderRadius.circular(4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    dateTo != null ? _fmt(dateTo!) : 'Ate',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      color: dateTo != null
-                          ? Theme.of(context).textTheme.bodyMedium?.color
-                          : Theme.of(context).hintColor,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _fmt(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
-
-  Future<void> _pickDate(BuildContext context, {required bool isFrom}) async {
-    final initial = isFrom ? (dateFrom ?? DateTime.now()) : (dateTo ?? DateTime.now());
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (picked == null) return;
-
-    if (isFrom) {
-      final effectiveTo = dateTo;
-      if (effectiveTo != null && picked.isAfter(effectiveTo)) {
-        onChanged(from: effectiveTo, to: picked);
-      } else {
-        onChanged(from: picked, to: effectiveTo);
-      }
-    } else {
-      final effectiveFrom = dateFrom;
-      if (effectiveFrom != null && picked.isBefore(effectiveFrom)) {
-        onChanged(from: picked, to: effectiveFrom);
-      } else {
-        onChanged(from: effectiveFrom, to: picked);
-      }
-    }
-  }
-}
-
 class _RatListItemCard extends StatelessWidget {
   const _RatListItemCard({
     required this.rat,
@@ -566,7 +369,7 @@ class _RatListItemCard extends StatelessWidget {
                       ),
                       const SizedBox(height: MetricSlateSpacing.xxs),
                       Text(
-                        'RAT ${rat.numero}',
+                        rat.numero,
                         style: theme.textTheme.labelMedium,
                       ),
                       const SizedBox(height: MetricSlateSpacing.xs),

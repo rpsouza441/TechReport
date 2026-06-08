@@ -155,6 +155,7 @@ class AppSessionViewModel extends ChangeNotifier {
 
     _session = result.session;
     _errorMessage = null;
+    notifyListeners();
     return true;
   }
 

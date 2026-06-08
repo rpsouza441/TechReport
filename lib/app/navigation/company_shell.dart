@@ -12,6 +12,7 @@ import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
 import 'package:techreport/features/sync/presentation/screens/sync_center_screen.dart';
 import 'package:techreport/features/sync/presentation/view_models/sync_center_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_mode_title.dart';
 
 enum CompanyArea { rats, profile, adminEmpresa, appAdmin }
 
@@ -225,7 +226,7 @@ class _CompanyShellState extends State<CompanyShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_companyAreaLabel(_selectedArea)),
+        title: const TechReportModeTitle(modeLabel: 'Modo Empresa'),
         bottom: _isSigningOut
             ? const PreferredSize(
                 preferredSize: Size.zero,

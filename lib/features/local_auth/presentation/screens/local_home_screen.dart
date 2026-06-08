@@ -1,6 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:techreport/app/theme/app_theme_variant.dart';
 import 'package:techreport/app/theme/app_theme_view_model.dart';
+import 'package:techreport/app/theme/metric_slate_radii.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/local_auth/data/services/local_backup_parser.dart';
 import 'package:techreport/features/local_auth/data/services/local_backup_service.dart';
@@ -8,26 +10,27 @@ import 'package:techreport/features/local_auth/data/services/local_data_import_p
 import 'package:techreport/features/local_auth/data/services/local_data_export_share_service.dart';
 import 'package:techreport/features/local_auth/domain/entities/tecnico_local.dart';
 import 'package:techreport/features/local_auth/domain/repositories/tecnico_local_repository.dart';
-import 'package:techreport/features/local_auth/domain/usecases/apply_local_backup.dart';
 import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
-import 'package:techreport/features/local_auth/domain/usecases/preview_local_backup.dart';
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_data_import.dart';
 import 'package:techreport/features/local_auth/domain/usecases/update_tecnico_local.dart';
-import 'package:techreport/features/local_auth/presentation/screens/local_data_import_screen.dart';
+import 'package:techreport/features/local_auth/presentation/screens/local_settings_screen.dart';
 import 'package:techreport/features/local_auth/presentation/view_models/app_session_view_model.dart';
-import 'package:techreport/features/local_auth/presentation/view_models/local_data_import_view_model.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart' as domain;
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_form_screen.dart';
+import 'package:techreport/features/rat/presentation/screens/rat_pdf_preview_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_form_view_model.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
+import 'package:techreport/features/rat/presentation/widgets/rat_list_filter_bar.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_mode_title.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
@@ -95,7 +98,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_ratListViewModel, widget.themeViewModel]),
+      animation: Listenable.merge([_ratListViewModel, widget.themeViewModel, widget.viewModel]),
       builder: (context, _) {
         return Scaffold(
           body: _buildBody(),
@@ -143,6 +146,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
           onLocalLocked: widget.onLocalLocked,
           onSwitchMode: widget.onSwitchMode,
           themeViewModel: widget.themeViewModel,
+          onNavigateToSettings: () => _navigateToSettings(context),
         );
 
       case _LocalTab.profile:
@@ -151,6 +155,29 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
           viewModel: widget.viewModel,
         );
     }
+  }
+
+  void _navigateToSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LocalSettingsScreen(
+          appSessionViewModel: widget.viewModel,
+          themeViewModel: widget.themeViewModel,
+          onSwitchMode: () async {
+            if (widget.viewModel.pinConfigured) {
+              await widget.viewModel.lock();
+            }
+            await widget.onSwitchMode();
+          },
+          ratRepository: widget.ratRepository,
+          localBackupService: widget.localBackupService,
+          localBackupParser: widget.localBackupParser,
+          localDataImportParser: widget.localDataImportParser,
+          applyLocalDataImport: widget.applyLocalDataImport,
+          previewLocalDataImport: widget.previewLocalDataImport,
+        ),
+      ),
+    );
   }
 }
 
@@ -173,6 +200,7 @@ class _RatsTab extends StatelessWidget {
     required this.onLocalLocked,
     required this.onSwitchMode,
     required this.themeViewModel,
+    required this.onNavigateToSettings,
   });
 
   final RatListViewModel ratListViewModel;
@@ -190,6 +218,7 @@ class _RatsTab extends StatelessWidget {
   final VoidCallback onLocalLocked;
   final Future<void> Function() onSwitchMode;
   final AppThemeViewModel themeViewModel;
+  final VoidCallback onNavigateToSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -198,350 +227,184 @@ class _RatsTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            const Text('Tech Report'),
-            const SizedBox(width: MetricSlateSpacing.xs),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: MetricSlateSpacing.xs,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'Modo Local',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-              ),
-            ),
-          ],
-        ),
+        title: const TechReportModeTitle(modeLabel: 'Modo Local'),
         actions: [
           if (viewModel.pinConfigured)
             TextButton(
               onPressed: _lockLocal,
               child: const Text('Bloquear'),
             ),
+          IconButton(
+            onPressed: onNavigateToSettings,
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Configurações',
+          ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openCreate(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Novo RAT'),
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Seus RATs locais',
-                style: theme.textTheme.headlineMedium,
-              ),
-              const SizedBox(height: MetricSlateSpacing.xxs),
-              Text(
-                'Crie, acompanhe e edite atendimentos salvos neste dispositivo.',
-                style: theme.textTheme.bodyLarge,
-              ),
-              const SizedBox(height: MetricSlateSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => _openCreate(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Novo RAT'),
-                    ),
-                  ),
-                  const SizedBox(width: MetricSlateSpacing.xs),
-                  PopupMenuButton<_LocalHomeAction>(
-                    tooltip: 'Mais opcoes',
-                    onSelected: (action) => _handleMenuAction(context, action),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: _LocalHomeAction.refresh,
-                        child: ListTile(
-                          leading: Icon(Icons.refresh),
-                          title: Text('Atualizar'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: _LocalHomeAction.changeTheme,
-                        child: ListTile(
-                          leading: Icon(Icons.palette_outlined),
-                          title: Text(
-                            'Tema (${themeViewModel.currentVariant.displayName})',
-                          ),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: _LocalHomeAction.changePin,
-                        child: ListTile(
-                          leading: const Icon(Icons.pin_outlined),
-                          title: Text(
-                            viewModel.pinConfigured ? 'Trocar PIN' : 'Criar PIN',
-                          ),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: _LocalHomeAction.export,
-                        child: ListTile(
-                          leading: Icon(Icons.file_upload_outlined),
-                          title: Text('Exportar dados'),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: _LocalHomeAction.import,
-                        child: ListTile(
-                          leading: Icon(Icons.file_download_outlined),
-                          title: Text('Importar dados'),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: _LocalHomeAction.switchMode,
-                        child: ListTile(
-                          leading: Icon(Icons.swap_horiz),
-                          title: Text('Trocar modo'),
-                        ),
-                      ),
-                    ],
-                    child: const Icon(Icons.more_vert),
-                  ),
-                ],
-              ),
-              const SizedBox(height: MetricSlateSpacing.md),
-              Expanded(
-                child: Builder(
-                  builder: (context) {
-                    if (ratListViewModel.isLoading) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-
-                    if (ratListViewModel.errorMessage != null) {
-                      return Center(
-                        child: Text(ratListViewModel.errorMessage!),
-                      );
-                    }
-
-                    if (ratListViewModel.isEmpty) {
-                      return _EmptyRatState(onCreate: () => _openCreate(context));
-                    }
-
-                    return ListView.separated(
-                      itemCount: ratListViewModel.rats.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: MetricSlateSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final rat = ratListViewModel.rats[index];
-                        final hasSignature = ratListViewModel.hasSignature(
-                          rat.id,
-                        );
-                        return Card(
-                          child: ListTile(
-                            title: Row(
-                              children: [
-                                Expanded(child: Text(rat.clienteNome)),
-                                if (hasSignature) ...[
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.draw,
-                                    size: 18,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ],
-                              ],
-                            ),
-                            subtitle: Text(
-                              rat.descricao,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: Wrap(
-                              direction: Axis.vertical,
-                              alignment: WrapAlignment.end,
-                              spacing: MetricSlateSpacing.xxs,
-                              crossAxisAlignment: WrapCrossAlignment.end,
-                              children: [
-                                TechReportStatusChip(
-                                  label: ratStatusLabel(rat.status),
-                                  tone: ratStatusTone(rat.status),
-                                ),
-                                Text(
-                                  _formatDate(rat.updatedAt),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () => _openEdit(context, rat),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RatListFilterBar(viewModel: ratListViewModel),
+            Expanded(child: _buildRatListContent(context, theme)),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildRatListContent(BuildContext context, ThemeData theme) {
+    if (ratListViewModel.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (ratListViewModel.errorMessage != null) {
+      return Center(child: Text(ratListViewModel.errorMessage!));
+    }
+
+    if (ratListViewModel.isEmpty) {
+      return _EmptyRatState(onCreate: () => _openCreate(context));
+    }
+
+    final rats = ratListViewModel.filteredRats;
+    if (rats.isEmpty) {
+      final hasActiveFilter =
+          ratListViewModel.query.isNotEmpty ||
+          ratListViewModel.statusFilter != null ||
+          ratListViewModel.dateFrom != null ||
+          ratListViewModel.dateTo != null;
+
+      return TechReportStateView.empty(
+        message: hasActiveFilter
+            ? 'Nenhum RAT corresponde ao filtro atual.'
+            : 'Nenhum RAT cadastrado ainda.',
+        primaryAction: hasActiveFilter
+            ? TextButton(
+                onPressed: ratListViewModel.clearAllFilters,
+                child: const Text('Limpar filtros'),
+              )
+            : null,
+      );
+    }
+
+    final count = rats.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            left: MetricSlateSpacing.xs,
+            bottom: MetricSlateSpacing.sm,
+          ),
+          child: Text(
+            '$count RAT${count == 1 ? '' : 's'} locais',
+            style: theme.textTheme.labelLarge,
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(
+              MetricSlateSpacing.md,
+              0,
+              MetricSlateSpacing.md,
+              88,
+            ),
+            itemCount: rats.length,
+            separatorBuilder: (_, _) =>
+                const SizedBox(height: MetricSlateSpacing.sm),
+            itemBuilder: (context, index) {
+              final rat = rats[index];
+              final hasSignature = ratListViewModel.hasSignature(rat.id);
+              return TechReportCard(
+                onTap: () => _openEdit(context, rat),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(MetricSlateRadii.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  rat.clienteNome,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                const SizedBox(
+                                  height: MetricSlateSpacing.xxs,
+                                ),
+                                Text(
+                                  rat.numero,
+                                  style: theme.textTheme.labelMedium,
+                                ),
+                                const SizedBox(height: MetricSlateSpacing.xs),
+                                Text(
+                                  rat.descricao,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              if (hasSignature)
+                                Icon(
+                                  Icons.draw_outlined,
+                                  size: 22,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              IconButton(
+                                icon: const Icon(Icons.picture_as_pdf_outlined),
+                                tooltip: 'Prévia PDF',
+                                onPressed: () => _openPdfPreview(context, rat),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: MetricSlateSpacing.sm),
+                      Wrap(
+                        spacing: MetricSlateSpacing.sm,
+                        runSpacing: MetricSlateSpacing.xxs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          TechReportStatusChip(
+                            label: ratStatusLabel(rat.status),
+                            tone: ratStatusTone(rat.status),
+                          ),
+                          Text(
+                            _formatDate(rat.updatedAt),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
   Future<void> _lockLocal() async {
     await viewModel.lock();
     onLocalLocked();
-  }
-
-  Future<void> _switchMode() async {
-    if (viewModel.pinConfigured) {
-      await viewModel.lock();
-    }
-    await onSwitchMode();
-  }
-
-  Future<void> _handleMenuAction(
-    BuildContext context,
-    _LocalHomeAction action,
-  ) async {
-    await Future<void>.delayed(Duration.zero);
-    if (!context.mounted) return;
-
-    switch (action) {
-      case _LocalHomeAction.refresh:
-        await ratListViewModel.load();
-      case _LocalHomeAction.changeTheme:
-        _openThemeSelector(context);
-      case _LocalHomeAction.changePin:
-        await _showChangePinDialog(context);
-      case _LocalHomeAction.export:
-        await _showExportOptions(context);
-      case _LocalHomeAction.import:
-        await _openImport(context);
-      case _LocalHomeAction.switchMode:
-        await _switchMode();
-    }
-  }
-
-  void _openThemeSelector(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => _ThemeSelectorSheet(
-        currentVariant: themeViewModel.currentVariant,
-        onSelected: (variant) {
-          themeViewModel.setVariant(variant);
-          Navigator.of(ctx).pop();
-        },
-      ),
-    );
-  }
-
-  Future<void> _showChangePinDialog(BuildContext parentContext) async {
-    final hasPin = viewModel.pinConfigured;
-    final changed = await Navigator.of(parentContext).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => LocalPinScreen(
-          hasPin: hasPin,
-          viewModel: viewModel,
-        ),
-      ),
-    );
-
-    if (!parentContext.mounted || changed != true) return;
-
-    ScaffoldMessenger.of(
-      parentContext,
-    ).showSnackBar(const SnackBar(content: Text('PIN atualizado.')));
-  }
-
-  Future<void> _showExportOptions(BuildContext parentContext) async {
-    await showModalBottomSheet<void>(
-      context: parentContext,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.save_alt_outlined),
-                title: const Text('Salvar no dispositivo'),
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  await _saveLocalData(parentContext);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.ios_share_outlined),
-                title: const Text('Compartilhar'),
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  await _shareLocalData(parentContext);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _saveLocalData(BuildContext context) async {
-    try {
-      final path = await localBackupService.saveBackupToDevice();
-      if (!context.mounted || path == null) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Backup salvo: $path')));
-    } catch (_) {
-      _showExportError(context);
-    }
-  }
-
-  Future<void> _shareLocalData(BuildContext context) async {
-    try {
-      await localBackupService.shareBackup();
-    } catch (_) {
-      _showExportError(context);
-    }
-  }
-
-  void _showExportError(BuildContext context) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Não foi possível exportar os dados locais.'),
-      ),
-    );
-  }
-
-  Future<void> _openImport(BuildContext context) async {
-    final imported = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => LocalDataImportScreen(
-          viewModel: LocalDataImportViewModel(
-            previewLocalBackup: PreviewLocalBackup(
-              parser: localBackupParser,
-            ),
-            applyLocalBackup: ApplyLocalBackup(
-              parser: localBackupParser,
-              applyLocalDataImport: applyLocalDataImport,
-            ),
-            localDataImportParser: localDataImportParser,
-            previewLocalDataImport: previewLocalDataImport,
-            applyLocalDataImport: applyLocalDataImport,
-          ),
-        ),
-      ),
-    );
-
-    if (imported == true) {
-      await ratListViewModel.load();
-    }
   }
 
   Future<void> _openCreate(BuildContext context) async {
@@ -589,6 +452,45 @@ class _RatsTab extends StatelessWidget {
     return '${value.day.toString().padLeft(2, '0')}/'
         '${value.month.toString().padLeft(2, '0')}/'
         '${value.year}';
+  }
+
+  Future<void> _openPdfPreview(
+    BuildContext context,
+    domain.Rat rat,
+  ) async {
+    final navigator = Navigator.of(context);
+
+    final assinaturas = await assinaturaRepository.listByRatId(rat.id);
+    assinaturas.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final assinatura = assinaturas.isEmpty ? null : assinaturas.first;
+
+    Uint8List? signatureBytes;
+    if (assinatura != null) {
+      try {
+        signatureBytes = await assinaturaRepository.readBytes(assinatura.id);
+      } catch (_) {}
+    }
+
+    if (!context.mounted) return;
+
+    final shareResult = await shareRatLocally.call(
+      ratId: rat.id,
+      scope: const RatListScope.local(),
+    );
+
+    final canNavigate = context.mounted;
+    if (!canNavigate || !shareResult.success) return;
+
+    await navigator.push(
+      MaterialPageRoute(
+        builder: (_) => RatPdfPreviewScreen(
+          rat: shareResult.rat!,
+          signatureBytes: signatureBytes,
+          onShare: () => ratPdfShareService.share(shareResult),
+          onSave: () => ratPdfShareService.exportToDevice(shareResult),
+        ),
+      ),
+    );
   }
 }
 
@@ -691,6 +593,8 @@ class _ProfileTabState extends State<_ProfileTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const TechReportModeTitle(modeLabel: 'Modo Local'),
         actions: [
           if (!_isEditing && !_isLoading)
             IconButton(
@@ -887,15 +791,6 @@ class _ProfileCard extends StatelessWidget {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-enum _LocalHomeAction {
-  refresh,
-  changeTheme,
-  changePin,
-  export,
-  import,
-  switchMode,
-}
-
 class _EmptyRatState extends StatelessWidget {
   const _EmptyRatState({required this.onCreate});
 
@@ -932,62 +827,6 @@ class _EmptyRatState extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _ThemeSelectorSheet extends StatelessWidget {
-  const _ThemeSelectorSheet({
-    required this.currentVariant,
-    required this.onSelected,
-  });
-
-  final AppThemeVariant currentVariant;
-  final ValueChanged<AppThemeVariant> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-            child: Text(
-              'Escolha o tema',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          const Divider(height: 1),
-          RadioGroup<AppThemeVariant>(
-            groupValue: currentVariant,
-            onChanged: (value) {
-              if (value != null) onSelected(value);
-            },
-            child: Column(
-              children: [
-                for (final variant in AppThemeVariant.values)
-                  RadioListTile<AppThemeVariant>(
-                    value: variant,
-                    title: Text(variant.displayName),
-                    subtitle: Text(variant.description),
-                    secondary: Icon(_variantIcon(variant)),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: MetricSlateSpacing.md),
-        ],
-      ),
-    );
-  }
-
-  IconData _variantIcon(AppThemeVariant variant) {
-    return switch (variant) {
-      AppThemeVariant.cobalt => Icons.water_drop_outlined,
-      AppThemeVariant.volt => Icons.flash_on_outlined,
-      AppThemeVariant.burgundy => Icons.wine_bar_outlined,
-    };
   }
 }
 
