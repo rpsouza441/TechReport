@@ -72,7 +72,9 @@ class _AppAdminCompanyDetailScreenState
   }
 
   Widget _buildBody(BuildContext context) {
-    if (widget.viewModel.isLoading && widget.viewModel.admins.isEmpty) {
+    if (widget.viewModel.isLoading &&
+        widget.viewModel.admins.isEmpty &&
+        widget.viewModel.convites.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -95,9 +97,9 @@ class _AppAdminCompanyDetailScreenState
             TechReportErrorBanner(message: errorMessage),
           ],
           const SizedBox(height: MetricSlateSpacing.md),
-          _buildAdminsSection(),
-          const SizedBox(height: MetricSlateSpacing.lg),
           _buildConvitesSection(),
+          const SizedBox(height: MetricSlateSpacing.lg),
+          _buildAdminsSection(),
         ],
       ),
     );
@@ -157,9 +159,9 @@ class _AppAdminCompanyDetailScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TechReportSectionHeader(
+        const TechReportSectionHeader(
           title: 'Admins da empresa',
-          subtitle: '${admins.length} admin(s)',
+          subtitle: 'Administradores vinculados à empresa.',
         ),
         if (admins.isEmpty)
           const TechReportStateView.empty(
@@ -191,14 +193,14 @@ class _AppAdminCompanyDetailScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TechReportSectionHeader(
+        const TechReportSectionHeader(
           title: 'Convites pendentes',
-          subtitle: '${convites.length} convite(s)',
+          subtitle: 'Compartilhe o código gerado com o convidado.',
         ),
         if (convites.isEmpty)
           const TechReportStateView.empty(
             title: 'Sem convites pendentes',
-            message: 'Convites pendentes aparecerao aqui.',
+            message: 'Use o botão Convidar admin para gerar um novo convite.',
           )
         else
           for (final convite in convites) ...[
