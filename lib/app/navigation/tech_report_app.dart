@@ -126,23 +126,25 @@ class _TechReportAppState extends State<TechReportApp> {
   Widget build(BuildContext context) {
     final themeViewModel = widget.scope.appThemeViewModel;
 
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'Tech Report',
-      theme: themeViewModel.loaded
-          ? themeViewModel.currentTheme
-          : MetricSlateTheme.light(),
-      home: AnimatedBuilder(
-        animation: Listenable.merge([bootstrapViewModel, themeViewModel]),
-        builder: (context, _) {
-          return AppShell(
+    return AnimatedBuilder(
+      animation: Listenable.merge([bootstrapViewModel, themeViewModel]),
+      builder: (context, _) {
+        final theme = themeViewModel.loaded
+            ? themeViewModel.currentTheme
+            : MetricSlateTheme.light();
+
+        return MaterialApp(
+          navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'Tech Report',
+          theme: theme,
+          home: AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,
             rootNavigatorKey: _navigatorKey,
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -250,7 +252,7 @@ class AppShell extends StatelessWidget {
         return CompanyShell(
           key: ValueKey('companyUnlocked-${session.usuarioId}'),
           scope: scope,
-          session: session,
+          sessionNotifier: scope.companySessionNotifier,
           onSignOut: () async {
             await scope.signOutCompany();
             rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);

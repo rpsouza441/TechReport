@@ -28,6 +28,7 @@ import 'package:techreport/features/rat/presentation/view_models/rat_list_view_m
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
 
@@ -196,7 +197,31 @@ class _RatsTab extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tech Report'),
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            const Text('Tech Report'),
+            const SizedBox(width: MetricSlateSpacing.xs),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: MetricSlateSpacing.xs,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Modo Local',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           if (viewModel.pinConfigured)
             TextButton(
@@ -207,7 +232,7 @@ class _RatsTab extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(MetricSlateSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -215,12 +240,12 @@ class _RatsTab extends StatelessWidget {
                 'Seus RATs locais',
                 style: theme.textTheme.headlineMedium,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: MetricSlateSpacing.xxs),
               Text(
                 'Crie, acompanhe e edite atendimentos salvos neste dispositivo.',
                 style: theme.textTheme.bodyLarge,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: MetricSlateSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -230,9 +255,9 @@ class _RatsTab extends StatelessWidget {
                       label: const Text('Novo RAT'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: MetricSlateSpacing.xs),
                   PopupMenuButton<_LocalHomeAction>(
-                    tooltip: 'Menu local',
+                    tooltip: 'Mais opcoes',
                     onSelected: (action) => _handleMenuAction(context, action),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
@@ -256,9 +281,7 @@ class _RatsTab extends StatelessWidget {
                         child: ListTile(
                           leading: const Icon(Icons.pin_outlined),
                           title: Text(
-                            viewModel.pinConfigured
-                                ? 'Trocar PIN'
-                                : 'Criar PIN',
+                            viewModel.pinConfigured ? 'Trocar PIN' : 'Criar PIN',
                           ),
                         ),
                       ),
@@ -284,14 +307,11 @@ class _RatsTab extends StatelessWidget {
                         ),
                       ),
                     ],
-                    child: const IconButton.filledTonal(
-                      onPressed: null,
-                      icon: Icon(Icons.more_vert),
-                    ),
+                    child: const Icon(Icons.more_vert),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: MetricSlateSpacing.md),
               Expanded(
                 child: Builder(
                   builder: (context) {
@@ -314,7 +334,7 @@ class _RatsTab extends StatelessWidget {
                     return ListView.separated(
                       itemCount: ratListViewModel.rats.length,
                       separatorBuilder: (_, _) =>
-                          const SizedBox(height: 12),
+                          const SizedBox(height: MetricSlateSpacing.sm),
                       itemBuilder: (context, index) {
                         final rat = ratListViewModel.rats[index];
                         final hasSignature = ratListViewModel.hasSignature(
@@ -340,15 +360,21 @@ class _RatsTab extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                            trailing: Wrap(
+                              direction: Axis.vertical,
+                              alignment: WrapAlignment.end,
+                              spacing: MetricSlateSpacing.xxs,
+                              crossAxisAlignment: WrapCrossAlignment.end,
                               children: [
-                                Text(ratStatusLabel(rat.status)),
-                                const SizedBox(height: 4),
+                                TechReportStatusChip(
+                                  label: ratStatusLabel(rat.status),
+                                  tone: ratStatusTone(rat.status),
+                                ),
                                 Text(
                                   _formatDate(rat.updatedAt),
-                                  style: theme.textTheme.bodySmall,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ],
                             ),
@@ -665,7 +691,6 @@ class _ProfileTabState extends State<_ProfileTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meu perfil'),
         actions: [
           if (!_isEditing && !_isLoading)
             IconButton(

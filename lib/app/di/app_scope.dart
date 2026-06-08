@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:techreport/app/theme/app_theme_repository.dart';
+import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/app/theme/app_theme_view_model.dart';
 import 'package:techreport/features/local_auth/domain/usecases/update_tecnico_local.dart';
 import 'package:techreport/features/company_admin/data/repositories/supabase_company_admin_repository.dart';
@@ -122,6 +126,7 @@ class AppScope {
     required this.previewLocalBackup,
     required this.applyLocalBackup,
     required this.appThemeViewModel,
+    required this.companySessionNotifier,
   });
 
   static Future<AppScope> create() async {
@@ -229,6 +234,12 @@ class AppScope {
         tokenStore: secureTokenStore,
         remoteSessionRepository: remoteSessionRepository,
       );
+
+      // Session reativo para atualizar o perfil sem precisar relogar.
+      final companySessionNotifier = ValueNotifier<SessaoRemota?>(null);
+      // Inicializa com a sessão salva.
+      final initialSession = await remoteSessionRepository.getSession();
+      companySessionNotifier.value = initialSession;
       final appModeRepository = LocalAppModeRepository();
       final selectAppMode = SelectAppMode(appModeRepository);
 
@@ -331,6 +342,7 @@ class AppScope {
         previewLocalBackup: previewLocalBackup,
         applyLocalBackup: applyLocalBackup,
         appThemeViewModel: appThemeViewModel,
+        companySessionNotifier: companySessionNotifier,
       );
 
       LocalDatabaseDebugLog.info('appScope.create.done');
@@ -395,8 +407,10 @@ class AppScope {
   final PreviewLocalBackup previewLocalBackup;
   final ApplyLocalBackup applyLocalBackup;
   final AppThemeViewModel appThemeViewModel;
+  final ValueNotifier<SessaoRemota?> companySessionNotifier;
 
   Future<void> dispose() async {
+    companySessionNotifier.dispose();
     await database.close();
   }
 }
