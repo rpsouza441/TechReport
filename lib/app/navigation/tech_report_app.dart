@@ -7,6 +7,7 @@ import 'package:techreport/app/theme/metric_slate_theme.dart';
 import '../../features/company_auth/presentation/screens/app_mode_choice_screen.dart';
 import '../../features/company_auth/presentation/screens/company_sign_in_screen.dart';
 import '../../features/company_auth/presentation/screens/company_accept_invite_screen.dart';
+import '../../features/company_auth/domain/entities/sessao_remota.dart';
 import '../../features/company_auth/presentation/view_models/company_accept_invite_view_model.dart';
 import '../../features/company_auth/presentation/screens/remote_server_config_screen.dart';
 import '../../features/company_auth/presentation/view_models/app_mode_choice_view_model.dart';
@@ -115,11 +116,16 @@ class _TechReportAppState extends State<TechReportApp> {
       MaterialPageRoute<void>(
         builder: (context) => CompanyAcceptInviteScreen(
           viewModel: viewModel,
-          onAccepted: bootstrapViewModel.unlockCompany,
+          onAccepted: _unlockCompany,
           onCancel: () => navigator.pop(),
         ),
       ),
     );
+  }
+
+  void _unlockCompany(SessaoRemota session) {
+    widget.scope.companySessionNotifier.value = session;
+    bootstrapViewModel.unlockCompany(session);
   }
 
   @override
@@ -229,7 +235,10 @@ class AppShell extends StatelessWidget {
         return CompanySignInScreen(
           key: const ValueKey('remoteLoginRequired'),
           viewModel: CompanySignInViewModel(signInCompany: scope.signInCompany),
-          onSignedIn: bootstrapViewModel.unlockCompany,
+          onSignedIn: (session) {
+            scope.companySessionNotifier.value = session;
+            bootstrapViewModel.unlockCompany(session);
+          },
           onCancel: bootstrapViewModel.requireModeChoice,
           onAcceptInvite: () => _openAcceptInvite(context),
         );
@@ -243,10 +252,17 @@ class AppShell extends StatelessWidget {
             viewModel: CompanySignInViewModel(
               signInCompany: scope.signInCompany,
             ),
-            onSignedIn: bootstrapViewModel.unlockCompany,
+            onSignedIn: (session) {
+              scope.companySessionNotifier.value = session;
+              bootstrapViewModel.unlockCompany(session);
+            },
             onCancel: bootstrapViewModel.requireModeChoice,
             onAcceptInvite: () => _openAcceptInvite(context),
           );
+        }
+
+        if (scope.companySessionNotifier.value != session) {
+          scope.companySessionNotifier.value = session;
         }
 
         return CompanyShell(
@@ -255,6 +271,7 @@ class AppShell extends StatelessWidget {
           sessionNotifier: scope.companySessionNotifier,
           onSignOut: () async {
             await scope.signOutCompany();
+            scope.companySessionNotifier.value = null;
             rootNavigatorKey.currentState?.popUntil((route) => route.isFirst);
             bootstrapViewModel.requireRemoteLogin();
           },
@@ -270,7 +287,10 @@ class AppShell extends StatelessWidget {
             signInCompanyWithInvite: scope.signInCompanyWithInvite,
             authRepository: scope.authRepository,
           ),
-          onAccepted: bootstrapViewModel.unlockCompany,
+          onAccepted: (session) {
+            scope.companySessionNotifier.value = session;
+            bootstrapViewModel.unlockCompany(session);
+          },
           onCancel: () => Navigator.of(context).pop(),
         ),
       ),
