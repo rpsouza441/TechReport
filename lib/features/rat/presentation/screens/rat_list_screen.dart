@@ -20,6 +20,7 @@ import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
 import '../../presentation/view_models/rat_list_view_model.dart';
 import 'rat_form_screen.dart';
+import 'rat_pdf_preview_screen.dart';
 
 class RatListScreen extends StatefulWidget {
   const RatListScreen({
@@ -70,25 +71,18 @@ class _RatListScreenState extends State<RatListScreen> {
         final body = _buildBody(context);
 
         if (widget.embedded) {
-          return Stack(
-            children: [
-              body,
-              Positioned(
-                right: MetricSlateSpacing.md,
-                bottom: MetricSlateSpacing.md,
-                child: FloatingActionButton.extended(
-                  onPressed: _openCreate,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Novo RAT'),
-                ),
-              ),
-            ],
+          return Scaffold(
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _openCreate,
+              icon: const Icon(Icons.add),
+              label: const Text('Novo RAT'),
+            ),
+            body: body,
           );
         }
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Relatórios RAT'),
             actions: [
               if (widget.remoteSession != null)
                 IconButton(
@@ -135,9 +129,6 @@ class _RatListScreenState extends State<RatListScreen> {
 
   Widget _buildFilterBar(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final hasActiveFilter =
-        widget.viewModel.query.isNotEmpty ||
-        widget.viewModel.statusFilter != null;
 
     return Material(
       color: scheme.surfaceContainerLow,
@@ -159,66 +150,65 @@ class _RatListScreenState extends State<RatListScreen> {
               onChanged: widget.viewModel.setQuery,
             ),
             const SizedBox(height: MetricSlateSpacing.sm),
-            InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Status do RAT',
-                isDense: true,
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<RatStatus?>(
-                  isExpanded: true,
-                  value: widget.viewModel.statusFilter,
-                  hint: const Text('Todos'),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Todos')),
-                    DropdownMenuItem(
-                      value: RatStatus.draft,
-                      child: Text('Rascunho'),
-                    ),
-                    DropdownMenuItem(
-                      value: RatStatus.finalizado,
-                      child: Text('Finalizado'),
-                    ),
-                    DropdownMenuItem(
-                      value: RatStatus.enviado,
-                      child: Text('Enviado'),
-                    ),
-                    DropdownMenuItem(
-                      value: RatStatus.arquivado,
-                      child: Text('Arquivado'),
-                    ),
-                  ],
-                  onChanged: widget.viewModel.setStatusFilter,
-                ),
-              ),
-            ),
-            if (hasActiveFilter) ...[
-              const SizedBox(height: MetricSlateSpacing.sm),
-              Wrap(
-                spacing: MetricSlateSpacing.xs,
-                runSpacing: MetricSlateSpacing.xs,
-                children: [
-                  if (widget.viewModel.query.isNotEmpty)
-                    TechReportStatusChip(
-                      label: 'Busca',
-                      tone: TechReportStatusTone.info,
-                      icon: Icons.search,
-                    ),
-                  if (widget.viewModel.statusFilter != null)
-                    TechReportStatusChip(
-                      label: ratStatusLabel(widget.viewModel.statusFilter!),
-                      tone: ratStatusTone(widget.viewModel.statusFilter!),
-                    ),
-                  ActionChip(
-                    label: const Text('Limpar'),
-                    onPressed: () {
-                      widget.viewModel.setQuery('');
-                      widget.viewModel.setStatusFilter(null);
-                    },
+            Wrap(
+              spacing: MetricSlateSpacing.sm,
+              runSpacing: MetricSlateSpacing.sm,
+              children: [
+                SizedBox(
+                  width: 180,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Status do RAT',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton<RatStatus?>(
+                          isExpanded: true,
+                          value: widget.viewModel.statusFilter,
+                          hint: const Text('Todos'),
+                          items: const [
+                            DropdownMenuItem(value: null, child: Text('Todos')),
+                            DropdownMenuItem(
+                              value: RatStatus.draft,
+                              child: Text('Rascunho'),
+                            ),
+                            DropdownMenuItem(
+                              value: RatStatus.finalizado,
+                              child: Text('Finalizado'),
+                            ),
+                            DropdownMenuItem(
+                              value: RatStatus.enviado,
+                              child: Text('Enviado'),
+                            ),
+                            DropdownMenuItem(
+                              value: RatStatus.arquivado,
+                              child: Text('Arquivado'),
+                            ),
+                          ],
+                          onChanged: widget.viewModel.setStatusFilter,
+                        ),
+                      ),
+                      Divider(height: 1, color: scheme.outline),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+                SizedBox(
+                  width: 180,
+                  child: _DateRangeField(
+                    dateFrom: widget.viewModel.dateFrom,
+                    dateTo: widget.viewModel.dateTo,
+                    onChanged: widget.viewModel.setDateRange,
+                    onClear: widget.viewModel.clearDateRange,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -231,7 +221,9 @@ class _RatListScreenState extends State<RatListScreen> {
     if (rats.isEmpty) {
       final hasActiveFilter =
           widget.viewModel.query.isNotEmpty ||
-          widget.viewModel.statusFilter != null;
+          widget.viewModel.statusFilter != null ||
+          widget.viewModel.dateFrom != null ||
+          widget.viewModel.dateTo != null;
 
       return TechReportStateView.empty(
         message: hasActiveFilter
@@ -239,45 +231,49 @@ class _RatListScreenState extends State<RatListScreen> {
             : 'Nenhum RAT cadastrado ainda.',
         primaryAction: hasActiveFilter
             ? TextButton(
-                onPressed: () {
-                  widget.viewModel.setQuery('');
-                  widget.viewModel.setStatusFilter(null);
-                },
+                onPressed: widget.viewModel.clearAllFilters,
                 child: const Text('Limpar filtros'),
               )
             : null,
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        MetricSlateSpacing.md,
-        MetricSlateSpacing.sm,
-        MetricSlateSpacing.md,
-        88,
-      ),
-      itemCount: rats.length + 1,
-      separatorBuilder: (_, index) {
-        if (index == 0) {
-          return const SizedBox(height: MetricSlateSpacing.sm);
-        }
-        return const SizedBox(height: MetricSlateSpacing.sm);
-      },
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            left: MetricSlateSpacing.xs,
+            bottom: MetricSlateSpacing.sm,
+          ),
+          child: Text(
             '${rats.length} ${rats.length == 1 ? 'relatório' : 'relatórios'}',
             style: Theme.of(context).textTheme.labelLarge,
-          );
-        }
-
-        final rat = rats[index - 1];
-        return _RatListItemCard(
-          rat: rat,
-          hasSignature: widget.viewModel.hasSignature(rat.id),
-          onTap: () => _openEdit(rat),
-        );
-      },
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(
+              MetricSlateSpacing.md,
+              0,
+              MetricSlateSpacing.md,
+              88,
+            ),
+            itemCount: rats.length,
+            separatorBuilder: (_, _) =>
+                const SizedBox(height: MetricSlateSpacing.sm),
+            itemBuilder: (context, index) {
+              final rat = rats[index];
+              return _RatListItemCard(
+                rat: rat,
+                hasSignature: widget.viewModel.hasSignature(rat.id),
+                onTap: () => _openEdit(rat),
+                onPreviewPdf: () => _openPdfPreview(rat),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -332,6 +328,64 @@ class _RatListScreenState extends State<RatListScreen> {
     }
   }
 
+  Future<void> _openPdfPreview(Rat rat) async {
+    final viewModel = RatFormViewModel(
+      assinaturaRepository: widget.assinaturaRepository,
+      localSignatureAssetStore: widget.localSignatureAssetStore,
+      ratPdfShareService: widget.ratPdfShareService,
+      ratRepository: widget.ratRepository,
+      shareRatLocally: widget.shareRatLocally,
+      initialRat: rat,
+      remoteSession: widget.remoteSession,
+      enqueueRatSync: widget.enqueueRatSync,
+      enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
+      processSyncQueue: widget.processSyncQueue,
+      downloadRemoteRats: widget.downloadRemoteRats,
+    );
+
+    final previewData = await viewModel.prepareForPdfPreview(persist: false);
+    if (!mounted || previewData == null) {
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RatPdfPreviewScreen(
+          rat: previewData.rat,
+          signatureBytes: previewData.signatureBytes,
+          onShare: () async {
+            final ok = await viewModel.sharePdf();
+            if (!mounted) return;
+            if (ok) {
+              messenger.showSnackBar(
+                const SnackBar(content: Text('PDF pronto para envio.')),
+              );
+            } else if (viewModel.errorMessage != null) {
+              messenger.showSnackBar(
+                SnackBar(content: Text(viewModel.errorMessage!)),
+              );
+            }
+          },
+          onSave: () async {
+            final ok = await viewModel.savePdf();
+            if (!mounted) return;
+            if (ok) {
+              messenger.showSnackBar(
+                const SnackBar(content: Text('PDF salvo no dispositivo.')),
+              );
+            } else if (viewModel.errorMessage != null) {
+              messenger.showSnackBar(
+                SnackBar(content: Text(viewModel.errorMessage!)),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _syncNow() async {
     final session = widget.remoteSession;
     final processSyncQueue = widget.processSyncQueue;
@@ -361,16 +415,132 @@ class _RatListScreenState extends State<RatListScreen> {
   }
 }
 
+class _DateRangeField extends StatelessWidget {
+  const _DateRangeField({
+    required this.dateFrom,
+    required this.dateTo,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
+  final void Function({DateTime? from, DateTime? to}) onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRange = dateFrom != null || dateTo != null;
+
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: 'Período',
+        isDense: true,
+        suffixIcon: hasRange
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 18),
+                onPressed: onClear,
+                padding: EdgeInsets.zero,
+              )
+            : null,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              label: 'Data de inicio: ${dateFrom != null ? _fmt(dateFrom!) : 'nao definida'}',
+              button: true,
+              child: InkWell(
+                onTap: () => _pickDate(context, isFrom: true),
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    dateFrom != null ? _fmt(dateFrom!) : 'De',
+                    style: TextStyle(
+                      color: dateFrom != null
+                          ? Theme.of(context).textTheme.bodyMedium?.color
+                          : Theme.of(context).hintColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Text('—'),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Semantics(
+              label: 'Data de fim: ${dateTo != null ? _fmt(dateTo!) : 'nao definida'}',
+              button: true,
+              child: InkWell(
+                onTap: () => _pickDate(context, isFrom: false),
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    dateTo != null ? _fmt(dateTo!) : 'Ate',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: dateTo != null
+                          ? Theme.of(context).textTheme.bodyMedium?.color
+                          : Theme.of(context).hintColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _fmt(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+
+  Future<void> _pickDate(BuildContext context, {required bool isFrom}) async {
+    final initial = isFrom ? (dateFrom ?? DateTime.now()) : (dateTo ?? DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (picked == null) return;
+
+    if (isFrom) {
+      final effectiveTo = dateTo;
+      if (effectiveTo != null && picked.isAfter(effectiveTo)) {
+        onChanged(from: effectiveTo, to: picked);
+      } else {
+        onChanged(from: picked, to: effectiveTo);
+      }
+    } else {
+      final effectiveFrom = dateFrom;
+      if (effectiveFrom != null && picked.isBefore(effectiveFrom)) {
+        onChanged(from: picked, to: effectiveFrom);
+      } else {
+        onChanged(from: effectiveFrom, to: picked);
+      }
+    }
+  }
+}
+
 class _RatListItemCard extends StatelessWidget {
   const _RatListItemCard({
     required this.rat,
     required this.hasSignature,
     required this.onTap,
+    required this.onPreviewPdf,
   });
 
   final Rat rat;
   final bool hasSignature;
   final VoidCallback onTap;
+  final VoidCallback onPreviewPdf;
 
   @override
   Widget build(BuildContext context) {
@@ -409,15 +579,36 @@ class _RatListItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (hasSignature)
-                  Padding(
-                    padding: const EdgeInsets.only(left: MetricSlateSpacing.xs),
-                    child: Icon(
-                      Icons.draw_outlined,
-                      size: 22,
-                      color: theme.colorScheme.primary,
+                Column(
+                  children: [
+                    if (hasSignature)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: MetricSlateSpacing.xs,
+                          bottom: MetricSlateSpacing.xxs,
+                        ),
+                        child: Icon(
+                          Icons.draw_outlined,
+                          size: 22,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    IconButton(
+                      onPressed: onPreviewPdf,
+                      icon: Icon(
+                        Icons.picture_as_pdf_outlined,
+                        size: 22,
+                        color: theme.colorScheme.primary,
+                      ),
+                      tooltip: 'Prévia do PDF',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
                     ),
-                  ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: MetricSlateSpacing.sm),

@@ -26,6 +26,8 @@ class RatListViewModel extends ChangeNotifier {
   // Filtros em memória
   String _query = '';
   RatStatus? _statusFilter;
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
 
   List<Rat> get rats => _rats;
   bool get isLoading => _isLoading;
@@ -33,6 +35,8 @@ class RatListViewModel extends ChangeNotifier {
   bool get isEmpty => _rats.isEmpty;
   String get query => _query;
   RatStatus? get statusFilter => _statusFilter;
+  DateTime? get dateFrom => _dateFrom;
+  DateTime? get dateTo => _dateTo;
   RatListScope get scope => _scope;
 
   bool hasSignature(String ratId) {
@@ -46,6 +50,26 @@ class RatListViewModel extends ChangeNotifier {
 
   void setStatusFilter(RatStatus? status) {
     _statusFilter = status;
+    notifyListeners();
+  }
+
+  void setDateRange({DateTime? from, DateTime? to}) {
+    _dateFrom = from;
+    _dateTo = to;
+    notifyListeners();
+  }
+
+  void clearDateRange() {
+    _dateFrom = null;
+    _dateTo = null;
+    notifyListeners();
+  }
+
+  void clearAllFilters() {
+    _query = '';
+    _statusFilter = null;
+    _dateFrom = null;
+    _dateTo = null;
     notifyListeners();
   }
 
@@ -66,6 +90,28 @@ class RatListViewModel extends ChangeNotifier {
 
     if (_statusFilter != null) {
       list = list.where((r) => r.status == _statusFilter).toList();
+    }
+
+    if (_dateFrom != null) {
+      list = list.where((r) {
+        final date = r.dataVisita ?? r.createdAt;
+        return !date.isBefore(_dateFrom!);
+      }).toList();
+    }
+
+    if (_dateTo != null) {
+      final endOfDay = DateTime(
+        _dateTo!.year,
+        _dateTo!.month,
+        _dateTo!.day,
+        23,
+        59,
+        59,
+      );
+      list = list.where((r) {
+        final date = r.dataVisita ?? r.createdAt;
+        return !date.isAfter(endOfDay);
+      }).toList();
     }
 
     return list;

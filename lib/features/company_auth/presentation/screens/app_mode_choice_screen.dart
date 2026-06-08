@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/app_mode_choice_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 
 class AppModeChoiceScreen extends StatelessWidget {
   const AppModeChoiceScreen({
@@ -19,30 +21,43 @@ class AppModeChoiceScreen extends StatelessWidget {
       animation: viewModel,
       builder: (context, _) {
         return Scaffold(
-          appBar: AppBar(title: const Text('TechReport')),
           body: SafeArea(
             child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Como você quer começar?',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                        textAlign: TextAlign.center,
+                      _buildHeader(context),
+                      const SizedBox(height: MetricSlateSpacing.xl),
+                      _ModeCard(
+                        icon: Icons.smartphone_outlined,
+                        title: 'Modo Local',
+                        description:
+                            'Todos os dados ficam neste dispositivo. '
+                            'Sem conexão com servidor, sem sincronização. '
+                            'Ideal para trabalho offline ou ambientes sem internet.',
+                        buttonLabel: 'Usar modo local',
+                        isLoading: viewModel.isSaving,
+                        onTap: () => _chooseLocal(context),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Use um servidor da empresa ou mantenha tudo apenas neste dispositivo.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
+                      const SizedBox(height: MetricSlateSpacing.md),
+                      _ModeCard(
+                        icon: Icons.cloud_outlined,
+                        title: 'Modo Empresa',
+                        description:
+                            'Relatórios sincronizam com o servidor da empresa. '
+                            'Acesso compartilhado, backup na nuvem e '
+                            'equipe conectada.',
+                        buttonLabel: 'Conectar ao servidor',
+                        isLoading: viewModel.isSaving,
+                        onTap: () => _chooseCompany(context),
                       ),
                       if (viewModel.errorMessage != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: MetricSlateSpacing.md),
                         Text(
                           viewModel.errorMessage!,
                           style: TextStyle(
@@ -51,27 +66,6 @@ class AppModeChoiceScreen extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ],
-                      const SizedBox(height: 32),
-                      FilledButton(
-                        onPressed: viewModel.isSaving
-                            ? null
-                            : () => _chooseCompany(context),
-                        child: viewModel.isSaving
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Conectar ao servidor'),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: viewModel.isSaving
-                            ? null
-                            : () => _chooseLocal(context),
-                        child: const Text('Criar conta local'),
-                      ),
                     ],
                   ),
                 ),
@@ -83,9 +77,36 @@ class AppModeChoiceScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Icon(
+          Icons.analytics_outlined,
+          size: 48,
+          color: scheme.primary,
+        ),
+        const SizedBox(height: MetricSlateSpacing.md),
+        Text(
+          'TechReport',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+ fontWeight: FontWeight.w700,
+              ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: MetricSlateSpacing.xs),
+        Text(
+          'Como você quer começar?',
+          style: Theme.of(context).textTheme.bodyLarge,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
   Future<void> _chooseCompany(BuildContext context) async {
     final success = await viewModel.chooseCompany();
-
     if (success && context.mounted) {
       onCompanySelected();
     }
@@ -93,9 +114,64 @@ class AppModeChoiceScreen extends StatelessWidget {
 
   Future<void> _chooseLocal(BuildContext context) async {
     final success = await viewModel.chooseLocal();
-
     if (success && context.mounted) {
       onLocalSelected();
     }
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.buttonLabel,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final String buttonLabel;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return TechReportCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 28, color: scheme.primary),
+              const SizedBox(width: MetricSlateSpacing.sm),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+          ),
+          const SizedBox(height: MetricSlateSpacing.sm),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: MetricSlateSpacing.md),
+          FilledButton(
+            onPressed: isLoading ? null : onTap,
+            child: isLoading
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(buttonLabel),
+          ),
+        ],
+      ),
+    );
   }
 }

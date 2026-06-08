@@ -24,13 +24,11 @@ class RemoteServerConfigScreen extends StatefulWidget {
 
 class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
   final _urlController = TextEditingController();
   final _publicKeyController = TextEditingController();
 
   @override
   void dispose() {
-    _nomeController.dispose();
     _urlController.dispose();
     _publicKeyController.dispose();
     super.dispose();
@@ -71,17 +69,6 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
                             ),
                           ],
                           const SizedBox(height: MetricSlateSpacing.lg),
-                          TextFormField(
-                            controller: _nomeController,
-                            enabled: !isSaving,
-                            decoration: const InputDecoration(
-                              labelText: 'Nome do servidor',
-                              hintText: 'Empresa ou ambiente',
-                              prefixIcon: Icon(Icons.badge_outlined),
-                            ),
-                            textInputAction: TextInputAction.next,
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.md),
                           TextFormField(
                             controller: _urlController,
                             enabled: !isSaving,
@@ -172,7 +159,7 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
     }
 
     final success = await widget.viewModel.save(
-      nome: _nomeController.text,
+      nome: '',
       supabaseUrl: _urlController.text,
       supabasePublicKey: _publicKeyController.text,
     );

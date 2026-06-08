@@ -45,117 +45,137 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
         final isSubmitting = widget.viewModel.isSubmitting;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Entrar na empresa')),
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: TechReportCard(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _BrandHeader(theme: theme, scheme: scheme),
-                          if (widget.viewModel.errorMessage != null) ...[
-                            const SizedBox(height: MetricSlateSpacing.md),
-                            TechReportCard(
-                              tone: TechReportCardTone.error,
-                              padding: const EdgeInsets.all(
-                                MetricSlateSpacing.sm,
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(Icons.error_outline, size: 22),
-                                  const SizedBox(width: MetricSlateSpacing.sm),
-                                  Expanded(
-                                    child: Text(
-                                      widget.viewModel.errorMessage!,
-                                      style: theme.textTheme.bodyMedium,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  scheme.surface,
+                  scheme.surface.withValues(alpha: 0.92),
+                  scheme.surfaceContainerLow,
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _BrandHeader(theme: theme, scheme: scheme),
+                        const SizedBox(height: MetricSlateSpacing.xl),
+                        TechReportCard(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (widget.viewModel.errorMessage != null) ...[
+                                  const SizedBox(height: MetricSlateSpacing.md),
+                                  TechReportCard(
+                                    tone: TechReportCardTone.error,
+                                    padding: const EdgeInsets.all(
+                                      MetricSlateSpacing.sm,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.error_outline, size: 22),
+                                        const SizedBox(width: MetricSlateSpacing.sm),
+                                        Expanded(
+                                          child: Text(
+                                            widget.viewModel.errorMessage!,
+                                            style: theme.textTheme.bodyMedium,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: MetricSlateSpacing.lg),
-                          TextFormField(
-                            controller: _emailController,
-                            enabled: !isSubmitting,
-                            decoration: const InputDecoration(
-                              labelText: 'E-mail corporativo',
-                              hintText: 'usuario@empresa.com.br',
-                              prefixIcon: Icon(Icons.mail_outline),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.email],
-                            validator: _validateEmail,
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          TextFormField(
-                            controller: _passwordController,
-                            enabled: !isSubmitting,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Senha',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                onPressed: isSubmitting
-                                    ? null
-                                    : () => setState(
-                                        () => _obscurePassword =
-                                            !_obscurePassword,
-                                      ),
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
+                                const SizedBox(height: MetricSlateSpacing.lg),
+                                TextFormField(
+                                  controller: _emailController,
+                                  enabled: !isSubmitting,
+                                  decoration: const InputDecoration(
+                                    labelText: 'E-mail corporativo',
+                                    hintText: 'usuario@empresa.com.br',
+                                    prefixIcon: Icon(Icons.mail_outline),
+                                  ),
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                  autofillHints: const [AutofillHints.email],
+                                  validator: _validateEmail,
                                 ),
-                              ),
-                            ),
-                            textInputAction: TextInputAction.done,
-                            autofillHints: const [AutofillHints.password],
-                            validator: _validatePassword,
-                            onFieldSubmitted: (_) => _submit(),
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.lg),
-                          FilledButton.icon(
-                            onPressed: isSubmitting ? null : _submit,
-                            icon: isSubmitting
-                                ? SizedBox.square(
-                                    dimension: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: scheme.onPrimary,
+                                const SizedBox(height: MetricSlateSpacing.md),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  enabled: !isSubmitting,
+                                  obscureText: _obscurePassword,
+                                  decoration: InputDecoration(
+                                    labelText: 'Senha',
+                                    prefixIcon: const Icon(Icons.lock_outline),
+                                    suffixIcon: IconButton(
+                                      onPressed: isSubmitting
+                                          ? null
+                                          : () => setState(
+                                              () => _obscurePassword =
+                                                  !_obscurePassword,
+                                            ),
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                      ),
                                     ),
-                                  )
-                                : const Icon(Icons.login, size: 20),
-                            label: Text(
-                              isSubmitting ? 'Entrando...' : 'Entrar',
+                                  ),
+                                  textInputAction: TextInputAction.done,
+                                  autofillHints: const [AutofillHints.password],
+                                  validator: _validatePassword,
+                                  onFieldSubmitted: (_) => _submit(),
+                                ),
+                                const SizedBox(height: MetricSlateSpacing.lg),
+                                FilledButton.icon(
+                                  onPressed: isSubmitting ? null : _submit,
+                                  icon: isSubmitting
+                                      ? SizedBox.square(
+                                          dimension: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: scheme.onPrimary,
+                                          ),
+                                        )
+                                      : const Icon(Icons.login, size: 20),
+                                  label: Text(
+                                    isSubmitting ? 'Entrando...' : 'Entrar',
+                                  ),
+                                ),
+                                if (widget.onCancel != null) ...[
+                                  const SizedBox(height: MetricSlateSpacing.sm),
+                                  OutlinedButton(
+                                    onPressed: isSubmitting ? null : widget.onCancel,
+                                    child: const Text('Voltar'),
+                                  ),
+                                ],
+                                if (widget.onAcceptInvite != null) ...[
+                                  const SizedBox(height: MetricSlateSpacing.sm),
+                                  TextButton(
+                                    onPressed: isSubmitting
+                                        ? null
+                                        : widget.onAcceptInvite,
+                                    child: const Text('Aceitar convite da empresa'),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
-                          if (widget.onCancel != null) ...[
-                            const SizedBox(height: MetricSlateSpacing.sm),
-                            OutlinedButton(
-                              onPressed: isSubmitting ? null : widget.onCancel,
-                              child: const Text('Voltar'),
-                            ),
-                          ],
-                          if (widget.onAcceptInvite != null) ...[
-                            const SizedBox(height: MetricSlateSpacing.sm),
-                            TextButton(
-                              onPressed: isSubmitting
-                                  ? null
-                                  : widget.onAcceptInvite,
-                              child: const Text('Aceitar convite da empresa'),
-                            ),
-                          ],
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
