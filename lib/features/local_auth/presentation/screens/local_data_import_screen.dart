@@ -174,10 +174,7 @@ class LocalDataImportScreen extends StatelessWidget {
 }
 
 class _ImportPreviewSection extends StatelessWidget {
-  const _ImportPreviewSection({
-    required this.preview,
-    required this.isLegacy,
-  });
+  const _ImportPreviewSection({required this.preview, required this.isLegacy});
 
   final LocalImportPreview preview;
   final bool isLegacy;
@@ -205,7 +202,9 @@ class _ImportPreviewSection extends StatelessWidget {
             ),
             TechReportInfoRow(
               label: 'Checksum válido',
-              value: (preview as LocalBackupPreview).checksumsValid ? 'Sim' : 'Não',
+              value: (preview as LocalBackupPreview).checksumsValid
+                  ? 'Sim'
+                  : 'Não',
               dense: true,
             ),
             const SizedBox(height: 8),

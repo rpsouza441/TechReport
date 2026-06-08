@@ -85,9 +85,7 @@ class SupabaseRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
     final client = await _requireClient();
 
     try {
-      final data = await client.storage
-          .from(_bucket)
-          .download(storagePath);
+      final data = await client.storage.from(_bucket).download(storagePath);
       return data.isNotEmpty;
     } catch (_) {
       return false;
@@ -131,14 +129,17 @@ class SupabaseRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
     }
 
     // 2. Marcar deleted_at na metadata (não apaga a linha).
-    await client.from('rat_signature_attachments').update({
-      'deleted_at': DateTime.now().toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
-    }).match({
-      'empresa_id': empresaId,
-      'rat_id': ratId,
-      'assinatura_id': assinaturaId,
-    });
+    await client
+        .from('rat_signature_attachments')
+        .update({
+          'deleted_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .match({
+          'empresa_id': empresaId,
+          'rat_id': ratId,
+          'assinatura_id': assinaturaId,
+        });
   }
 
   Future<SupabaseClient> _requireClient() async {

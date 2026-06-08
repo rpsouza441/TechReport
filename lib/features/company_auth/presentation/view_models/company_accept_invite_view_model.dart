@@ -8,9 +8,9 @@ class CompanyAcceptInviteViewModel extends ChangeNotifier {
     required SignInCompanyWithInvite signInCompanyWithInvite,
     required AuthRepository authRepository,
     String? codigo,
-  })  : _signInCompanyWithInvite = signInCompanyWithInvite,
-        _authRepository = authRepository,
-        _codigo = codigo;
+  }) : _signInCompanyWithInvite = signInCompanyWithInvite,
+       _authRepository = authRepository,
+       _codigo = codigo;
 
   final SignInCompanyWithInvite _signInCompanyWithInvite;
   final AuthRepository _authRepository;

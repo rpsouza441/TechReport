@@ -70,9 +70,9 @@ class _StatusFilter extends StatelessWidget {
       children: [
         Text(
           'Status do RAT',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         DropdownButtonHideUnderline(
@@ -87,7 +87,10 @@ class _StatusFilter extends StatelessWidget {
                 value: RatStatus.finalizado,
                 child: Text('Finalizado'),
               ),
-              DropdownMenuItem(value: RatStatus.enviado, child: Text('Enviado')),
+              DropdownMenuItem(
+                value: RatStatus.enviado,
+                child: Text('Enviado'),
+              ),
               DropdownMenuItem(
                 value: RatStatus.arquivado,
                 child: Text('Arquivado'),

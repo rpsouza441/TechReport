@@ -22,7 +22,8 @@ class LocalBackupManifest {
       appVersion: json['appVersion'] as String,
       databaseSchemaVersion: json['databaseSchemaVersion'] as int,
       counts: Counts.fromJson(json['counts'] as Map<String, dynamic>),
-      checksums: (json['checksums'] as Map<String, dynamic>).cast<String, String>(),
+      checksums: (json['checksums'] as Map<String, dynamic>)
+          .cast<String, String>(),
     );
   }
 
@@ -39,10 +40,7 @@ class LocalBackupManifest {
 }
 
 class Counts {
-  const Counts({
-    required this.rats,
-    required this.assinaturas,
-  });
+  const Counts({required this.rats, required this.assinaturas});
 
   final int rats;
   final int assinaturas;
@@ -55,9 +53,6 @@ class Counts {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'rats': rats,
-      'assinaturas': assinaturas,
-    };
+    return <String, dynamic>{'rats': rats, 'assinaturas': assinaturas};
   }
 }

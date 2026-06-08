@@ -2,9 +2,7 @@ import 'package:techreport/features/local_auth/data/services/local_backup_parser
 import 'package:techreport/features/local_auth/domain/entities/local_backup_preview.dart';
 
 class PreviewLocalBackup {
-  PreviewLocalBackup({
-    required LocalBackupParser parser,
-  }) : _parser = parser;
+  PreviewLocalBackup({required LocalBackupParser parser}) : _parser = parser;
 
   final LocalBackupParser _parser;
 

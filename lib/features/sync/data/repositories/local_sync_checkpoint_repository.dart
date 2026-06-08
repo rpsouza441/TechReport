@@ -18,7 +18,9 @@ class LocalSyncCheckpointRepository implements SyncCheckpointRepository {
     required String usuarioId,
     required String papel,
   }) async {
-    final rawValue = await _storage.read(key: _key(empresaId, usuarioId, papel));
+    final rawValue = await _storage.read(
+      key: _key(empresaId, usuarioId, papel),
+    );
     if (rawValue == null) return null;
     return DateTime.tryParse(rawValue);
   }

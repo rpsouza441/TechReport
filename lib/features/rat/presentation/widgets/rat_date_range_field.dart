@@ -89,8 +89,9 @@ class RatDateRangeField extends StatelessWidget {
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
 
   Future<void> _pickDate(BuildContext context, {required bool isFrom}) async {
-    final initial =
-        isFrom ? (dateFrom ?? DateTime.now()) : (dateTo ?? DateTime.now());
+    final initial = isFrom
+        ? (dateFrom ?? DateTime.now())
+        : (dateTo ?? DateTime.now());
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,

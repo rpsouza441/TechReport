@@ -11,12 +11,14 @@ class CompanySignInScreen extends StatefulWidget {
     required this.onSignedIn,
     this.onCancel,
     this.onAcceptInvite,
+    this.onChangeServer,
   });
 
   final CompanySignInViewModel viewModel;
   final ValueChanged<SessaoRemota> onSignedIn;
   final VoidCallback? onCancel;
   final VoidCallback? onAcceptInvite;
+  final VoidCallback? onChangeServer;
 
   @override
   State<CompanySignInScreen> createState() => _CompanySignInScreenState();
@@ -84,10 +86,16 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
                                       MetricSlateSpacing.sm,
                                     ),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(Icons.error_outline, size: 22),
-                                        const SizedBox(width: MetricSlateSpacing.sm),
+                                        const Icon(
+                                          Icons.error_outline,
+                                          size: 22,
+                                        ),
+                                        const SizedBox(
+                                          width: MetricSlateSpacing.sm,
+                                        ),
                                         Expanded(
                                           child: Text(
                                             widget.viewModel.errorMessage!,
@@ -158,8 +166,19 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
                                 if (widget.onCancel != null) ...[
                                   const SizedBox(height: MetricSlateSpacing.sm),
                                   OutlinedButton(
-                                    onPressed: isSubmitting ? null : widget.onCancel,
-                                    child: const Text('Voltar'),
+                                    onPressed: isSubmitting
+                                        ? null
+                                        : _confirmExitCompanyMode,
+                                    child: const Text('Sair do modo empresa'),
+                                  ),
+                                ],
+                                if (widget.onChangeServer != null) ...[
+                                  const SizedBox(height: MetricSlateSpacing.xs),
+                                  TextButton(
+                                    onPressed: isSubmitting
+                                        ? null
+                                        : _confirmChangeServer,
+                                    child: const Text('Trocar servidor'),
                                   ),
                                 ],
                                 if (widget.onAcceptInvite != null) ...[
@@ -168,7 +187,9 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
                                     onPressed: isSubmitting
                                         ? null
                                         : widget.onAcceptInvite,
-                                    child: const Text('Aceitar convite da empresa'),
+                                    child: const Text(
+                                      'Aceitar convite da empresa',
+                                    ),
                                   ),
                                 ],
                               ],
@@ -185,6 +206,61 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
         );
       },
     );
+  }
+
+  Future<void> _confirmExitCompanyMode() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sair do modo empresa?'),
+        content: const Text(
+          'Você voltará para a escolha de modo. '
+          'O servidor configurado continuará salvo neste dispositivo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      widget.onCancel?.call();
+    }
+  }
+
+  Future<void> _confirmChangeServer() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Trocar servidor?'),
+        content: const Text(
+          'Você poderá informar uma nova URL e anon key. '
+          'O servidor atual só será substituído depois que o novo '
+          'servidor for salvo com sucesso.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Trocar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      widget.onChangeServer?.call();
+    }
   }
 
   String? _validateEmail(String? value) {
@@ -252,10 +328,7 @@ class _BrandHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: MetricSlateSpacing.xxs),
-        Text(
-          'Acesso corporativo',
-          style: theme.textTheme.bodyMedium,
-        ),
+        Text('Acesso corporativo', style: theme.textTheme.bodyMedium),
       ],
     );
   }

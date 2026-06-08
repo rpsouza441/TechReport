@@ -74,10 +74,8 @@ class MetricSlateColors {
   static const defaultFamily = MetricSlateThemeFamily.cobalt;
   static const defaultBrightness = Brightness.light;
 
-  static MetricSlatePalette get defaultPalette => paletteFor(
-        family: defaultFamily,
-        brightness: defaultBrightness,
-      );
+  static MetricSlatePalette get defaultPalette =>
+      paletteFor(family: defaultFamily, brightness: defaultBrightness);
 
   static const cobaltLight = MetricSlatePalette(
     family: MetricSlateThemeFamily.cobalt,

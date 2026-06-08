@@ -9,10 +9,10 @@ class SyncCenterViewModel extends ChangeNotifier {
     required ProcessSyncQueue processSyncQueue,
     required String empresaId,
     required String usuarioId,
-  })  : _queueRepository = queueRepository,
-        _processSyncQueue = processSyncQueue,
-        _empresaId = empresaId,
-        _usuarioId = usuarioId;
+  }) : _queueRepository = queueRepository,
+       _processSyncQueue = processSyncQueue,
+       _empresaId = empresaId,
+       _usuarioId = usuarioId;
 
   final SyncQueueRepository _queueRepository;
   final ProcessSyncQueue _processSyncQueue;

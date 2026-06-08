@@ -38,8 +38,9 @@ void main() {
   }
 
   group('RatListItemCard', () {
-    testWidgets('exibe nome do cliente e numero do RAT',
-        (WidgetTester tester) async {
+    testWidgets('exibe nome do cliente e numero do RAT', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(buildCard(rat: _fixtureRat));
 
       expect(find.text('Acme Corp'), findsOneWidget);
@@ -52,93 +53,101 @@ void main() {
       expect(find.text('Manutenção preventiva'), findsOneWidget);
     });
 
-    testWidgets('exibe icone de assinatura quando hasSignature=true',
-        (WidgetTester tester) async {
+    testWidgets('exibe icone de assinatura quando hasSignature=true', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(buildCard(rat: _fixtureRat, hasSignature: true));
 
       expect(find.byIcon(Icons.draw_outlined), findsOneWidget);
     });
 
-    testWidgets('NAO exibe icone de assinatura quando hasSignature=false',
-        (WidgetTester tester) async {
+    testWidgets('NAO exibe icone de assinatura quando hasSignature=false', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(buildCard(rat: _fixtureRat, hasSignature: false));
 
       expect(find.byIcon(Icons.draw_outlined), findsNothing);
     });
 
-    testWidgets('exibe chip de sync quando showSyncStatus=true',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildCard(
-        rat: _fixtureRat,
-        showSyncStatus: true,
-      ));
+    testWidgets('exibe chip de sync quando showSyncStatus=true', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        buildCard(rat: _fixtureRat, showSyncStatus: true),
+      );
 
       expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
     });
 
-    testWidgets('NAO exibe chip de sync quando showSyncStatus=false',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildCard(
-        rat: _fixtureRat,
-        showSyncStatus: false,
-      ));
+    testWidgets('NAO exibe chip de sync quando showSyncStatus=false', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        buildCard(rat: _fixtureRat, showSyncStatus: false),
+      );
 
       expect(find.byIcon(Icons.cloud_done_outlined), findsNothing);
     });
 
-    testWidgets('exibe data formatada quando trailingDate!=null',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildCard(
-        rat: _fixtureRat,
-        showSyncStatus: false,
-        trailingDate: DateTime(2024, 6, 15),
-      ));
+    testWidgets('exibe data formatada quando trailingDate!=null', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        buildCard(
+          rat: _fixtureRat,
+          showSyncStatus: false,
+          trailingDate: DateTime(2024, 6, 15),
+        ),
+      );
 
       expect(find.text('15/06/2024'), findsOneWidget);
     });
 
-    testWidgets('NAO exibe data quando trailingDate=null',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(buildCard(
-        rat: _fixtureRat,
-        showSyncStatus: false,
-        trailingDate: null,
-      ));
+    testWidgets('NAO exibe data quando trailingDate=null', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        buildCard(rat: _fixtureRat, showSyncStatus: false, trailingDate: null),
+      );
 
       expect(find.text('15/06/2024'), findsNothing);
     });
 
-    testWidgets('dispara onTap ao tocar no card',
-        (WidgetTester tester) async {
+    testWidgets('dispara onTap ao tocar no card', (WidgetTester tester) async {
       var tapped = false;
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: RatListItemCard(
-            rat: _fixtureRat,
-            hasSignature: false,
-            onTap: () => tapped = true,
-            onPreviewPdf: () {},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RatListItemCard(
+              rat: _fixtureRat,
+              hasSignature: false,
+              onTap: () => tapped = true,
+              onPreviewPdf: () {},
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.byType(InkWell).first);
       expect(tapped, isTrue);
     });
 
-    testWidgets('dispara onPreviewPdf ao tocar no botao PDF',
-        (WidgetTester tester) async {
+    testWidgets('dispara onPreviewPdf ao tocar no botao PDF', (
+      WidgetTester tester,
+    ) async {
       var pdfTapped = false;
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: RatListItemCard(
-            rat: _fixtureRat,
-            hasSignature: false,
-            onTap: () {},
-            onPreviewPdf: () => pdfTapped = true,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RatListItemCard(
+              rat: _fixtureRat,
+              hasSignature: false,
+              onTap: () {},
+              onPreviewPdf: () => pdfTapped = true,
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.byIcon(Icons.picture_as_pdf_outlined));
       expect(pdfTapped, isTrue);

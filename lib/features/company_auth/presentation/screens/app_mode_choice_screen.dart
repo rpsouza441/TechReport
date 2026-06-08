@@ -82,17 +82,13 @@ class AppModeChoiceScreen extends StatelessWidget {
 
     return Column(
       children: [
-        Icon(
-          Icons.analytics_outlined,
-          size: 48,
-          color: scheme.primary,
-        ),
+        Icon(Icons.analytics_outlined, size: 48, color: scheme.primary),
         const SizedBox(height: MetricSlateSpacing.md),
         Text(
           'TechReport',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
- fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: MetricSlateSpacing.xs),
@@ -106,6 +102,9 @@ class AppModeChoiceScreen extends StatelessWidget {
   }
 
   Future<void> _chooseCompany(BuildContext context) async {
+    // viewModel.chooseCompany() salva o modo (AppMode.company) no storage.
+    // onCompanySelected chama bootstrapViewModel.chooseCompany() que verifica
+    // endpoint salvo e decide: remoteLoginRequired ou remoteEndpointRequired.
     final success = await viewModel.chooseCompany();
     if (success && context.mounted) {
       onCompanySelected();
@@ -149,17 +148,11 @@ class _ModeCard extends StatelessWidget {
             children: [
               Icon(icon, size: 28, color: scheme.primary),
               const SizedBox(width: MetricSlateSpacing.sm),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
             ],
           ),
           const SizedBox(height: MetricSlateSpacing.sm),
-          Text(
-            description,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(description, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: MetricSlateSpacing.md),
           FilledButton(
             onPressed: isLoading ? null : onTap,

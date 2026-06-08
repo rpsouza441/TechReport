@@ -20,13 +20,13 @@ class AppAdminCompanyDetailViewModel extends ChangeNotifier {
     required CancelTecnicoConvite cancelTecnicoConvite,
     required UpdateEmpresaAdmin updateEmpresaAdmin,
     required UpdateAdminEmpresa updateAdminEmpresa,
-  })  : _empresa = empresa,
-        _listEmpresaAdmins = listEmpresaAdmins,
-        _listEmpresaAdminConvites = listEmpresaAdminConvites,
-        _createEmpresaConvite = createEmpresaConvite,
-        _cancelTecnicoConvite = cancelTecnicoConvite,
-        _updateEmpresaAdmin = updateEmpresaAdmin,
-        _updateAdminEmpresa = updateAdminEmpresa;
+  }) : _empresa = empresa,
+       _listEmpresaAdmins = listEmpresaAdmins,
+       _listEmpresaAdminConvites = listEmpresaAdminConvites,
+       _createEmpresaConvite = createEmpresaConvite,
+       _cancelTecnicoConvite = cancelTecnicoConvite,
+       _updateEmpresaAdmin = updateEmpresaAdmin,
+       _updateAdminEmpresa = updateAdminEmpresa;
 
   final ListEmpresaAdmins _listEmpresaAdmins;
   final ListEmpresaAdminConvites _listEmpresaAdminConvites;

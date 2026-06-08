@@ -14,11 +14,11 @@ class LocalDataImportViewModel extends ChangeNotifier {
     required LocalDataImportParser localDataImportParser,
     required PreviewLocalDataImport previewLocalDataImport,
     required ApplyLocalDataImport applyLocalDataImport,
-  })  : _previewLocalBackup = previewLocalBackup,
-        _applyLocalBackup = applyLocalBackup,
-        _localDataImportParser = localDataImportParser,
-        _previewLocalDataImport = previewLocalDataImport,
-        _applyLocalDataImport = applyLocalDataImport;
+  }) : _previewLocalBackup = previewLocalBackup,
+       _applyLocalBackup = applyLocalBackup,
+       _localDataImportParser = localDataImportParser,
+       _previewLocalDataImport = previewLocalDataImport,
+       _applyLocalDataImport = applyLocalDataImport;
 
   final PreviewLocalBackup _previewLocalBackup;
   final ApplyLocalBackup _applyLocalBackup;
@@ -53,8 +53,9 @@ class LocalDataImportViewModel extends ChangeNotifier {
     } on FormatException {
       // Não é ZIP — tenta legado
       try {
-        _legacyPayload =
-            _localDataImportParser.parse(String.fromCharCodes(bytes));
+        _legacyPayload = _localDataImportParser.parse(
+          String.fromCharCodes(bytes),
+        );
         preview = await _previewLocalDataImport(_legacyPayload!);
         _isLegacy = true;
       } on FormatException catch (e) {

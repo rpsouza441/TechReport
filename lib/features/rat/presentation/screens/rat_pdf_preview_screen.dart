@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
+import 'package:techreport/features/rat/domain/utils/rat_number_formatter.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
@@ -34,10 +35,7 @@ class _RatPdfPreviewScreenState extends State<RatPdfPreviewScreen> {
     final scheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prévia do PDF'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Prévia do PDF'), centerTitle: true),
       body: Column(
         children: [
           // ── Documento ────────────────────────────────────────────────
@@ -112,10 +110,7 @@ class _RatPdfPreviewScreenState extends State<RatPdfPreviewScreen> {
 }
 
 class _A4DocumentPreview extends StatelessWidget {
-  const _A4DocumentPreview({
-    required this.rat,
-    this.signatureBytes,
-  });
+  const _A4DocumentPreview({required this.rat, this.signatureBytes});
 
   final Rat rat;
   final Uint8List? signatureBytes;
@@ -153,7 +148,7 @@ class _A4DocumentPreview extends StatelessWidget {
                 context,
                 title: 'Identificação',
                 children: [
-                  _infoRow('RAT', rat.numero),
+                  _infoRow('RAT', ratDisplayNumber(rat.numero)),
                   _infoRow('Cliente', rat.clienteNome),
                   _infoRow(
                     'Responsável',
@@ -240,10 +235,7 @@ class _A4DocumentPreview extends StatelessWidget {
                         border: Border.all(color: Colors.grey[400]!),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Image.memory(
-                        signatureBytes!,
-                        fit: BoxFit.contain,
-                      ),
+                      child: Image.memory(signatureBytes!, fit: BoxFit.contain),
                     ),
                 ],
               ),
@@ -258,9 +250,7 @@ class _A4DocumentPreview extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFF1565C0), width: 2),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFF1565C0), width: 2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -278,10 +268,7 @@ class _A4DocumentPreview extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 2),
             child: Text(
               'Relatório de Atendimento Técnico',
-              style: TextStyle(
-                fontSize: 9,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 9, color: Colors.grey[600]),
             ),
           ),
         ],
@@ -331,10 +318,7 @@ class _A4DocumentPreview extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 9,
-                color: Colors.grey[800],
-              ),
+              style: TextStyle(fontSize: 9, color: Colors.grey[800]),
             ),
           ),
         ],
@@ -390,9 +374,7 @@ class _ActionBar extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: scheme.surface,
-        border: Border(
-          top: BorderSide(color: scheme.outlineVariant),
-        ),
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Row(
         children: [

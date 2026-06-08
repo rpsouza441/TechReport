@@ -44,6 +44,7 @@ class _TechReportAppState extends State<TechReportApp> {
       localSessionViewModel: widget.scope.appSessionViewModel,
       bootstrapCompanySession: widget.scope.bootstrapCompanySession,
       selectAppMode: widget.scope.selectAppMode,
+      remoteEndpointRepository: widget.scope.remoteEndpointRepository,
     );
 
     bootstrapViewModel.bootstrap();
@@ -185,7 +186,7 @@ class AppShell extends StatelessWidget {
       case AppBootstrapStatus.modeChoiceRequired:
         return AppModeChoiceScreen(
           viewModel: AppModeChoiceViewModel(selectAppMode: scope.selectAppMode),
-          onCompanySelected: bootstrapViewModel.requireRemoteEndpoint,
+          onCompanySelected: () => bootstrapViewModel.chooseCompany(),
           onLocalSelected: bootstrapViewModel.chooseLocal,
         );
 
@@ -228,7 +229,13 @@ class AppShell extends StatelessWidget {
             remoteEndpointRepository: scope.remoteEndpointRepository,
           ),
           onSaved: bootstrapViewModel.requireRemoteLogin,
-          onCancel: bootstrapViewModel.requireModeChoice,
+          onExit: () {
+            if (bootstrapViewModel.isChangingServer) {
+              bootstrapViewModel.requireRemoteLogin();
+            } else {
+              bootstrapViewModel.requireModeChoice();
+            }
+          },
         );
 
       case AppBootstrapStatus.remoteLoginRequired:
@@ -241,6 +248,8 @@ class AppShell extends StatelessWidget {
           },
           onCancel: bootstrapViewModel.requireModeChoice,
           onAcceptInvite: () => _openAcceptInvite(context),
+          onChangeServer: () =>
+              bootstrapViewModel.requireRemoteEndpoint(isChangingServer: true),
         );
 
       case AppBootstrapStatus.companyUnlocked:
@@ -258,6 +267,9 @@ class AppShell extends StatelessWidget {
             },
             onCancel: bootstrapViewModel.requireModeChoice,
             onAcceptInvite: () => _openAcceptInvite(context),
+            onChangeServer: () => bootstrapViewModel.requireRemoteEndpoint(
+              isChangingServer: true,
+            ),
           );
         }
 

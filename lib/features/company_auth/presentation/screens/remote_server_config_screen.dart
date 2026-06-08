@@ -10,12 +10,12 @@ class RemoteServerConfigScreen extends StatefulWidget {
     super.key,
     required this.viewModel,
     this.onSaved,
-    this.onCancel,
+    this.onExit,
   });
 
   final RemoteServerConfigViewModel viewModel;
   final VoidCallback? onSaved;
-  final VoidCallback? onCancel;
+  final VoidCallback? onExit;
 
   @override
   State<RemoteServerConfigScreen> createState() =>
@@ -28,7 +28,16 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
   final _publicKeyController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _urlController.addListener(_onFieldsChanged);
+    _publicKeyController.addListener(_onFieldsChanged);
+  }
+
+  @override
   void dispose() {
+    _urlController.removeListener(_onFieldsChanged);
+    _publicKeyController.removeListener(_onFieldsChanged);
     _urlController.dispose();
     _publicKeyController.dispose();
     super.dispose();
@@ -41,6 +50,7 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
       builder: (context, _) {
         final scheme = Theme.of(context).colorScheme;
         final isSaving = widget.viewModel.isSaving;
+        final isTesting = widget.viewModel.isTesting;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Configurar servidor')),
@@ -93,9 +103,56 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
                             validator: _validatePublicKey,
                             onFieldSubmitted: (_) => _save(),
                           ),
+                          const SizedBox(height: MetricSlateSpacing.md),
+                          OutlinedButton.icon(
+                            onPressed: isTesting || isSaving
+                                ? null
+                                : _testConnection,
+                            icon: isTesting
+                                ? SizedBox.square(
+                                    dimension: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.wifi_find_outlined,
+                                    size: 18,
+                                  ),
+                            label: Text(
+                              isTesting
+                                  ? 'Testando...'
+                                  : widget.viewModel.isTestSuccess
+                                  ? 'Conexão validada'
+                                  : 'Testar conexão',
+                            ),
+                          ),
+                          if (widget.viewModel.isTestSuccess) ...[
+                            const SizedBox(height: MetricSlateSpacing.xs),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  size: 16,
+                                  color: Colors.green,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Conexão validada. Salve para continuar.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: MetricSlateSpacing.lg),
                           FilledButton.icon(
-                            onPressed: isSaving ? null : _save,
+                            onPressed:
+                                isSaving || !widget.viewModel.isTestSuccess
+                                ? null
+                                : _save,
                             icon: isSaving
                                 ? SizedBox.square(
                                     dimension: 20,
@@ -109,10 +166,10 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
                               isSaving ? 'Salvando...' : 'Salvar servidor',
                             ),
                           ),
-                          if (widget.onCancel != null) ...[
+                          if (widget.onExit != null) ...[
                             const SizedBox(height: MetricSlateSpacing.sm),
                             OutlinedButton(
-                              onPressed: isSaving ? null : widget.onCancel,
+                              onPressed: isSaving ? null : widget.onExit,
                               child: const Text('Voltar'),
                             ),
                           ],
@@ -127,6 +184,12 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
         );
       },
     );
+  }
+
+  void _onFieldsChanged() {
+    if (widget.viewModel.isTestSuccess) {
+      widget.viewModel.invalidateTest();
+    }
   }
 
   String? _validateUrl(String? value) {
@@ -150,6 +213,20 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
     }
 
     return null;
+  }
+
+  Future<void> _testConnection() async {
+    final isUrlValid = _validateUrl(_urlController.text) == null;
+    final isKeyValid = _validatePublicKey(_publicKeyController.text) == null;
+
+    if (!isUrlValid || !isKeyValid) {
+      return;
+    }
+
+    await widget.viewModel.testConnection(
+      supabaseUrl: _urlController.text,
+      supabasePublicKey: _publicKeyController.text,
+    );
   }
 
   Future<void> _save() async {
@@ -179,8 +256,7 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          widget.viewModel.errorMessage ??
-              'Não foi possível salvar servidor.',
+          widget.viewModel.errorMessage ?? 'Não foi possível salvar servidor.',
         ),
       ),
     );

@@ -86,20 +86,23 @@ class _CompanyShellState extends State<CompanyShell> {
         await widget.onSignOut();
         return;
       }
-      final pendingCount =
-          await widget.scope.syncQueueRepository.countPending(
+      final pendingCount = await widget.scope.syncQueueRepository.countPending(
         empresaId: empresaId,
         usuarioId: currentSession.usuarioId,
       );
 
       if (pendingCount == 0) {
+        final confirmed = await _showExitConfirmation();
+        if (confirmed != true) {
+          if (mounted) setState(() { _isSigningOut = false; });
+          return;
+        }
         await widget.onSignOut();
         return;
       }
 
       final decision = await _showLogoutPendingDialog(pendingCount);
-      if (decision == null ||
-          decision == LogoutPendingDecision.cancel) {
+      if (decision == null || decision == LogoutPendingDecision.cancel) {
         return;
       }
 
@@ -108,11 +111,11 @@ class _CompanyShellState extends State<CompanyShell> {
         return;
       }
       await _syncNow();
-      final remainingCount =
-          await widget.scope.syncQueueRepository.countPending(
-        empresaId: empresaId,
-        usuarioId: currentSession.usuarioId,
-      );
+      final remainingCount = await widget.scope.syncQueueRepository
+          .countPending(
+            empresaId: empresaId,
+            usuarioId: currentSession.usuarioId,
+          );
       if (remainingCount == 0) {
         await widget.onSignOut();
         return;
@@ -136,6 +139,29 @@ class _CompanyShellState extends State<CompanyShell> {
     }
   }
 
+  Future<bool?> _showExitConfirmation() {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sair da empresa?'),
+        content: const Text(
+          'Você precisará entrar novamente com e-mail e senha. '
+          'O servidor configurado continuará salvo neste dispositivo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<LogoutPendingDecision?> _showLogoutPendingDialog(int count) {
     return showDialog<LogoutPendingDecision>(
       context: context,
@@ -149,8 +175,8 @@ class _CompanyShellState extends State<CompanyShell> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext)
-                  .pop(LogoutPendingDecision.cancel),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(LogoutPendingDecision.cancel),
               child: const Text('Cancelar'),
             ),
             TextButton(
@@ -214,9 +240,7 @@ class _CompanyShellState extends State<CompanyShell> {
   Widget build(BuildContext context) {
     final currentSession = session;
     if (currentSession == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final areas = _areasFor(currentSession);
@@ -250,8 +274,7 @@ class _CompanyShellState extends State<CompanyShell> {
               label: 'Acessar central de sincronização',
               button: true,
               child: IconButton(
-                onPressed:
-                    _isSyncing || _isSigningOut ? null : _openSyncCenter,
+                onPressed: _isSyncing || _isSigningOut ? null : _openSyncCenter,
                 icon: const Icon(Icons.sync_alt_outlined),
                 tooltip: 'Central de sincronização',
               ),
@@ -333,6 +356,8 @@ class _CompanyShellState extends State<CompanyShell> {
             createTecnicoConvite: widget.scope.createTecnicoConvite,
             cancelTecnicoConvite: widget.scope.cancelTecnicoConvite,
             updateTecnicoEquipe: widget.scope.updateTecnicoEquipe,
+            getAdminEmpresa: widget.scope.getAdminEmpresa,
+            updateAdminEmpresa: widget.scope.updateAdminEmpresa,
           ),
         );
       case CompanyArea.appAdmin:

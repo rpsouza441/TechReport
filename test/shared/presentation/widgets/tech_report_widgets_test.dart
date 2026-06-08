@@ -94,7 +94,9 @@ void main() {
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
   });
 
-  testWidgets('TechReportSectionHeader mostra titulo e trailing', (tester) async {
+  testWidgets('TechReportSectionHeader mostra titulo e trailing', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       wrap(
         const TechReportSectionHeader(

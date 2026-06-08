@@ -66,21 +66,17 @@ class LocalBackupService {
     );
 
     final archive = Archive();
-    archive.addFile(ArchiveFile(
-      'manifest.json',
-      manifestBytes.length,
-      manifestBytes,
-    ));
-    archive.addFile(ArchiveFile(
-      'data/rats.json',
-      ratsBytes.length,
-      ratsBytes,
-    ));
-    archive.addFile(ArchiveFile(
-      'data/assinaturas.json',
-      assinaturasBytes.length,
-      assinaturasBytes,
-    ));
+    archive.addFile(
+      ArchiveFile('manifest.json', manifestBytes.length, manifestBytes),
+    );
+    archive.addFile(ArchiveFile('data/rats.json', ratsBytes.length, ratsBytes));
+    archive.addFile(
+      ArchiveFile(
+        'data/assinaturas.json',
+        assinaturasBytes.length,
+        assinaturasBytes,
+      ),
+    );
 
     final List<int> zipBytes = ZipEncoder().encode(archive);
 

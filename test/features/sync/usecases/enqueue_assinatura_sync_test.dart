@@ -41,14 +41,12 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String usuarioId,
     bool includeFailed = false,
     int limit = 20,
-  }) async =>
-      [];
+  }) async => [];
   @override
   Future<int> countPending({
     required String empresaId,
     required String usuarioId,
-  }) async =>
-      0;
+  }) async => 0;
   @override
   Future<void> markProcessing(String id) async {}
   @override
@@ -64,8 +62,7 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String empresaId,
     required String usuarioId,
     int limit = 50,
-  }) async =>
-      [];
+  }) async => [];
 }
 
 void main() {
@@ -78,17 +75,17 @@ void main() {
   });
 
   Assinatura _assinatura(String id) => Assinatura(
-        id: id,
-        ratId: 'rat-1',
-        storageMode: StorageMode.inlineBinary,
-        assetRef: 'signatures/$id.png',
-        data: Uint8List.fromList([1, 2, 3]),
-        sizeBytes: 3,
-        sha256: null,
-        mimeType: 'image/png',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+    id: id,
+    ratId: 'rat-1',
+    storageMode: StorageMode.inlineBinary,
+    assetRef: 'signatures/$id.png',
+    data: Uint8List.fromList([1, 2, 3]),
+    sizeBytes: 3,
+    sha256: null,
+    mimeType: 'image/png',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
 
   group('upsert', () {
     test('enfileira item quando não há pendente existente', () async {

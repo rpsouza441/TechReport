@@ -206,7 +206,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
                           initialValue: vm.equipamentoMovimentoTipo,
                           decoration: const InputDecoration(
                             labelText: 'Movimentação de equipamento',
-                            prefixIcon: Icon(Icons.precision_manufacturing_outlined),
+                            prefixIcon: Icon(
+                              Icons.precision_manufacturing_outlined,
+                            ),
                           ),
                           items: EquipamentoMovimentoTipo.values.map((tipo) {
                             return DropdownMenuItem(
@@ -296,9 +298,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
                       onPressed: isBusy || !vm.canEdit ? null : _handleSharePdf,
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: Text(
-                        vm.isSharing
-                            ? 'Preparando...'
-                            : 'Prévia do PDF',
+                        vm.isSharing ? 'Preparando...' : 'Prévia do PDF',
                       ),
                     ),
                     const SizedBox(height: MetricSlateSpacing.sm),
@@ -432,9 +432,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
               );
             } else if (widget.viewModel.errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(widget.viewModel.errorMessage!),
-                ),
+                SnackBar(content: Text(widget.viewModel.errorMessage!)),
               );
             }
           },
@@ -595,10 +593,7 @@ class _FormSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TechReportSectionHeader(
-              title: title,
-              padding: EdgeInsets.zero,
-            ),
+            TechReportSectionHeader(title: title, padding: EdgeInsets.zero),
             const SizedBox(height: MetricSlateSpacing.md),
             ...children,
           ],

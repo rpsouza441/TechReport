@@ -22,7 +22,9 @@ class ProcessAssinaturaSync {
     final ratId = payload['ratId'] as String;
     final assinaturaId = payload['assinaturaId'] as String;
     final deletedAtStr = payload['deletedAt'] as String?;
-    final deletedAt = deletedAtStr != null ? DateTime.parse(deletedAtStr) : null;
+    final deletedAt = deletedAtStr != null
+        ? DateTime.parse(deletedAtStr)
+        : null;
 
     if (item.operation == SyncOperation.delete) {
       await _remoteAssinaturaRepository.markDeleted(
@@ -47,11 +49,8 @@ class ProcessAssinaturaSync {
 
     final mimeType = payload['mimeType'] as String? ?? 'image/png';
     const version = 1;
-    final storagePath =
-        '$empresaId/$ratId/$assinaturaId/v$version.png';
-    final sha256 = SupabaseRemoteAssinaturaRepository.computeSha256(
-      bytes,
-    );
+    final storagePath = '$empresaId/$ratId/$assinaturaId/v$version.png';
+    final sha256 = SupabaseRemoteAssinaturaRepository.computeSha256(bytes);
 
     // Upload do objeto
     await _remoteAssinaturaRepository.uploadSignature(

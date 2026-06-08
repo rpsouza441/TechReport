@@ -8,12 +8,13 @@ class ListEmpresaAdminConvites {
   final CompanyAdminRepository _repository;
 
   Future<List<AdminConviteResumo>> call({required String empresaId}) async {
-    final convites =
-        await _repository.listConvites(empresaId: empresaId);
+    final convites = await _repository.listConvites(empresaId: empresaId);
     return convites
-        .where((c) =>
-            c.papel == AdminTecnicoPapel.adminEmpresa &&
-            c.status == AdminConviteStatus.pending)
+        .where(
+          (c) =>
+              c.papel == AdminTecnicoPapel.adminEmpresa &&
+              c.status == AdminConviteStatus.pending,
+        )
         .toList();
   }
 }

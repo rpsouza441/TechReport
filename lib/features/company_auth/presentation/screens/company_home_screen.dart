@@ -58,7 +58,10 @@ class _CompanyHomeScreenState extends State<CompanyHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.themeViewModel, widget.sessionNotifier]),
+      animation: Listenable.merge([
+        widget.themeViewModel,
+        widget.sessionNotifier,
+      ]),
       builder: (context, _) {
         final session = widget.sessionNotifier.value;
         if (session == null) {
@@ -82,9 +85,8 @@ class _CompanyHomeScreenState extends State<CompanyHomeScreen> {
   Future<void> _openChangePasswordScreen() async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => CompanyChangePasswordScreen(
-          viewModel: _accountViewModel,
-        ),
+        builder: (_) =>
+            CompanyChangePasswordScreen(viewModel: _accountViewModel),
       ),
     );
 
@@ -219,11 +221,7 @@ class _CompanyHomeScreenBodyState extends State<_CompanyHomeScreenBody> {
             padding: const EdgeInsets.only(top: MetricSlateSpacing.sm),
             child: TextButton.icon(
               onPressed: () => _openEditProfile(context, nome),
-              icon: Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: scheme.primary,
-              ),
+              icon: Icon(Icons.edit_outlined, size: 18, color: scheme.primary),
               label: Text(
                 'Editar nome',
                 style: TextStyle(color: scheme.primary),
@@ -267,9 +265,7 @@ class _CompanyHomeScreenBodyState extends State<_CompanyHomeScreenBody> {
               TechReportInfoRow(
                 icon: Icons.mail_outlined,
                 label: 'E-mail',
-                value: session.email.isEmpty
-                    ? 'Não informado'
-                    : session.email,
+                value: session.email.isEmpty ? 'Não informado' : session.email,
               ),
               if (session.hasCompanyContext) ...[
                 const Divider(height: 1),
@@ -415,7 +411,10 @@ class _CompanyHomeScreenBodyState extends State<_CompanyHomeScreenBody> {
     );
   }
 
-  Future<void> _openEditProfile(BuildContext context, String? currentName) async {
+  Future<void> _openEditProfile(
+    BuildContext context,
+    String? currentName,
+  ) async {
     final newName = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => CompanyEditProfileScreen(
@@ -463,9 +462,7 @@ class _CompanyThemeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Selecionar tema'),
-      ),
+      appBar: AppBar(title: const Text('Selecionar tema')),
       body: ListView(
         children: [
           for (final variant in AppThemeVariant.values)

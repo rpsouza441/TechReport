@@ -51,8 +51,8 @@ class LocalSettingsScreen extends StatelessWidget {
               'Estas opções afetam apenas o modo local. '
               'Seus dados não são sincronizados com o servidor.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: MetricSlateSpacing.lg),
             _SectionHeader(title: 'Dados locais'),
@@ -93,8 +93,8 @@ class LocalSettingsScreen extends StatelessWidget {
               trailing: Text(
                 themeViewModel.currentVariant.displayName,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
               onTap: () => _openThemeSelector(context),
             ),
@@ -116,9 +116,7 @@ class LocalSettingsScreen extends StatelessWidget {
   void _openChangePin(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _ChangePinScreen(
-          viewModel: appSessionViewModel,
-        ),
+        builder: (_) => _ChangePinScreen(viewModel: appSessionViewModel),
       ),
     );
   }
@@ -140,9 +138,9 @@ class LocalSettingsScreen extends StatelessWidget {
     try {
       final path = await localBackupService.saveBackupToDevice();
       if (!context.mounted || path == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Backup salvo: $path')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Backup salvo: $path')));
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -160,9 +158,7 @@ class LocalSettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Trocar para modo empresa?'),
-        content: const Text(
-          'Seus RATs locais permanecem neste dispositivo.',
-        ),
+        content: const Text('Seus RATs locais permanecem neste dispositivo.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -209,10 +205,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium,
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleMedium);
   }
 }
 
@@ -245,10 +238,7 @@ class _SettingsCard extends StatelessWidget {
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -371,9 +361,9 @@ class _ChangePinScreenState extends State<_ChangePinScreen> {
 
     if (success) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN atualizado.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('PIN atualizado.')));
       return;
     }
 

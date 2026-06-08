@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
+import 'package:techreport/features/company_admin/domain/usecases/update_admin_empresa.dart';
 import 'package:techreport/features/company_admin/presentation/screens/app_admin_company_form_screen.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_company_detail_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
@@ -14,9 +15,11 @@ class AppAdminCompanyDetailScreen extends StatefulWidget {
   const AppAdminCompanyDetailScreen({
     super.key,
     required this.viewModel,
+    required this.updateAdminEmpresa,
   });
 
   final AppAdminCompanyDetailViewModel viewModel;
+  final UpdateAdminEmpresa updateAdminEmpresa;
 
   @override
   State<AppAdminCompanyDetailScreen> createState() =>
@@ -25,10 +28,19 @@ class AppAdminCompanyDetailScreen extends StatefulWidget {
 
 class _AppAdminCompanyDetailScreenState
     extends State<AppAdminCompanyDetailScreen> {
+  final _nomeController = TextEditingController();
+  bool _isEditingNome = false;
+  bool _isSavingNome = false;
   @override
   void initState() {
     super.initState();
     widget.viewModel.load();
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,29 +55,29 @@ class _AppAdminCompanyDetailScreenState
             Navigator.of(context).pop(widget.viewModel.empresa);
           },
           child: Scaffold(
-          appBar: AppBar(
-            title: Text(widget.viewModel.empresa.nome),
-            actions: [
-              if (widget.viewModel.isSubmitting)
-                const Padding(
-                  padding: EdgeInsets.only(right: MetricSlateSpacing.md),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+            appBar: AppBar(
+              title: Text(widget.viewModel.empresa.nome),
+              actions: [
+                if (widget.viewModel.isSubmitting)
+                  const Padding(
+                    padding: EdgeInsets.only(right: MetricSlateSpacing.md),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
+            body: _buildBody(context),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: widget.viewModel.isSubmitting
+                  ? null
+                  : _openInviteScreen,
+              icon: const Icon(Icons.person_add_outlined),
+              label: const Text('Convidar admin'),
+            ),
           ),
-          body: _buildBody(context),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: widget.viewModel.isSubmitting
-                ? null
-                : _openInviteScreen,
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Convidar admin'),
-          ),
-        ),
         );
       },
     );
@@ -123,34 +135,151 @@ class _AppAdminCompanyDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  empresa.nome,
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: MetricSlateSpacing.xxs),
-                Text(
-                  empresa.ativo ? 'Empresa ativa' : 'Empresa inativa',
-                  style: theme.textTheme.bodyMedium,
-                ),
+                if (_isEditingNome)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _nomeController,
+                          decoration: const InputDecoration(
+                            hintText: 'Nome da empresa',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
+                          ),
+                          autofocus: true,
+                        ),
+                      ),
+                      const SizedBox(width: MetricSlateSpacing.xxs),
+                      IconButton(
+                        onPressed: _isSavingNome ? null : _saveNome,
+                        icon: _isSavingNome
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.check_outlined),
+                        tooltip: 'Salvar',
+                      ),
+                      IconButton(
+                        onPressed: _isSavingNome ? null : _cancelEditNome,
+                        icon: const Icon(Icons.close_outlined),
+                        tooltip: 'Cancelar',
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              empresa.nome,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: MetricSlateSpacing.xxs),
+                            Text(
+                              empresa.ativo
+                                  ? 'Empresa ativa'
+                                  : 'Empresa inativa',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _startEditNome,
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Editar nome',
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
-          ActionChip(
-            label: Text(empresa.ativo ? 'Ativa' : 'Inativa'),
-            avatar: Icon(
-              empresa.ativo ? Icons.check_circle : Icons.cancel_outlined,
-              size: 16,
-              color: empresa.ativo
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline,
+          if (!_isEditingNome) ...[
+            const SizedBox(width: MetricSlateSpacing.sm),
+            ActionChip(
+              label: Text(empresa.ativo ? 'Ativa' : 'Inativa'),
+              avatar: Icon(
+                empresa.ativo ? Icons.check_circle : Icons.cancel_outlined,
+                size: 16,
+                color: empresa.ativo
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline,
+              ),
+              onPressed: widget.viewModel.isSubmitting
+                  ? null
+                  : () =>
+                        widget.viewModel.setEmpresaAtiva(ativo: !empresa.ativo),
             ),
-            onPressed: widget.viewModel.isSubmitting
-                ? null
-                : () => widget.viewModel.setEmpresaAtiva(ativo: !empresa.ativo),
-          ),
+          ],
         ],
       ),
     );
+  }
+
+  void _startEditNome() {
+    _nomeController.text = widget.viewModel.empresa.nome;
+    setState(() {
+      _isEditingNome = true;
+    });
+  }
+
+  Future<void> _saveNome() async {
+    final novoNome = _nomeController.text.trim();
+    if (novoNome.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nome da empresa não pode ser vazio.')),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isSavingNome = true;
+    });
+
+    try {
+      await widget.updateAdminEmpresa(
+        empresaId: widget.viewModel.empresa.id,
+        nome: novoNome,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Nome atualizado.')));
+        setState(() {
+          _isEditingNome = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar nome: $error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingNome = false;
+        });
+      }
+    }
+  }
+
+  void _cancelEditNome() {
+    setState(() {
+      _isEditingNome = false;
+    });
   }
 
   Widget _buildAdminsSection() {
@@ -177,9 +306,9 @@ class _AppAdminCompanyDetailScreenState
                   widget.viewModel.setAdminAtivo(admin: admin, ativo: ativo),
               onToggleMustChangePassword: (value) =>
                   widget.viewModel.setMustChangePassword(
-                admin: admin,
-                mustChangePassword: value,
-              ),
+                    admin: admin,
+                    mustChangePassword: value,
+                  ),
             ),
             const SizedBox(height: MetricSlateSpacing.sm),
           ],
@@ -207,8 +336,7 @@ class _AppAdminCompanyDetailScreenState
             _ConviteCard(
               convite: convite,
               isSubmitting: widget.viewModel.isSubmitting,
-              onCancel: () =>
-                  widget.viewModel.cancelConvite(convite.id),
+              onCancel: () => widget.viewModel.cancelConvite(convite.id),
             ),
             const SizedBox(height: MetricSlateSpacing.sm),
           ],
@@ -251,10 +379,7 @@ class _AdminCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.account_circle_outlined,
-            color: theme.colorScheme.primary,
-          ),
+          Icon(Icons.account_circle_outlined, color: theme.colorScheme.primary),
           const SizedBox(width: MetricSlateSpacing.sm),
           Expanded(
             child: Column(
@@ -298,8 +423,8 @@ class _AdminCard extends StatelessWidget {
                       onPressed: isSubmitting
                           ? null
                           : () => onToggleMustChangePassword(
-                                !admin.mustChangePassword,
-                              ),
+                              !admin.mustChangePassword,
+                            ),
                     ),
                   ],
                 ),
@@ -370,4 +495,3 @@ class _ConviteCard extends StatelessWidget {
     );
   }
 }
-

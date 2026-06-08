@@ -2,7 +2,7 @@ import 'package:techreport/features/company_auth/domain/repositories/auth_reposi
 
 class UpdateOwnDisplayName {
   UpdateOwnDisplayName({required AuthRepository authRepository})
-      : _authRepository = authRepository;
+    : _authRepository = authRepository;
 
   final AuthRepository _authRepository;
 
@@ -34,10 +34,7 @@ class UpdateOwnDisplayName {
 }
 
 class UpdateOwnDisplayNameResult {
-  const UpdateOwnDisplayNameResult({
-    required this.success,
-    this.errorMessage,
-  });
+  const UpdateOwnDisplayNameResult({required this.success, this.errorMessage});
 
   final bool success;
   final String? errorMessage;

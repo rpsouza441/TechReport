@@ -177,11 +177,12 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
                                       color: scheme.onPrimary,
                                     ),
                                   )
-                                : const Icon(Icons.check_circle_outline, size: 20),
+                                : const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 20,
+                                  ),
                             label: Text(
-                              isLoading
-                                  ? 'Salvando...'
-                                  : 'Concluir onboarding',
+                              isLoading ? 'Salvando...' : 'Concluir onboarding',
                             ),
                           ),
                           if (widget.onBackToModeChoice != null) ...[

@@ -366,8 +366,8 @@ class _CompanyInviteEmailConfirmationScreenState
                           onPressed: isResending
                               ? null
                               : () => widget.viewModel.resendConfirmationEmail(
-                                    email: widget.email,
-                                  ),
+                                  email: widget.email,
+                                ),
                           child: isResending
                               ? const SizedBox.square(
                                   dimension: 18,

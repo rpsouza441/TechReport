@@ -6,8 +6,8 @@ class CompanyAccountViewModel extends ChangeNotifier {
   CompanyAccountViewModel({
     required ChangeCompanyPassword changePassword,
     required UpdateOwnDisplayName updateOwnDisplayName,
-  })  : _changePassword = changePassword,
-        _updateOwnDisplayName = updateOwnDisplayName;
+  }) : _changePassword = changePassword,
+       _updateOwnDisplayName = updateOwnDisplayName;
 
   final ChangeCompanyPassword _changePassword;
   final UpdateOwnDisplayName _updateOwnDisplayName;
@@ -50,7 +50,8 @@ class CompanyAccountViewModel extends ChangeNotifier {
     if (result.success) {
       successMessage = 'Nome atualizado.';
     } else {
-      errorMessage = result.errorMessage ?? 'Não foi possível atualizar o nome.';
+      errorMessage =
+          result.errorMessage ?? 'Não foi possível atualizar o nome.';
     }
     notifyListeners();
     return result.success;

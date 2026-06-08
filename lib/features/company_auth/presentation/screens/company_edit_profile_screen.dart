@@ -19,8 +19,7 @@ class CompanyEditProfileScreen extends StatefulWidget {
       _CompanyEditProfileScreenState();
 }
 
-class _CompanyEditProfileScreenState
-    extends State<CompanyEditProfileScreen> {
+class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
   late final TextEditingController _nameController;
   bool _isSaving = false;
   bool _hasChanges = false;
@@ -66,9 +65,9 @@ class _CompanyEditProfileScreenState
       final ok = await widget.onSave(trimmed);
       if (!mounted) return;
       if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nome atualizado.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Nome atualizado.')));
         Navigator.of(context).pop(trimmed);
       } else {
         setState(() {
@@ -121,9 +120,7 @@ class _CompanyEditProfileScreenState
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Editar perfil'),
-        ),
+        appBar: AppBar(title: const Text('Editar perfil')),
         body: SafeArea(
           child: Align(
             alignment: Alignment.topCenter,
@@ -137,8 +134,7 @@ class _CompanyEditProfileScreenState
                     const TechReportFormHeader(
                       icon: Icons.person_outlined,
                       title: 'Nome exibido',
-                      subtitle:
-                          'Este nome aparece nos RATs criados por você.',
+                      subtitle: 'Este nome aparece nos RATs criados por você.',
                     ),
                     const SizedBox(height: MetricSlateSpacing.md),
                     TextField(
@@ -154,8 +150,9 @@ class _CompanyEditProfileScreenState
                     ),
                     const SizedBox(height: MetricSlateSpacing.xl),
                     FilledButton(
-                      onPressed:
-                          (_isSaving || !_hasChanges) ? null : _handleSave,
+                      onPressed: (_isSaving || !_hasChanges)
+                          ? null
+                          : _handleSave,
                       child: _isSaving
                           ? const SizedBox(
                               height: 20,

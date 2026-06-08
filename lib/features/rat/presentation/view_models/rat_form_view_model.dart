@@ -238,7 +238,9 @@ class RatFormViewModel extends ChangeNotifier {
 
     if (_assinatura case final assinatura?) {
       if (assinatura.storageMode == StorageMode.inlineBinary) {
-        _signaturePreviewBytes = await _assinaturaRepository.readBytes(assinatura.id);
+        _signaturePreviewBytes = await _assinaturaRepository.readBytes(
+          assinatura.id,
+        );
       } else if (assinatura.storageMode == StorageMode.localFile) {
         _signaturePreviewBytes = await _localSignatureAssetStore.read(
           assinatura.assetRef,
@@ -492,8 +494,9 @@ class RatFormViewModel extends ChangeNotifier {
     // Garante que a assinatura está carregada.
     if (_assinatura != null && _signaturePreviewBytes == null) {
       try {
-        _signaturePreviewBytes =
-            await _assinaturaRepository.readBytes(_assinatura!.id);
+        _signaturePreviewBytes = await _assinaturaRepository.readBytes(
+          _assinatura!.id,
+        );
       } catch (_) {
         _signaturePreviewBytes = null;
       }
@@ -609,7 +612,7 @@ String _newRatId() {
 }
 
 String _newRatNumber() {
-  return 'RAT-${DateTime.now().microsecondsSinceEpoch}';
+  return '${DateTime.now().microsecondsSinceEpoch}';
 }
 
 String? _optionalText(String value) {
@@ -663,10 +666,7 @@ int _minutesSinceMidnight(String value) {
 }
 
 class PdfPreviewData {
-  const PdfPreviewData({
-    required this.rat,
-    this.signatureBytes,
-  });
+  const PdfPreviewData({required this.rat, this.signatureBytes});
 
   final Rat rat;
   final Uint8List? signatureBytes;

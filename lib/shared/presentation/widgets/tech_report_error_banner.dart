@@ -29,10 +29,7 @@ class TechReportErrorBanner extends StatelessWidget {
           ),
           const SizedBox(width: MetricSlateSpacing.sm),
           Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),

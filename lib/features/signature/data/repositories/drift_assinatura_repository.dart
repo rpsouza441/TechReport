@@ -115,21 +115,23 @@ class DriftAssinaturaRepository implements AssinaturaRepository {
       deletedAt: existing?.deletedAt,
     );
 
-    await _database.into(_database.assinaturas).insert(
-      AssinaturasCompanion(
-        id: Value(assinatura.id),
-        ratId: Value(assinatura.ratId),
-        storageMode: Value(assinatura.storageMode.name),
-        assetRef: Value(assinatura.assetRef),
-        dataBlob: Value(assinatura.data),
-        sizeBytes: Value(assinatura.sizeBytes),
-        sha256: Value(assinatura.sha256),
-        mimeType: Value(assinatura.mimeType),
-        createdAt: Value(assinatura.createdAt),
-        updatedAt: Value(assinatura.updatedAt),
-        deletedAt: Value(assinatura.deletedAt),
-      ),
-    );
+    await _database
+        .into(_database.assinaturas)
+        .insert(
+          AssinaturasCompanion(
+            id: Value(assinatura.id),
+            ratId: Value(assinatura.ratId),
+            storageMode: Value(assinatura.storageMode.name),
+            assetRef: Value(assinatura.assetRef),
+            dataBlob: Value(assinatura.data),
+            sizeBytes: Value(assinatura.sizeBytes),
+            sha256: Value(assinatura.sha256),
+            mimeType: Value(assinatura.mimeType),
+            createdAt: Value(assinatura.createdAt),
+            updatedAt: Value(assinatura.updatedAt),
+            deletedAt: Value(assinatura.deletedAt),
+          ),
+        );
   }
 
   domain.Assinatura _toEntity(Assinatura row) {
@@ -176,8 +178,9 @@ class DriftAssinaturaRepository implements AssinaturaRepository {
       sizeBytes: entity.sizeBytes != null
           ? Value(entity.sizeBytes)
           : const Value.absent(),
-      sha256:
-          entity.sha256 != null ? Value(entity.sha256) : const Value.absent(),
+      sha256: entity.sha256 != null
+          ? Value(entity.sha256)
+          : const Value.absent(),
       mimeType: entity.mimeType != null
           ? Value(entity.mimeType)
           : const Value.absent(),

@@ -1,12 +1,6 @@
-enum SessaoModo {
-  local,
-}
+enum SessaoModo { local }
 
-enum SessaoLocalStatus {
-  onboardingRequired,
-  locked,
-  unlocked,
-}
+enum SessaoLocalStatus { onboardingRequired, locked, unlocked }
 
 class SessaoLocal {
   const SessaoLocal({
@@ -38,8 +32,7 @@ class SessaoLocal {
 
   bool get isUnlocked => status == SessaoLocalStatus.unlocked;
 
-  bool get requiresOnboarding =>
-      status == SessaoLocalStatus.onboardingRequired;
+  bool get requiresOnboarding => status == SessaoLocalStatus.onboardingRequired;
 
   SessaoLocal copyWith({
     String? id,
@@ -58,12 +51,9 @@ class SessaoLocal {
       tecnicoLocalId: tecnicoLocalId ?? this.tecnicoLocalId,
       status: status ?? this.status,
       pinConfigured: pinConfigured ?? this.pinConfigured,
-      biometriaDisponivel:
-          biometriaDisponivel ?? this.biometriaDisponivel,
-      biometriaHabilitada:
-          biometriaHabilitada ?? this.biometriaHabilitada,
-      onboardingConcluido:
-          onboardingConcluido ?? this.onboardingConcluido,
+      biometriaDisponivel: biometriaDisponivel ?? this.biometriaDisponivel,
+      biometriaHabilitada: biometriaHabilitada ?? this.biometriaHabilitada,
+      onboardingConcluido: onboardingConcluido ?? this.onboardingConcluido,
       lastUnlockedAt: lastUnlockedAt == _sentinel
           ? this.lastUnlockedAt
           : lastUnlockedAt as DateTime?,
@@ -94,18 +84,18 @@ class SessaoLocal {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        mode,
-        tecnicoLocalId,
-        status,
-        pinConfigured,
-        biometriaDisponivel,
-        biometriaHabilitada,
-        onboardingConcluido,
-        lastUnlockedAt,
-        createdAt,
-        updatedAt,
-      );
+    id,
+    mode,
+    tecnicoLocalId,
+    status,
+    pinConfigured,
+    biometriaDisponivel,
+    biometriaHabilitada,
+    onboardingConcluido,
+    lastUnlockedAt,
+    createdAt,
+    updatedAt,
+  );
 }
 
 const Object _sentinel = Object();

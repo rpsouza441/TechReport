@@ -34,7 +34,7 @@ void main() {
     expect(find.text('E-mail corporativo'), findsOneWidget);
     expect(find.text('Senha'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Entrar'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Voltar'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Sair do modo empresa'), findsOneWidget);
   });
 
   testWidgets('CompanySignInScreen mostra erro em card', (tester) async {
@@ -51,10 +51,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: MetricSlateTheme.light(),
-        home: CompanySignInScreen(
-          viewModel: viewModel,
-          onSignedIn: (_) {},
-        ),
+        home: CompanySignInScreen(viewModel: viewModel, onSignedIn: (_) {}),
       ),
     );
     await tester.pump();

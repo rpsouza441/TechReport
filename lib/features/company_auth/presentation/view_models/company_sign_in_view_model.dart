@@ -5,9 +5,8 @@ import 'package:techreport/features/company_auth/domain/usecases/sign_in_company
 enum CompanySignInStatus { idle, submitting, success, failure }
 
 class CompanySignInViewModel extends ChangeNotifier {
-  CompanySignInViewModel({
-    required SignInCompany signInCompany,
-  }) : _signInCompany = signInCompany;
+  CompanySignInViewModel({required SignInCompany signInCompany})
+    : _signInCompany = signInCompany;
 
   final SignInCompany _signInCompany;
 
@@ -19,10 +18,7 @@ class CompanySignInViewModel extends ChangeNotifier {
   bool get isSuccess => status == CompanySignInStatus.success;
   bool get hasError => errorMessage != null;
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     final normalizedEmail = email.trim();
     final normalizedPassword = password.trim();
 

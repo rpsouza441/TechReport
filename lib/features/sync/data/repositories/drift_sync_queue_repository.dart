@@ -141,15 +141,16 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
     required String usuarioId,
     int limit = 50,
   }) async {
-    final rows = await (_database.select(_database.syncQueueItems)
-          ..where(
-            (tbl) =>
-                tbl.empresaId.equals(empresaId) &
-                tbl.usuarioId.equals(usuarioId),
-          )
-          ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
-          ..limit(limit))
-        .get();
+    final rows =
+        await (_database.select(_database.syncQueueItems)
+              ..where(
+                (tbl) =>
+                    tbl.empresaId.equals(empresaId) &
+                    tbl.usuarioId.equals(usuarioId),
+              )
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+              ..limit(limit))
+            .get();
 
     return rows.map(_toEntity).toList();
   }
@@ -161,16 +162,21 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
     required domain.SyncEntityType entityType,
     required String entityId,
   }) async {
-    final row = await (_database.select(_database.syncQueueItems)
-          ..where((tbl) =>
-              tbl.empresaId.equals(empresaId) &
-              tbl.usuarioId.equals(usuarioId) &
-              tbl.entityType.equals(entityType.name) &
-              tbl.entityId.equals(entityId) &
-              (tbl.status.equals(domain.SyncItemStatus.pending.name) |
-                  tbl.status.equals(domain.SyncItemStatus.processing.name)))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.syncQueueItems)
+              ..where(
+                (tbl) =>
+                    tbl.empresaId.equals(empresaId) &
+                    tbl.usuarioId.equals(usuarioId) &
+                    tbl.entityType.equals(entityType.name) &
+                    tbl.entityId.equals(entityId) &
+                    (tbl.status.equals(domain.SyncItemStatus.pending.name) |
+                        tbl.status.equals(
+                          domain.SyncItemStatus.processing.name,
+                        )),
+              )
+              ..limit(1))
+            .getSingleOrNull();
 
     return row != null;
   }

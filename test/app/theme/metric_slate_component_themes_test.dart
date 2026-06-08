@@ -17,10 +17,7 @@ void main() {
       expect(theme.appBarTheme.surfaceTintColor, Colors.transparent);
       expect(theme.cardTheme, isNotNull);
       expect(theme.inputDecorationTheme.filled, isTrue);
-      expect(
-        theme.inputDecorationTheme.constraints?.minHeight,
-        48,
-      );
+      expect(theme.inputDecorationTheme.constraints?.minHeight, 48);
       expect(theme.filledButtonTheme.style, isNotNull);
       expect(theme.outlinedButtonTheme.style, isNotNull);
       expect(theme.textButtonTheme.style, isNotNull);

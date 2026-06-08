@@ -197,6 +197,7 @@ class _AppAdminAreaState extends State<AppAdminArea> {
             updateEmpresaAdmin: widget.updateEmpresaAdmin,
             updateAdminEmpresa: widget.updateAdminEmpresa,
           ),
+          updateAdminEmpresa: widget.updateAdminEmpresa,
         ),
       ),
     );

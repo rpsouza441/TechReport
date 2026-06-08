@@ -9,9 +9,7 @@ class MetricSlateTheme {
   static const defaultFamily = MetricSlateColors.defaultFamily;
   static const defaultBrightness = MetricSlateColors.defaultBrightness;
 
-  static ThemeData light({
-    MetricSlateThemeFamily family = defaultFamily,
-  }) {
+  static ThemeData light({MetricSlateThemeFamily family = defaultFamily}) {
     return _build(
       MetricSlateColors.paletteFor(
         family: family,
@@ -20,9 +18,7 @@ class MetricSlateTheme {
     );
   }
 
-  static ThemeData dark({
-    MetricSlateThemeFamily family = defaultFamily,
-  }) {
+  static ThemeData dark({MetricSlateThemeFamily family = defaultFamily}) {
     return _build(
       MetricSlateColors.paletteFor(family: family, brightness: Brightness.dark),
     );
@@ -65,7 +61,10 @@ class MetricSlateTheme {
         palette,
         textTheme,
       ),
-      textButtonTheme: MetricSlateComponentThemes.textButton(palette, textTheme),
+      textButtonTheme: MetricSlateComponentThemes.textButton(
+        palette,
+        textTheme,
+      ),
       floatingActionButtonTheme: MetricSlateComponentThemes.fab(palette),
       navigationBarTheme: MetricSlateComponentThemes.navigationBar(
         palette,

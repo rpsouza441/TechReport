@@ -177,10 +177,22 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
         );
       }
       if (from < 8) {
-        await _addAssinaturaColumnIfMissing(m, 'data_blob', assinaturas.dataBlob);
-        await _addAssinaturaColumnIfMissing(m, 'size_bytes', assinaturas.sizeBytes);
+        await _addAssinaturaColumnIfMissing(
+          m,
+          'data_blob',
+          assinaturas.dataBlob,
+        );
+        await _addAssinaturaColumnIfMissing(
+          m,
+          'size_bytes',
+          assinaturas.sizeBytes,
+        );
         await _addAssinaturaColumnIfMissing(m, 'sha256', assinaturas.sha256);
-        await _addAssinaturaColumnIfMissing(m, 'mime_type', assinaturas.mimeType);
+        await _addAssinaturaColumnIfMissing(
+          m,
+          'mime_type',
+          assinaturas.mimeType,
+        );
       }
     },
   );

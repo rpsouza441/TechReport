@@ -25,8 +25,7 @@ class AdminConviteResumo {
 
   bool get isPending => status == AdminConviteStatus.pending;
 
-  bool get isExpired =>
-      isPending && DateTime.now().isAfter(expiresAt);
+  bool get isExpired => isPending && DateTime.now().isAfter(expiresAt);
 }
 
 class CreateTecnicoConviteResult {

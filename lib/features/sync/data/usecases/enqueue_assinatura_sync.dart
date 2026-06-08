@@ -16,7 +16,8 @@ class EnqueueAssinaturaSync {
   final SyncQueueRepository _queueRepository;
   final Uuid _uuid;
 
-  Future<void> upsert(Assinatura assinatura, {
+  Future<void> upsert(
+    Assinatura assinatura, {
     required String empresaId,
     required String usuarioId,
     required String ratId,
@@ -60,7 +61,8 @@ class EnqueueAssinaturaSync {
     );
   }
 
-  Future<void> delete(Assinatura assinatura, {
+  Future<void> delete(
+    Assinatura assinatura, {
     required String empresaId,
     required String usuarioId,
     required String ratId,

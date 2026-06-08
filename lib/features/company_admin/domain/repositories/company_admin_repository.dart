@@ -5,9 +5,15 @@ import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_
 abstract class CompanyAdminRepository {
   Future<List<AdminEmpresaResumo>> listEmpresas();
 
+  Future<AdminEmpresaResumo> getEmpresa(String empresaId);
+
   Future<void> createEmpresa({required String nome});
 
-  Future<void> updateEmpresa({required String empresaId, required bool ativo});
+  Future<void> updateEmpresa({
+    required String empresaId,
+    String? nome,
+    bool? ativo,
+  });
 
   Future<List<AdminTecnicoResumo>> listTecnicos({required String empresaId});
 

@@ -1,5 +1,6 @@
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/utils/rat_number_formatter.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
@@ -29,7 +30,7 @@ class ShareRatLocally {
     assinaturas.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     final assinatura = assinaturas.isEmpty ? null : assinaturas.first;
 
-    final subject = 'RAT ${rat.numero} - ${rat.clienteNome}';
+    final subject = 'RAT ${ratDisplayNumber(rat.numero)} - ${rat.clienteNome}';
     final body = _buildBody(rat: rat, assinatura: assinatura);
 
     return ShareRatLocallyResult.success(
@@ -47,8 +48,8 @@ class ShareRatLocally {
     );
 
     final equipamentoObservacao = rat.equipamentoObservacao;
-    final equipamentoSection = equipamentoObservacao != null &&
-            equipamentoObservacao.trim().isNotEmpty
+    final equipamentoSection =
+        equipamentoObservacao != null && equipamentoObservacao.trim().isNotEmpty
         ? '''
 Movimentacao: ${equipamentoMovimentoLabel(rat.equipamentoMovimentoTipo ?? EquipamentoMovimentoTipo.nenhum)}
 Descricao: ${rat.equipamentoDescricao ?? ratNotInformedLabel}
@@ -61,7 +62,7 @@ Descricao: ${rat.equipamentoDescricao ?? ratNotInformedLabel}''';
 === TECHREPORT - RELATORIO DE ATENDIMENTO ===
 
 --- Identificacao ---
-RAT: ${rat.numero}
+RAT: ${ratDisplayNumber(rat.numero)}
 Cliente: ${rat.clienteNome}
 Responsavel: ${rat.responsavelRecebimento ?? ratNotInformedLabel}
 Documento: ${rat.responsavelDocumento ?? ratNotInformedLabel}

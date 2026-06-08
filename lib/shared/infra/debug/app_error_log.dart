@@ -48,10 +48,7 @@ class AppErrorLog {
       developer.log(
         'uncaught (release)',
         name: _name,
-        error: error.toString().substring(
-          0,
-          min(100, error.toString().length),
-        ),
+        error: error.toString().substring(0, min(100, error.toString().length)),
       );
     }
   }

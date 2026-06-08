@@ -10,12 +10,12 @@ import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
+import 'package:techreport/features/rat/domain/utils/rat_number_formatter.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 
 class RatPdfShareService {
-  RatPdfShareService({
-    required AssinaturaRepository assinaturaRepository,
-  }) : _assinaturaRepository = assinaturaRepository;
+  RatPdfShareService({required AssinaturaRepository assinaturaRepository})
+    : _assinaturaRepository = assinaturaRepository;
 
   final AssinaturaRepository _assinaturaRepository;
 
@@ -123,7 +123,7 @@ class RatPdfShareService {
       children: [
         _sectionTitle('Identificação'),
         pw.SizedBox(height: 8),
-        _infoRow('RAT', rat.numero),
+        _infoRow('RAT', ratDisplayNumber(rat.numero)),
         _infoRow('Cliente', rat.clienteNome),
         _infoRow(
           'Responsável',
@@ -148,10 +148,7 @@ class RatPdfShareService {
       children: [
         _sectionTitle('Descrição do atendimento'),
         pw.SizedBox(height: 8),
-        pw.Text(
-          rat.descricao,
-          style: const pw.TextStyle(fontSize: 11),
-        ),
+        pw.Text(rat.descricao, style: const pw.TextStyle(fontSize: 11)),
       ],
     );
   }
@@ -162,14 +159,8 @@ class RatPdfShareService {
       children: [
         _sectionTitle('Equipamento'),
         pw.SizedBox(height: 8),
-        _infoRow(
-          'Movimentação',
-          _movimentoLabel(rat.equipamentoMovimentoTipo),
-        ),
-        _infoRow(
-          'Descrição',
-          rat.equipamentoDescricao ?? ratNotInformedLabel,
-        ),
+        _infoRow('Movimentação', _movimentoLabel(rat.equipamentoMovimentoTipo)),
+        _infoRow('Descrição', rat.equipamentoDescricao ?? ratNotInformedLabel),
         if (rat.equipamentoObservacao != null &&
             rat.equipamentoObservacao!.isNotEmpty)
           _infoRow('Observação', rat.equipamentoObservacao!),

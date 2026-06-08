@@ -54,30 +54,30 @@ class Assinatura {
       data: dataSet == _sentinel
           ? data
           : dataSet == _nullMark
-              ? null
-              : dataSet as Uint8List?,
+          ? null
+          : dataSet as Uint8List?,
       sizeBytes: sizeBytesSet == _sentinel
           ? sizeBytes
           : sizeBytesSet == _nullMark
-              ? null
-              : sizeBytesSet as int?,
+          ? null
+          : sizeBytesSet as int?,
       sha256: sha256Set == _sentinel
           ? sha256
           : sha256Set == _nullMark
-              ? null
-              : sha256Set as String?,
+          ? null
+          : sha256Set as String?,
       mimeType: mimeTypeSet == _sentinel
           ? mimeType
           : mimeTypeSet == _nullMark
-              ? null
-              : mimeTypeSet as String?,
+          ? null
+          : mimeTypeSet as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt == _sentinel
           ? this.deletedAt
           : deletedAt == _nullMark
-              ? null
-              : deletedAt as DateTime?,
+          ? null
+          : deletedAt as DateTime?,
     );
   }
 
@@ -102,18 +102,18 @@ class Assinatura {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        ratId,
-        storageMode,
-        assetRef,
-        data,
-        sizeBytes,
-        sha256,
-        mimeType,
-        createdAt,
-        updatedAt,
-        deletedAt,
-      );
+    id,
+    ratId,
+    storageMode,
+    assetRef,
+    data,
+    sizeBytes,
+    sha256,
+    mimeType,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
 }
 
 const Object _sentinel = Object();

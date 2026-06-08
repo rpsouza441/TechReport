@@ -55,29 +55,76 @@ class MetricSlateComponentThemes {
     final muted = palette.onSurfaceVariant;
 
     TextStyle? withColor(TextStyle? style, Color color, {FontWeight? weight}) {
-      return style?.copyWith(color: color, fontWeight: weight ?? style.fontWeight);
+      return style?.copyWith(
+        color: color,
+        fontWeight: weight ?? style.fontWeight,
+      );
     }
 
     return typography.copyWith(
-      displayLarge: withColor(typography.displayLarge, base, weight: FontWeight.w600),
-      displayMedium: withColor(typography.displayMedium, base, weight: FontWeight.w600),
-      displaySmall: withColor(typography.displaySmall, base, weight: FontWeight.w600),
-      headlineLarge: withColor(typography.headlineLarge, base, weight: FontWeight.w600),
+      displayLarge: withColor(
+        typography.displayLarge,
+        base,
+        weight: FontWeight.w600,
+      ),
+      displayMedium: withColor(
+        typography.displayMedium,
+        base,
+        weight: FontWeight.w600,
+      ),
+      displaySmall: withColor(
+        typography.displaySmall,
+        base,
+        weight: FontWeight.w600,
+      ),
+      headlineLarge: withColor(
+        typography.headlineLarge,
+        base,
+        weight: FontWeight.w600,
+      ),
       headlineMedium: withColor(
         typography.headlineMedium,
         base,
         weight: FontWeight.w600,
       ),
-      headlineSmall: withColor(typography.headlineSmall, base, weight: FontWeight.w600),
-      titleLarge: withColor(typography.titleLarge, base, weight: FontWeight.w600),
-      titleMedium: withColor(typography.titleMedium, base, weight: FontWeight.w600),
-      titleSmall: withColor(typography.titleSmall, base, weight: FontWeight.w600),
+      headlineSmall: withColor(
+        typography.headlineSmall,
+        base,
+        weight: FontWeight.w600,
+      ),
+      titleLarge: withColor(
+        typography.titleLarge,
+        base,
+        weight: FontWeight.w600,
+      ),
+      titleMedium: withColor(
+        typography.titleMedium,
+        base,
+        weight: FontWeight.w600,
+      ),
+      titleSmall: withColor(
+        typography.titleSmall,
+        base,
+        weight: FontWeight.w600,
+      ),
       bodyLarge: withColor(typography.bodyLarge, base),
       bodyMedium: withColor(typography.bodyMedium, muted),
       bodySmall: withColor(typography.bodySmall, muted),
-      labelLarge: withColor(typography.labelLarge, base, weight: FontWeight.w600),
-      labelMedium: withColor(typography.labelMedium, muted, weight: FontWeight.w600),
-      labelSmall: withColor(typography.labelSmall, muted, weight: FontWeight.w600),
+      labelLarge: withColor(
+        typography.labelLarge,
+        base,
+        weight: FontWeight.w600,
+      ),
+      labelMedium: withColor(
+        typography.labelMedium,
+        muted,
+        weight: FontWeight.w600,
+      ),
+      labelSmall: withColor(
+        typography.labelSmall,
+        muted,
+        weight: FontWeight.w600,
+      ),
     );
   }
 
@@ -139,7 +186,9 @@ class MetricSlateComponentThemes {
         horizontal: MetricSlateSpacing.inputHorizontal,
         vertical: MetricSlateSpacing.inputVertical,
       ),
-      constraints: const BoxConstraints(minHeight: MetricSlateSpacing.touchTarget),
+      constraints: const BoxConstraints(
+        minHeight: MetricSlateSpacing.touchTarget,
+      ),
       labelStyle: TextStyle(color: palette.onSurfaceVariant),
       floatingLabelStyle: TextStyle(
         color: palette.primary,
@@ -170,7 +219,10 @@ class MetricSlateComponentThemes {
     );
   }
 
-  static ButtonStyle _filledStyle(MetricSlatePalette palette, TextTheme textTheme) {
+  static ButtonStyle _filledStyle(
+    MetricSlatePalette palette,
+    TextTheme textTheme,
+  ) {
     return ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(
         Size(MetricSlateSpacing.touchTarget, MetricSlateSpacing.touchTarget),
@@ -242,9 +294,7 @@ class MetricSlateComponentThemes {
         }),
         side: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
-            return BorderSide(
-              color: palette.outline.withValues(alpha: 0.38),
-            );
+            return BorderSide(color: palette.outline.withValues(alpha: 0.38));
           }
           return BorderSide(color: palette.outline);
         }),
@@ -315,14 +365,18 @@ class MetricSlateComponentThemes {
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return textTheme.labelMedium?.copyWith(
-          color: selected ? palette.onPrimaryContainer : palette.onSurfaceVariant,
+          color: selected
+              ? palette.onPrimaryContainer
+              : palette.onSurfaceVariant,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return IconThemeData(
-          color: selected ? palette.onPrimaryContainer : palette.onSurfaceVariant,
+          color: selected
+              ? palette.onPrimaryContainer
+              : palette.onSurfaceVariant,
           size: 24,
         );
       }),
@@ -349,7 +403,10 @@ class MetricSlateComponentThemes {
     );
   }
 
-  static DialogThemeData dialog(MetricSlatePalette palette, TextTheme textTheme) {
+  static DialogThemeData dialog(
+    MetricSlatePalette palette,
+    TextTheme textTheme,
+  ) {
     return DialogThemeData(
       backgroundColor: palette.surfaceContainerLowest,
       surfaceTintColor: Colors.transparent,
@@ -402,7 +459,10 @@ class MetricSlateComponentThemes {
     );
   }
 
-  static ListTileThemeData listTile(MetricSlatePalette palette, TextTheme textTheme) {
+  static ListTileThemeData listTile(
+    MetricSlatePalette palette,
+    TextTheme textTheme,
+  ) {
     return ListTileThemeData(
       iconColor: palette.primary,
       textColor: palette.onSurface,

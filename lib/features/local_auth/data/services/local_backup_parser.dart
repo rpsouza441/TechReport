@@ -8,7 +8,7 @@ import 'package:techreport/features/local_auth/domain/entities/local_backup_mani
 
 class LocalBackupParser {
   LocalBackupParser({LocalDataImportParser? legacyParser})
-      : _legacyParser = legacyParser ?? LocalDataImportParser();
+    : _legacyParser = legacyParser ?? LocalDataImportParser();
 
   final LocalDataImportParser _legacyParser;
 
@@ -20,20 +20,16 @@ class LocalBackupParser {
 
     final manifestFile = archive.findFile('manifest.json');
     if (manifestFile == null) {
-      throw const FormatException(
-        'Backup corrompido: manifest.json ausente.',
-      );
+      throw const FormatException('Backup corrompido: manifest.json ausente.');
     }
 
     Map<String, dynamic> manifestJson;
     try {
-      manifestJson = jsonDecode(
-        utf8.decode(manifestFile.content as List<int>),
-      ) as Map<String, dynamic>;
+      manifestJson =
+          jsonDecode(utf8.decode(manifestFile.content as List<int>))
+              as Map<String, dynamic>;
     } catch (_) {
-      throw const FormatException(
-        'Backup corrompido: manifest.json ilegível.',
-      );
+      throw const FormatException('Backup corrompido: manifest.json ilegível.');
     }
 
     final schema = manifestJson['schema'] as String?;
@@ -71,9 +67,8 @@ class LocalBackupParser {
           'Backup corrompido: data/rats.json ausente.',
         );
       }
-      final decoded = jsonDecode(
-        utf8.decode(ratsFile.content as List<int>),
-      ) as List;
+      final decoded =
+          jsonDecode(utf8.decode(ratsFile.content as List<int>)) as List;
       return decoded.cast<Map<String, dynamic>>();
     }
 
@@ -91,9 +86,8 @@ class LocalBackupParser {
           'Backup corrompido: data/assinaturas.json ausente.',
         );
       }
-      final decoded = jsonDecode(
-        utf8.decode(assinaturasFile.content as List<int>),
-      ) as List;
+      final decoded =
+          jsonDecode(utf8.decode(assinaturasFile.content as List<int>)) as List;
       return decoded.cast<Map<String, dynamic>>();
     }
 
@@ -117,9 +111,9 @@ class LocalBackupParser {
 
     Map<String, dynamic> manifestJson;
     try {
-      manifestJson = jsonDecode(
-        utf8.decode(manifestFile.content as List<int>),
-      ) as Map<String, dynamic>;
+      manifestJson =
+          jsonDecode(utf8.decode(manifestFile.content as List<int>))
+              as Map<String, dynamic>;
     } catch (_) {
       return false;
     }
@@ -133,7 +127,9 @@ class LocalBackupParser {
       final file = archive.findFile(path);
       if (file == null) return false;
 
-      final actualChecksum = sha256.convert(file.content as List<int>).toString();
+      final actualChecksum = sha256
+          .convert(file.content as List<int>)
+          .toString();
       if (actualChecksum != expectedChecksum) return false;
     }
 

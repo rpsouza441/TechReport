@@ -24,6 +24,22 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
   }
 
   @override
+  Future<AdminEmpresaResumo> getEmpresa(String empresaId) async {
+    final client = await _requireClient();
+    final row = await client
+        .from('empresas')
+        .select('id, nome, ativo')
+        .eq('id', empresaId)
+        .maybeSingle();
+
+    if (row == null) {
+      throw StateError('Empresa não encontrada.');
+    }
+
+    return _toEmpresa(row);
+  }
+
+  @override
   Future<void> createEmpresa({required String nome}) async {
     final client = await _requireClient();
     await client.from('empresas').insert({'nome': nome.trim()});
@@ -32,16 +48,31 @@ class SupabaseCompanyAdminRepository implements CompanyAdminRepository {
   @override
   Future<void> updateEmpresa({
     required String empresaId,
-    required bool ativo,
+    String? nome,
+    bool? ativo,
   }) async {
+    if (nome == null && ativo == null) {
+      throw ArgumentError('updateEmpresa requer nome ou ativo.');
+    }
+
     final client = await _requireClient();
-    await client
-        .from('empresas')
-        .update({
-          'ativo': ativo,
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', empresaId);
+    final updates = <String, dynamic>{
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    if (nome != null) {
+      final trimmed = nome.trim();
+      if (trimmed.isEmpty) {
+        throw ArgumentError('Nome da empresa não pode ser vazio.');
+      }
+      updates['nome'] = trimmed;
+    }
+
+    if (ativo != null) {
+      updates['ativo'] = ativo;
+    }
+
+    await client.from('empresas').update(updates).eq('id', empresaId);
   }
 
   @override

@@ -5,10 +5,7 @@ class UpdateTecnicoLocal {
 
   final TecnicoLocalRepository _repository;
 
-  Future<void> call({
-    required String nome,
-    required String email,
-  }) async {
+  Future<void> call({required String nome, required String email}) async {
     final current = await _repository.getCurrent();
     if (current == null) return;
 

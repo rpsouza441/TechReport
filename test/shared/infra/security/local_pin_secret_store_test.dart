@@ -61,18 +61,21 @@ void main() {
       expect(saved!.contains('1234'), isFalse);
     });
 
-    test('two saves of the same PIN produce different salts/verifiers', () async {
-      final fake = _FakeSecureStorage();
-      final store = LocalPinSecretStore(fake);
+    test(
+      'two saves of the same PIN produce different salts/verifiers',
+      () async {
+        final fake = _FakeSecureStorage();
+        final store = LocalPinSecretStore(fake);
 
-      await store.savePin('1234');
-      final first = await fake.read(key: 'local_pin');
+        await store.savePin('1234');
+        final first = await fake.read(key: 'local_pin');
 
-      await store.savePin('1234');
-      final second = await fake.read(key: 'local_pin');
+        await store.savePin('1234');
+        final second = await fake.read(key: 'local_pin');
 
-      expect(first, isNot(equals(second)));
-    });
+        expect(first, isNot(equals(second)));
+      },
+    );
 
     test('verifyPin accepts correct PIN', () async {
       final fake = _FakeSecureStorage();

@@ -21,10 +21,19 @@ class AdminEmpresaArea extends StatefulWidget {
 }
 
 class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
+  final _nomeController = TextEditingController();
+  bool _isEditingNome = false;
+
   @override
   void initState() {
     super.initState();
     widget.viewModel.load();
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -106,6 +115,104 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
     }
   }
 
+  void _cancelEditNome() {
+    setState(() {
+      _isEditingNome = false;
+    });
+  }
+
+  Widget _buildEmpresaHeader() {
+    final empresa = widget.viewModel.empresa;
+    final theme = Theme.of(context);
+    final nome = empresa?.nome ?? '';
+
+    return TechReportCard(
+      child: Row(
+        children: [
+          Icon(Icons.business_outlined, color: theme.colorScheme.primary),
+          const SizedBox(width: MetricSlateSpacing.sm),
+          Expanded(
+            child: _isEditingNome
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _nomeController,
+                          decoration: const InputDecoration(
+                            hintText: 'Nome da empresa',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
+                          ),
+                          autofocus: true,
+                        ),
+                      ),
+                      const SizedBox(width: MetricSlateSpacing.xxs),
+                      IconButton(
+                        onPressed: widget.viewModel.isSubmitting
+                            ? null
+                            : _saveNome,
+                        icon: const Icon(Icons.check_outlined),
+                        tooltip: 'Salvar',
+                      ),
+                      IconButton(
+                        onPressed: widget.viewModel.isSubmitting
+                            ? null
+                            : _cancelEditNome,
+                        icon: const Icon(Icons.close_outlined),
+                        tooltip: 'Cancelar',
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Text(nome, style: theme.textTheme.titleMedium),
+                      ),
+                      IconButton(
+                        onPressed: _startEditNome,
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Editar nome',
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startEditNome() {
+    _nomeController.text = widget.viewModel.empresa?.nome ?? '';
+    setState(() {
+      _isEditingNome = true;
+    });
+  }
+
+  Future<void> _saveNome() async {
+    final novoNome = _nomeController.text.trim();
+    if (novoNome.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nome da empresa não pode ser vazio.')),
+        );
+      }
+      return;
+    }
+
+    final sucesso = await widget.viewModel.updateNome(novoNome);
+    if (sucesso && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nome atualizado.')));
+      setState(() {
+        _isEditingNome = false;
+      });
+    }
+  }
+
   Widget _buildBody(BuildContext context) {
     if (widget.viewModel.isLoading &&
         widget.viewModel.tecnicos.isEmpty &&
@@ -127,6 +234,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
         88,
       ),
       children: [
+        if (widget.viewModel.canEditNome) _buildEmpresaHeader(),
         if (errorMessage != null) ...[
           TechReportErrorBanner(message: errorMessage),
           const SizedBox(height: MetricSlateSpacing.sm),

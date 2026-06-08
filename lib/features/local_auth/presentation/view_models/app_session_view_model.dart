@@ -144,7 +144,8 @@ class AppSessionViewModel extends ChangeNotifier {
     if (!result.success) {
       _errorMessage = switch (result.failure) {
         ChangeLocalPinFailure.invalidCurrentPin => 'PIN atual inválido.',
-        ChangeLocalPinFailure.invalidNewPin => 'Defina um PIN com 4 a 8 dígitos.',
+        ChangeLocalPinFailure.invalidNewPin =>
+          'Defina um PIN com 4 a 8 dígitos.',
         ChangeLocalPinFailure.confirmationMismatch =>
           'A confirmação do PIN não confere.',
         ChangeLocalPinFailure.missingSession => 'Sessão local não encontrada.',

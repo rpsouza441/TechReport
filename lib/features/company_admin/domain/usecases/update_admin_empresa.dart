@@ -5,10 +5,14 @@ class UpdateAdminEmpresa {
 
   final CompanyAdminRepository _repository;
 
-  Future<void> call({
-    required String empresaId,
-    required bool ativo,
-  }) {
-    return _repository.updateEmpresa(empresaId: empresaId, ativo: ativo);
+  Future<void> call({required String empresaId, String? nome, bool? ativo}) {
+    if (nome == null && ativo == null) {
+      throw ArgumentError('Update requer nome ou ativo.');
+    }
+    return _repository.updateEmpresa(
+      empresaId: empresaId,
+      nome: nome,
+      ativo: ativo,
+    );
   }
 }

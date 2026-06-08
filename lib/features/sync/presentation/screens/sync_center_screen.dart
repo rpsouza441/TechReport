@@ -249,10 +249,7 @@ class _SyncItemCard extends StatelessWidget {
       SyncItemStatus.pending => Icon(Icons.schedule, color: scheme.tertiary),
       SyncItemStatus.processing => SizedBox.square(
         dimension: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: scheme.primary,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
       ),
       SyncItemStatus.synced => Icon(
         Icons.check_circle_outline,

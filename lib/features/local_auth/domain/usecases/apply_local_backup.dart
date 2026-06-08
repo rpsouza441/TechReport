@@ -17,18 +17,13 @@ class ApplyLocalBackup {
     required LocalImportConflictPolicy conflictPolicy,
   }) async {
     if (!_parser.validateIntegrity(bytes)) {
-      throw const FormatException(
-        'Backup corrompido:checksum divergente.',
-      );
+      throw const FormatException('Backup corrompido:checksum divergente.');
     }
 
     final rats = _parser.parseRats(bytes);
     final assinaturas = _parser.parseAssinaturas(bytes);
 
-    final payload = <String, dynamic>{
-      'rats': rats,
-      'assinaturas': assinaturas,
-    };
+    final payload = <String, dynamic>{'rats': rats, 'assinaturas': assinaturas};
 
     return _applyLocalDataImport.call(
       payload: payload,

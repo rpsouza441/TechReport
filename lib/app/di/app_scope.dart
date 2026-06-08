@@ -10,6 +10,7 @@ import 'package:techreport/features/company_admin/domain/usecases/cancel_tecnico
 import 'package:techreport/features/company_admin/domain/usecases/create_admin_empresa.dart';
 import 'package:techreport/features/company_admin/domain/usecases/create_empresa_convite.dart';
 import 'package:techreport/features/company_admin/domain/usecases/create_tecnico_convite.dart';
+import 'package:techreport/features/company_admin/domain/usecases/get_admin_empresa.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_convites.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_empresas.dart';
 import 'package:techreport/features/company_admin/domain/usecases/list_admin_tecnicos.dart';
@@ -127,6 +128,7 @@ class AppScope {
     required this.applyLocalBackup,
     required this.appThemeViewModel,
     required this.companySessionNotifier,
+    required this.getAdminEmpresa,
   });
 
   static Future<AppScope> create() async {
@@ -165,9 +167,7 @@ class AppScope {
         assinaturaRepository: assinaturaRepository,
         localSignatureAssetStore: localSignatureAssetStore,
       );
-      final previewLocalBackup = PreviewLocalBackup(
-        parser: localBackupParser,
-      );
+      final previewLocalBackup = PreviewLocalBackup(parser: localBackupParser);
       final applyLocalBackup = ApplyLocalBackup(
         parser: localBackupParser,
         applyLocalDataImport: applyLocalDataImport,
@@ -200,9 +200,11 @@ class AppScope {
       final cancelTecnicoConvite = CancelTecnicoConvite(companyAdminRepository);
       final updateTecnicoEquipe = UpdateTecnicoEquipe(companyAdminRepository);
       final listEmpresaAdmins = ListEmpresaAdmins(companyAdminRepository);
-      final listEmpresaAdminConvites =
-          ListEmpresaAdminConvites(companyAdminRepository);
+      final listEmpresaAdminConvites = ListEmpresaAdminConvites(
+        companyAdminRepository,
+      );
       final updateEmpresaAdmin = UpdateEmpresaAdmin(companyAdminRepository);
+      final getAdminEmpresa = GetAdminEmpresa(companyAdminRepository);
       final syncQueueRepository = DriftSyncQueueRepository(database);
       final remoteRatRepository = SupabaseRemoteRatRepository(
         clientFactory: supabaseClientFactory,
@@ -343,6 +345,7 @@ class AppScope {
         applyLocalBackup: applyLocalBackup,
         appThemeViewModel: appThemeViewModel,
         companySessionNotifier: companySessionNotifier,
+        getAdminEmpresa: getAdminEmpresa,
       );
 
       LocalDatabaseDebugLog.info('appScope.create.done');
@@ -408,6 +411,7 @@ class AppScope {
   final ApplyLocalBackup applyLocalBackup;
   final AppThemeViewModel appThemeViewModel;
   final ValueNotifier<SessaoRemota?> companySessionNotifier;
+  final GetAdminEmpresa getAdminEmpresa;
 
   Future<void> dispose() async {
     companySessionNotifier.dispose();

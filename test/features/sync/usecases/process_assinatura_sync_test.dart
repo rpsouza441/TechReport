@@ -51,8 +51,7 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   }) async {}
 }
 
-class _StubRemoteAssinaturaRepository
-    implements RemoteAssinaturaRepository {
+class _StubRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
   final List<_UploadCall> uploads = [];
   final List<_DeleteCall> deletes = [];
   final List<String> storageDeletes = [];
@@ -71,14 +70,16 @@ class _StubRemoteAssinaturaRepository
     required List<int> bytes,
     required String mimeType,
   }) async {
-    uploads.add(_UploadCall(
-      empresaId: empresaId,
-      ratId: ratId,
-      assinaturaId: assinaturaId,
-      version: version,
-      bytesLength: bytes.length,
-      mimeType: mimeType,
-    ));
+    uploads.add(
+      _UploadCall(
+        empresaId: empresaId,
+        ratId: ratId,
+        assinaturaId: assinaturaId,
+        version: version,
+        bytesLength: bytes.length,
+        mimeType: mimeType,
+      ),
+    );
     return '$empresaId/$ratId/$assinaturaId/v$version.png';
   }
 
@@ -99,8 +100,7 @@ class _StubRemoteAssinaturaRepository
   Future<String> createSignedUrl({
     required String storagePath,
     int expiresInSeconds = 300,
-  }) async =>
-      'https://signed.url';
+  }) async => 'https://signed.url';
 
   @override
   Future<bool> objectExists(String storagePath) async => false;
@@ -111,11 +111,13 @@ class _StubRemoteAssinaturaRepository
     required String ratId,
     required String assinaturaId,
   }) async {
-    deletes.add(_DeleteCall(
-      empresaId: empresaId,
-      ratId: ratId,
-      assinaturaId: assinaturaId,
-    ));
+    deletes.add(
+      _DeleteCall(
+        empresaId: empresaId,
+        ratId: ratId,
+        assinaturaId: assinaturaId,
+      ),
+    );
   }
 }
 
@@ -148,8 +150,7 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String usuarioId,
     required SyncEntityType entityType,
     required String entityId,
-  }) async =>
-      false;
+  }) async => false;
 
   @override
   Future<void> enqueue(SyncItem item) async {}
@@ -159,14 +160,12 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String usuarioId,
     bool includeFailed = false,
     int limit = 20,
-  }) async =>
-      [];
+  }) async => [];
   @override
   Future<int> countPending({
     required String empresaId,
     required String usuarioId,
-  }) async =>
-      0;
+  }) async => 0;
   @override
   Future<void> markProcessing(String id) async {}
   @override
@@ -182,8 +181,7 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String empresaId,
     required String usuarioId,
     int limit = 50,
-  }) async =>
-      [];
+  }) async => [];
 }
 
 SyncItem _buildUpsertItem({
@@ -198,7 +196,8 @@ SyncItem _buildUpsertItem({
     entityType: SyncEntityType.assinatura,
     entityId: assinaturaId,
     operation: SyncOperation.upsert,
-    payload: '{"empresaId":"$empresaId","ratId":"$ratId","assinaturaId":"$assinaturaId","sizeBytes":1024,"mimeType":"image/png","deletedAt":null}',
+    payload:
+        '{"empresaId":"$empresaId","ratId":"$ratId","assinaturaId":"$assinaturaId","sizeBytes":1024,"mimeType":"image/png","deletedAt":null}',
     status: SyncItemStatus.pending,
     attempts: 0,
     createdAt: DateTime.now(),
@@ -218,7 +217,8 @@ SyncItem _buildDeleteItem({
     entityType: SyncEntityType.assinatura,
     entityId: assinaturaId,
     operation: SyncOperation.delete,
-    payload: '{"empresaId":"$empresaId","ratId":"$ratId","assinaturaId":"$assinaturaId","deletedAt":"${DateTime.now().toIso8601String()}"}',
+    payload:
+        '{"empresaId":"$empresaId","ratId":"$ratId","assinaturaId":"$assinaturaId","deletedAt":"${DateTime.now().toIso8601String()}"}',
     status: SyncItemStatus.pending,
     attempts: 0,
     createdAt: DateTime.now(),
@@ -245,11 +245,13 @@ void main() {
       final bytes = Uint8List.fromList(List<int>.generate(512, (i) => i % 256));
       assinaturaRepo.setBytesToReturn(bytes);
 
-      await sut.call(_buildUpsertItem(
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-        assinaturaId: 'assinatura-1',
-      ));
+      await sut.call(
+        _buildUpsertItem(
+          empresaId: 'emp-1',
+          ratId: 'rat-1',
+          assinaturaId: 'assinatura-1',
+        ),
+      );
 
       expect(assinaturaRepo.readHistory, ['assinatura-1']);
       expect(remoteRepo.uploads, hasLength(1));
@@ -264,11 +266,13 @@ void main() {
       assinaturaRepo.setBytesToReturn(null);
 
       expect(
-        () => sut.call(_buildUpsertItem(
-          empresaId: 'emp-1',
-          ratId: 'rat-1',
-          assinaturaId: 'assinatura-1',
-        )),
+        () => sut.call(
+          _buildUpsertItem(
+            empresaId: 'emp-1',
+            ratId: 'rat-1',
+            assinaturaId: 'assinatura-1',
+          ),
+        ),
         throwsA(isA<StateError>()),
       );
 
@@ -278,11 +282,13 @@ void main() {
     test('delete operation não lê bytes', () async {
       assinaturaRepo.setBytesToReturn(null);
 
-      await sut.call(_buildDeleteItem(
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-        assinaturaId: 'assinatura-1',
-      ));
+      await sut.call(
+        _buildDeleteItem(
+          empresaId: 'emp-1',
+          ratId: 'rat-1',
+          assinaturaId: 'assinatura-1',
+        ),
+      );
 
       expect(assinaturaRepo.readHistory, isEmpty);
     });
@@ -290,11 +296,13 @@ void main() {
 
   group('ProcessAssinaturaSync delete', () {
     test('chama markDeleted no repositório remoto', () async {
-      await sut.call(_buildDeleteItem(
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-        assinaturaId: 'assinatura-1',
-      ));
+      await sut.call(
+        _buildDeleteItem(
+          empresaId: 'emp-1',
+          ratId: 'rat-1',
+          assinaturaId: 'assinatura-1',
+        ),
+      );
 
       expect(remoteRepo.deletes, hasLength(1));
       expect(remoteRepo.deletes.first.empresaId, 'emp-1');
@@ -308,14 +316,20 @@ void main() {
       await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
 
       expect(remoteRepo.storageDeletes, hasLength(1));
-      expect(remoteRepo.storageDeletes.first, 'emp-1/rat-1/assinatura-1/v1.png');
+      expect(
+        remoteRepo.storageDeletes.first,
+        'emp-1/rat-1/assinatura-1/v1.png',
+      );
     });
 
-    test('deleteStorageObject é idempotente — chamar duas vezes não quebra', () async {
-      await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
-      await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
+    test(
+      'deleteStorageObject é idempotente — chamar duas vezes não quebra',
+      () async {
+        await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
+        await remoteRepo.deleteStorageObject('emp-1/rat-1/assinatura-1/v1.png');
 
-      expect(remoteRepo.storageDeletes, hasLength(2));
-    });
+        expect(remoteRepo.storageDeletes, hasLength(2));
+      },
+    );
   });
 }
