@@ -531,6 +531,53 @@ class SupabaseAuthRepository implements AuthRepository {
     );
   }
 
+  @override
+  Future<void> updateOwnDisplayName(String name) async {
+    try {
+      final client = await requireClient();
+
+      // Tenta atualizar tecnicos.nome primeiro.
+      try {
+        await client
+            .from('tecnicos')
+            .update({'nome': name})
+            .eq('user_id', client.auth.currentUser?.id ?? '')
+            .select()
+            .maybeSingle();
+        return;
+      } on PostgrestException {
+        // Técnico não encontrado ou sem vínculo — tenta app_admins.
+      }
+
+      // Tenta atualizar app_admins.nome.
+      await client
+          .from('app_admins')
+          .update({'nome': name})
+          .eq('user_id', client.auth.currentUser?.id ?? '')
+          .select()
+          .maybeSingle();
+    } on RemoteAuthException {
+      rethrow;
+    } on AuthException catch (e) {
+      if (e.message.toLowerCase().contains('session') ||
+          e.message.toLowerCase().contains('unauthorized')) {
+        throw const RemoteAuthException(
+          'Sessão expirada. Entre novamente para continuar.',
+        );
+      }
+      throw RemoteAuthException(e.message);
+    } on PostgrestException catch (e) {
+      if (e.message.toLowerCase().contains('row-level security') ||
+          e.message.toLowerCase().contains('permission')) {
+        throw const RemoteAuthException(
+          'Você não tem permissão para alterar o nome. '
+          'Entre novamente e tente outra vez.',
+        );
+      }
+      throw RemoteAuthException(e.message);
+    }
+  }
+
   RemoteAuthException _mapChangePasswordException(AuthApiException exception) {
     final message = exception.message.toLowerCase();
     if (message.contains('session')) {
