@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:techreport/app/theme/metric_slate_radii.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
@@ -11,14 +10,12 @@ import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.d
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
-import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
 import '../../presentation/view_models/rat_list_view_model.dart';
+import '../widgets/rat_list_item_card.dart';
 import '../widgets/rat_list_filter_bar.dart';
 import 'rat_form_screen.dart';
 import 'rat_pdf_preview_screen.dart';
@@ -181,11 +178,12 @@ class _RatListScreenState extends State<RatListScreen> {
                 const SizedBox(height: MetricSlateSpacing.sm),
             itemBuilder: (context, index) {
               final rat = rats[index];
-              return _RatListItemCard(
+              return RatListItemCard(
                 rat: rat,
                 hasSignature: widget.viewModel.hasSignature(rat.id),
                 onTap: () => _openEdit(rat),
                 onPreviewPdf: () => _openPdfPreview(rat),
+                showSyncStatus: true,
               );
             },
           ),
@@ -330,136 +328,4 @@ class _RatListScreenState extends State<RatListScreen> {
     );
     await widget.viewModel.load();
   }
-}
-
-class _RatListItemCard extends StatelessWidget {
-  const _RatListItemCard({
-    required this.rat,
-    required this.hasSignature,
-    required this.onTap,
-    required this.onPreviewPdf,
-  });
-
-  final Rat rat;
-  final bool hasSignature;
-  final VoidCallback onTap;
-  final VoidCallback onPreviewPdf;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return TechReportCard(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(MetricSlateRadii.md),
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rat.clienteNome,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: MetricSlateSpacing.xxs),
-                      Text(
-                        rat.numero,
-                        style: theme.textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: MetricSlateSpacing.xs),
-                      Text(
-                        rat.descricao,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    if (hasSignature)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: MetricSlateSpacing.xs,
-                          bottom: MetricSlateSpacing.xxs,
-                        ),
-                        child: Icon(
-                          Icons.draw_outlined,
-                          size: 22,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    IconButton(
-                      onPressed: onPreviewPdf,
-                      icon: Icon(
-                        Icons.picture_as_pdf_outlined,
-                        size: 22,
-                        color: theme.colorScheme.primary,
-                      ),
-                      tooltip: 'Prévia do PDF',
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: MetricSlateSpacing.sm),
-            Wrap(
-              spacing: MetricSlateSpacing.xs,
-              runSpacing: MetricSlateSpacing.xs,
-              children: [
-                TechReportStatusChip(
-                  label: ratStatusLabel(rat.status),
-                  tone: ratStatusTone(rat.status),
-                ),
-                TechReportStatusChip(
-                  label: _syncLabel(rat.syncStatus),
-                  tone: _syncTone(rat.syncStatus),
-                  icon: _syncIcon(rat.syncStatus),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-String _syncLabel(RatSyncStatus status) {
-  return switch (status) {
-    RatSyncStatus.localOnly => 'Local',
-    RatSyncStatus.pendingSync => 'Pendente',
-    RatSyncStatus.synced => 'Sincronizado',
-    RatSyncStatus.syncError => 'Erro de sync',
-  };
-}
-
-TechReportStatusTone _syncTone(RatSyncStatus status) {
-  return switch (status) {
-    RatSyncStatus.localOnly => TechReportStatusTone.neutral,
-    RatSyncStatus.pendingSync => TechReportStatusTone.warning,
-    RatSyncStatus.synced => TechReportStatusTone.success,
-    RatSyncStatus.syncError => TechReportStatusTone.error,
-  };
-}
-
-IconData? _syncIcon(RatSyncStatus status) {
-  return switch (status) {
-    RatSyncStatus.localOnly => Icons.smartphone_outlined,
-    RatSyncStatus.pendingSync => Icons.schedule,
-    RatSyncStatus.synced => Icons.cloud_done_outlined,
-    RatSyncStatus.syncError => Icons.error_outline,
-  };
 }

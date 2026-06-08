@@ -8,25 +8,59 @@ import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
 
+/// Exposes the editing and loading state of [LocalProfileScreen] so that
+/// a caller who supplies a custom [appBar] can react to those changes
+/// (e.g. to show/hide an edit button in the injected AppBar).
+class ProfileEditingNotifier extends ChangeNotifier {
+  bool get isEditing => _isEditing;
+  bool get isLoading => _isLoading;
+
+  bool _isEditing = false;
+  bool _isLoading = true;
+
+  void setEditing(bool value) {
+    if (_isEditing == value) return;
+    _isEditing = value;
+    notifyListeners();
+  }
+
+  void setLoading(bool value) {
+    if (_isLoading == value) return;
+    _isLoading = value;
+    notifyListeners();
+  }
+}
+
 class LocalProfileScreen extends StatefulWidget {
   const LocalProfileScreen({
     super.key,
     required this.appSessionViewModel,
     required this.tecnicoLocalRepository,
+    this.appBar,
   });
 
   final AppSessionViewModel appSessionViewModel;
   final TecnicoLocalRepository tecnicoLocalRepository;
+  final PreferredSizeWidget? appBar;
+
+  /// Read-only access to the editing/loading state so a parent (e.g. the
+  /// profile tab in LocalHomeScreen) can listen and rebuild a custom appBar.
+  ProfileEditingNotifier get profileEditingNotifier => _state._editingNotifier;
+
+  /// Triggers the edit mode. Safe to call from outside the widget.
+  void startEditing() => _state._startEditing();
+
+  _LocalProfileScreenState get _state => this as _LocalProfileScreenState;
 
   @override
   State<LocalProfileScreen> createState() => _LocalProfileScreenState();
 }
 
 class _LocalProfileScreenState extends State<LocalProfileScreen> {
+  final _editingNotifier = ProfileEditingNotifier();
+
   TecnicoLocal? _tecnico;
-  bool _isLoading = true;
   String? _errorMessage;
-  bool _isEditing = false;
   bool _isSaving = false;
 
   final _formKey = GlobalKey<FormState>();
@@ -47,8 +81,9 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
   }
 
   Future<void> _loadTecnico() async {
+    _editingNotifier.setLoading(true);
+    _editingNotifier.setEditing(false);
     setState(() {
-      _isLoading = true;
       _errorMessage = null;
     });
 
@@ -56,24 +91,24 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
       final tecnico = await widget.tecnicoLocalRepository.getCurrent();
       setState(() {
         _tecnico = tecnico;
-        _isLoading = false;
       });
+      _editingNotifier.setLoading(false);
     } catch (_) {
       setState(() {
         _errorMessage = 'Não foi possível carregar o perfil.';
-        _isLoading = false;
       });
+      _editingNotifier.setLoading(false);
     }
   }
 
   void _startEditing() {
     _nomeController.text = _tecnico?.nome ?? '';
     _emailController.text = _tecnico?.email ?? '';
-    setState(() => _isEditing = true);
+    _editingNotifier.setEditing(true);
   }
 
   void _cancelEditing() {
-    setState(() => _isEditing = false);
+    _editingNotifier.setEditing(false);
   }
 
   Future<void> _saveEditing() async {
@@ -88,11 +123,10 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
         email: _emailController.text,
       );
       await _loadTecnico();
-      setState(() => _isEditing = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil atualizado.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Perfil atualizado.')));
       }
     } catch (_) {
       setState(() {
@@ -105,25 +139,33 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meu perfil'),
-        actions: [
-          if (!_isEditing && !_isLoading)
-            IconButton(
-              onPressed: _startEditing,
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Editar perfil',
-            ),
-        ],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: ListenableBuilder(
+          listenable: _editingNotifier,
+          builder: (context, _) {
+            final provided = widget.appBar;
+            if (provided != null) return provided;
+            return AppBar(
+              title: const Text('Meu perfil'),
+              actions: [
+                if (!_editingNotifier.isEditing && !_editingNotifier.isLoading)
+                  IconButton(
+                    onPressed: _startEditing,
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar perfil',
+                  ),
+              ],
+            );
+          },
+        ),
       ),
-      body: SafeArea(
-        child: _buildBody(),
-      ),
+      body: SafeArea(child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
+    if (_editingNotifier.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -152,7 +194,10 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
             TechReportErrorBanner(message: _errorMessage!),
             const SizedBox(height: MetricSlateSpacing.md),
           ],
-          if (_isEditing) _buildEditForm() else _buildReadOnlyProfile(),
+          if (_editingNotifier.isEditing)
+            _buildEditForm()
+          else
+            _buildReadOnlyProfile(),
         ],
       ),
     );
@@ -165,20 +210,12 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ProfileCard(
-          icon: Icons.person_outline,
-          title: 'Nome',
-          value: t.nome,
-        ),
+        ProfileCard(icon: Icons.person_outline, title: 'Nome', value: t.nome),
         const SizedBox(height: MetricSlateSpacing.sm),
-        _ProfileCard(
-          icon: Icons.mail_outline,
-          title: 'E-mail',
-          value: t.email,
-        ),
+        ProfileCard(icon: Icons.mail_outline, title: 'E-mail', value: t.email),
         if (t.telefone != null && t.telefone!.isNotEmpty) ...[
           const SizedBox(height: MetricSlateSpacing.sm),
-          _ProfileCard(
+          ProfileCard(
             icon: Icons.phone_outlined,
             title: 'Telefone',
             value: t.telefone!,
@@ -186,15 +223,17 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
         ],
         if (t.empresaNome != null && t.empresaNome!.isNotEmpty) ...[
           const SizedBox(height: MetricSlateSpacing.sm),
-          _ProfileCard(
+          ProfileCard(
             icon: Icons.business_outlined,
             title: 'Empresa',
             value: t.empresaNome!,
           ),
         ],
         const SizedBox(height: MetricSlateSpacing.sm),
-        _ProfileCard(
-          icon: t.pinConfigured ? Icons.lock_outlined : Icons.lock_open_outlined,
+        ProfileCard(
+          icon: t.pinConfigured
+              ? Icons.lock_outlined
+              : Icons.lock_open_outlined,
           title: 'PIN',
           value: t.pinConfigured ? 'Configurado' : 'Não configurado',
         ),
@@ -261,8 +300,9 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({
+class ProfileCard extends StatelessWidget {
+  const ProfileCard({
+    super.key,
     required this.icon,
     required this.title,
     required this.value,
@@ -283,15 +323,9 @@ class _ProfileCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
+                Text(title, style: Theme.of(context).textTheme.labelMedium),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
+                Text(value, style: Theme.of(context).textTheme.bodyLarge),
               ],
             ),
           ),
