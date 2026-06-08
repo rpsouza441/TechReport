@@ -6,6 +6,7 @@ import 'package:flutter/services.dart'
 import 'package:techreport/app/theme/metric_slate_radii.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
+import 'package:techreport/features/rat/presentation/screens/rat_pdf_preview_screen.dart';
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
@@ -296,8 +297,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: Text(
                         vm.isSharing
-                            ? 'Preparando PDF...'
-                            : 'Compartilhar PDF',
+                            ? 'Preparando...'
+                            : 'Prévia do PDF',
                       ),
                     ),
                     const SizedBox(height: MetricSlateSpacing.sm),
@@ -402,16 +403,44 @@ class _RatFormScreenState extends State<RatFormScreen> {
   }
 
   Future<void> _handleSharePdf() async {
-    final shared = await widget.viewModel.sharePdf();
-    if (!mounted) {
+    final previewData = await widget.viewModel.prepareForPdfPreview();
+    if (!mounted || previewData == null) {
       return;
     }
 
-    if (shared) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('PDF pronto para envio.')));
-    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RatPdfPreviewScreen(
+          rat: previewData.rat,
+          signatureBytes: previewData.signatureBytes,
+          onShare: () async {
+            await widget.viewModel.sharePdf();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('PDF pronto para envio.')),
+              );
+            }
+          },
+          onSave: () async {
+            final exported = await widget.viewModel.savePdf();
+            if (!mounted) {
+              return;
+            }
+            if (exported) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('PDF salvo no dispositivo.')),
+              );
+            } else if (widget.viewModel.errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(widget.viewModel.errorMessage!),
+                ),
+              );
+            }
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _handleDelete() async {

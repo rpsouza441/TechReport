@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
@@ -472,6 +473,48 @@ class RatFormViewModel extends ChangeNotifier {
     return true;
   }
 
+  /// Retorna os dados necessários para a tela de preview do PDF.
+  ///
+  /// [persist] controla se a RAT é salva antes de gerar a prévia:
+  /// - `true` (padrão, usado na edição): salva primeiro para não perder
+  ///   alterações em andamento;
+  /// - `false` (usado na lista): só abre a prévia da RAT já persistida, sem
+  ///   salvar — útil inclusive para RAT de outro técnico (somente leitura).
+  /// Nunca enfileira sync.
+  Future<PdfPreviewData?> prepareForPdfPreview({bool persist = true}) async {
+    if (persist) {
+      final saved = await save(enqueueSync: false);
+      if (!saved) {
+        return null;
+      }
+    }
+
+    // Garante que a assinatura está carregada.
+    if (_assinatura != null && _signaturePreviewBytes == null) {
+      try {
+        _signaturePreviewBytes =
+            await _assinaturaRepository.readBytes(_assinatura!.id);
+      } catch (_) {
+        _signaturePreviewBytes = null;
+      }
+    }
+
+    final shareData = await _shareRatLocally(
+      ratId: ratId,
+      scope: _shareScope(),
+    );
+
+    if (!shareData.success || shareData.rat == null) {
+      return null;
+    }
+
+    return PdfPreviewData(
+      rat: shareData.rat!,
+      signatureBytes: _signaturePreviewBytes,
+    );
+  }
+
+  /// Compartilha o PDF da RAT atual.
   Future<bool> sharePdf() async {
     final saved = await save(enqueueSync: false);
     if (!saved) {
@@ -496,6 +539,41 @@ class RatFormViewModel extends ChangeNotifier {
       return true;
     } catch (_) {
       _errorMessage = 'Não foi possível compartilhar o PDF.';
+      return false;
+    } finally {
+      _isSharing = false;
+      notifyListeners();
+    }
+  }
+
+  /// Salva o PDF no dispositivo (seletor de arquivo), sem abrir share sheet.
+  Future<bool> savePdf() async {
+    final saved = await save(enqueueSync: false);
+    if (!saved) {
+      return false;
+    }
+
+    _isSharing = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final shareData = await _shareRatLocally(
+        ratId: ratId,
+        scope: _shareScope(),
+      );
+      if (!shareData.success) {
+        _errorMessage = shareData.errorMessage;
+        return false;
+      }
+
+      final exported = await _ratPdfShareService.exportToDevice(shareData);
+      if (!exported) {
+        return false;
+      }
+      return true;
+    } catch (_) {
+      _errorMessage = 'Não foi possível salvar o PDF.';
       return false;
     } finally {
       _isSharing = false;
@@ -582,4 +660,14 @@ int _minutesSinceMidnight(String value) {
   final minute = int.parse(parts[1]);
 
   return hour * 60 + minute;
+}
+
+class PdfPreviewData {
+  const PdfPreviewData({
+    required this.rat,
+    this.signatureBytes,
+  });
+
+  final Rat rat;
+  final Uint8List? signatureBytes;
 }
