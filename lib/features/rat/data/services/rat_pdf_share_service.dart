@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -34,11 +35,24 @@ class RatPdfShareService {
     );
   }
 
+  /// Salva o PDF no dispositivo via seletor de arquivo (sem sheet de share).
+  Future<bool> exportToDevice(ShareRatLocallyResult shareData) async {
+    final pdfBytes = await _buildPdf(shareData);
+    final fileName = _pdfFileName(shareData.subject!);
+
+    final savedPath = await FilePicker.saveFile(
+      dialogTitle: 'Exportar PDF',
+      fileName: fileName,
+      type: FileType.custom,
+      allowedExtensions: const ['pdf'],
+      bytes: pdfBytes,
+    );
+
+    return savedPath != null;
+  }
+
   Future<Uint8List> _buildPdf(ShareRatLocallyResult shareData) async {
     final assinaturaBytes = await _loadAssinaturaBytes(shareData.assinatura);
-    final assinaturaImage = assinaturaBytes == null
-        ? null
-        : pw.MemoryImage(assinaturaBytes);
     final rat = shareData.rat;
     if (rat == null) {
       throw StateError('RAT ausente para gerar PDF.');
@@ -50,77 +64,176 @@ class RatPdfShareService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
+        footer: (context) => _buildFooter(context),
         build: (context) {
           return [
-            pw.Text(
-              'Tech Report',
-              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.SizedBox(height: 8),
-            pw.Text(
-              shareData.subject!,
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-            ),
+            _buildHeader(),
             pw.SizedBox(height: 24),
-            _sectionTitle('Identificação'),
-            pw.SizedBox(height: 8),
-            _infoRow('RAT', rat.numero),
-            _infoRow('Cliente', rat.clienteNome),
-            _infoRow(
-              'Responsável',
-              rat.responsavelRecebimento ?? ratNotInformedLabel,
-            ),
-            _infoRow(
-              'Documento do responsável',
-              rat.responsavelDocumento ?? ratNotInformedLabel,
-            ),
-            _infoRow('Data da visita', _formatDate(rat.dataVisita)),
-            _infoRow(
-              'Horário',
-              '${rat.horarioInicioAtendimento ?? '--:--'} até '
-                  '${rat.horarioTerminoAtendimento ?? '--:--'}',
-            ),
-            _infoRow('Status', ratStatusLabel(rat.status)),
-
+            _buildIdentificationSection(rat),
             pw.SizedBox(height: 18),
-            _sectionTitle('Descrição do atendimento'),
-            pw.SizedBox(height: 8),
-            pw.Text(rat.descricao),
-
+            _buildDescriptionSection(rat),
             pw.SizedBox(height: 18),
-            _sectionTitle('Equipamento'),
-            pw.SizedBox(height: 8),
-            _infoRow(
-              'Movimentação',
-              _movimentoLabel(rat.equipamentoMovimentoTipo),
-            ),
-            _infoRow('Descrição', rat.equipamentoDescricao ?? ratNotInformedLabel),
-            _infoRow(
-              'Observação',
-              rat.equipamentoObservacao ?? ratNotInformedLabel,
-            ),
-
+            _buildEquipamentoSection(rat),
             pw.SizedBox(height: 24),
-            _sectionTitle('Assinatura'),
-            pw.SizedBox(height: 8),
-            if (assinaturaImage == null)
-              pw.Text('Nenhuma assinatura capturada.')
-            else
-              pw.Container(
-                height: 160,
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey600),
-                ),
-                child: pw.Image(assinaturaImage, fit: pw.BoxFit.contain),
-              ),
+            _buildAssinaturaSection(assinaturaBytes),
           ];
         },
       ),
     );
 
     return pdf.save();
+  }
+
+  pw.Widget _buildHeader() {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 16),
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
+        ),
+      ),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          pw.Text(
+            'TechReport',
+            style: pw.TextStyle(
+              fontSize: 22,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blue800,
+            ),
+          ),
+          pw.SizedBox(width: 8),
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 3),
+            child: pw.Text(
+              'Relatório de Atendimento Técnico',
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildIdentificationSection(Rat rat) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Identificação'),
+        pw.SizedBox(height: 8),
+        _infoRow('RAT', rat.numero),
+        _infoRow('Cliente', rat.clienteNome),
+        _infoRow(
+          'Responsável',
+          rat.responsavelRecebimento ?? ratNotInformedLabel,
+        ),
+        if (rat.responsavelDocumento != null)
+          _infoRow('Documento do responsável', rat.responsavelDocumento!),
+        _infoRow('Data da visita', _formatDate(rat.dataVisita)),
+        _infoRow(
+          'Horário',
+          '${rat.horarioInicioAtendimento ?? '--:--'} até '
+              '${rat.horarioTerminoAtendimento ?? '--:--'}',
+        ),
+        _infoRow('Status', ratStatusLabel(rat.status)),
+      ],
+    );
+  }
+
+  pw.Widget _buildDescriptionSection(Rat rat) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Descrição do atendimento'),
+        pw.SizedBox(height: 8),
+        pw.Text(
+          rat.descricao,
+          style: const pw.TextStyle(fontSize: 11),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildEquipamentoSection(Rat rat) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Equipamento'),
+        pw.SizedBox(height: 8),
+        _infoRow(
+          'Movimentação',
+          _movimentoLabel(rat.equipamentoMovimentoTipo),
+        ),
+        _infoRow(
+          'Descrição',
+          rat.equipamentoDescricao ?? ratNotInformedLabel,
+        ),
+        if (rat.equipamentoObservacao != null &&
+            rat.equipamentoObservacao!.isNotEmpty)
+          _infoRow('Observação', rat.equipamentoObservacao!),
+      ],
+    );
+  }
+
+  pw.Widget _buildAssinaturaSection(Uint8List? assinaturaBytes) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Assinatura'),
+        pw.SizedBox(height: 8),
+        if (assinaturaBytes == null)
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              border: pw.Border.all(color: PdfColors.grey400),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Text(
+              'Assinatura não capturada.',
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+            ),
+          )
+        else
+          pw.Container(
+            height: 140,
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey600),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Image(
+              pw.MemoryImage(assinaturaBytes),
+              fit: pw.BoxFit.contain,
+            ),
+          ),
+      ],
+    );
+  }
+
+  pw.Widget _buildFooter(pw.Context context) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.only(top: 8),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300)),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            'Gerado em: ${_formatDateTime(DateTime.now())}',
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+          ),
+          pw.Text(
+            'TechReport',
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+          ),
+        ],
+      ),
+    );
   }
 
   pw.Widget _infoRow(String label, String value) {
@@ -152,6 +265,14 @@ class RatPdfShareService {
         '${value.year}';
   }
 
+  String _formatDateTime(DateTime value) {
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year} '
+        '${value.hour.toString().padLeft(2, '0')}:'
+        '${value.minute.toString().padLeft(2, '0')}';
+  }
+
   String _movimentoLabel(EquipamentoMovimentoTipo? tipo) {
     if (tipo == null) {
       return ratNotInformedLabel;
@@ -172,7 +293,11 @@ class RatPdfShareService {
       return null;
     }
 
-    return _assinaturaRepository.readBytes(assinatura.id);
+    try {
+      return await _assinaturaRepository.readBytes(assinatura.id);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<File> _saveTemporaryPdf({

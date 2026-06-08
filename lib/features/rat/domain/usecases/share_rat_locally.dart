@@ -41,26 +41,58 @@ class ShareRatLocally {
   }
 
   String _buildBody({required Rat rat, required Assinatura? assinatura}) {
+    final horario = _formatHorario(
+      rat.horarioInicioAtendimento,
+      rat.horarioTerminoAtendimento,
+    );
+
+    final equipamentoObservacao = rat.equipamentoObservacao;
+    final equipamentoSection = equipamentoObservacao != null &&
+            equipamentoObservacao.trim().isNotEmpty
+        ? '''
+Movimentacao: ${equipamentoMovimentoLabel(rat.equipamentoMovimentoTipo ?? EquipamentoMovimentoTipo.nenhum)}
+Descricao: ${rat.equipamentoDescricao ?? ratNotInformedLabel}
+Observacao: $equipamentoObservacao'''
+        : '''
+Movimentacao: ${equipamentoMovimentoLabel(rat.equipamentoMovimentoTipo ?? EquipamentoMovimentoTipo.nenhum)}
+Descricao: ${rat.equipamentoDescricao ?? ratNotInformedLabel}''';
+
     return '''
+=== TECHREPORT - RELATORIO DE ATENDIMENTO ===
+
+--- Identificacao ---
 RAT: ${rat.numero}
 Cliente: ${rat.clienteNome}
-Responsável: ${rat.responsavelRecebimento ?? ratNotInformedLabel}
-Documento do responsável: ${rat.responsavelDocumento ?? ratNotInformedLabel}
+Responsavel: ${rat.responsavelRecebimento ?? ratNotInformedLabel}
+Documento: ${rat.responsavelDocumento ?? ratNotInformedLabel}
 Data da visita: ${_formatDate(rat.dataVisita)}
-Início: ${rat.horarioInicioAtendimento ?? ratNotInformedLabel}
-Término: ${rat.horarioTerminoAtendimento ?? ratNotInformedLabel}
+Horario: $horario
 Status: ${ratStatusLabel(rat.status)}
-Atualizado em: ${_formatDateTime(rat.updatedAt)}
 
-Descrição:
+--- Descricao do atendimento ---
 ${rat.descricao}
 
-Movimentação de equipamento: ${equipamentoMovimentoLabel(rat.equipamentoMovimentoTipo ?? EquipamentoMovimentoTipo.nenhum)}
-Equipamento: ${rat.equipamentoDescricao ?? ratNotInformedLabel}
-Observação: ${rat.equipamentoObservacao ?? ratNotInformedLabel}
+--- Equipamento ---
+$equipamentoSection
 
-Assinatura: ${assinatura == null ? 'não capturada' : 'capturada'}
+--- Assinatura ---
+Assinatura: ${assinatura == null ? 'nao capturada' : 'capturada'}
+
+Gerado em: ${_formatDateTime(DateTime.now())}
 ''';
+  }
+
+  String _formatHorario(String? inicio, String? termino) {
+    if (inicio == null && termino == null) {
+      return ratNotInformedLabel;
+    }
+    if (inicio == null) {
+      return 'ate $termino';
+    }
+    if (termino == null) {
+      return '$inicio ate $inicio';
+    }
+    return '$inicio ate $termino';
   }
 
   String _formatDate(DateTime? value) {
