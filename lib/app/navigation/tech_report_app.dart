@@ -136,15 +136,20 @@ class _TechReportAppState extends State<TechReportApp> {
     return AnimatedBuilder(
       animation: Listenable.merge([bootstrapViewModel, themeViewModel]),
       builder: (context, _) {
-        final theme = themeViewModel.loaded
-            ? themeViewModel.currentTheme
+        final lightTheme = themeViewModel.loaded
+            ? themeViewModel.lightTheme
             : MetricSlateTheme.light();
+        final darkTheme = themeViewModel.loaded
+            ? themeViewModel.darkTheme
+            : MetricSlateTheme.dark();
 
         return MaterialApp(
           navigatorKey: _navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'Tech Report',
-          theme: theme,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: ThemeMode.system,
           home: AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,

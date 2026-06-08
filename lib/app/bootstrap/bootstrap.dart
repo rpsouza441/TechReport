@@ -74,6 +74,8 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: MetricSlateTheme.light(),
+          darkTheme: MetricSlateTheme.dark(),
+          themeMode: ThemeMode.system,
           home: Scaffold(
             body: Center(
               child: Padding(

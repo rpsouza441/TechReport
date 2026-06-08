@@ -29,4 +29,43 @@ void main() {
     expect(scheme.surfaceContainerLow, const Color(0xFFEFF4FF));
     expect(scheme.onSurfaceVariant, const Color(0xFF444653));
   });
+
+  test('MetricSlateTheme.dark expoe brilho dark para todas as familias', () {
+    for (final family in MetricSlateThemeFamily.values) {
+      final theme = MetricSlateTheme.dark(family: family);
+      final palette = MetricSlateColors.paletteFor(
+        family: family,
+        brightness: Brightness.dark,
+      );
+
+      expect(theme.brightness, Brightness.dark);
+      expect(theme.colorScheme.brightness, Brightness.dark);
+      expect(theme.colorScheme.primary, palette.primary);
+      expect(theme.colorScheme.surface, palette.surface);
+    }
+  });
+
+  test('paletteFor resolve paletas dark das tres familias', () {
+    expect(
+      MetricSlateColors.paletteFor(
+        family: MetricSlateThemeFamily.cobalt,
+        brightness: Brightness.dark,
+      ),
+      same(MetricSlateColors.cobaltDark),
+    );
+    expect(
+      MetricSlateColors.paletteFor(
+        family: MetricSlateThemeFamily.volt,
+        brightness: Brightness.dark,
+      ),
+      same(MetricSlateColors.voltDark),
+    );
+    expect(
+      MetricSlateColors.paletteFor(
+        family: MetricSlateThemeFamily.burgundy,
+        brightness: Brightness.dark,
+      ),
+      same(MetricSlateColors.burgundyDark),
+    );
+  });
 }

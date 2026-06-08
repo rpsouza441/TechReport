@@ -15,8 +15,13 @@ class AppThemeViewModel extends ChangeNotifier {
   AppThemeVariant get currentVariant => _currentVariant;
   bool get loaded => _loaded;
 
-  ThemeData get currentTheme =>
+  ThemeData get currentTheme => lightTheme;
+
+  ThemeData get lightTheme =>
       MetricSlateTheme.light(family: _currentVariant.family);
+
+  ThemeData get darkTheme =>
+      MetricSlateTheme.dark(family: _currentVariant.family);
 
   Future<void> load() async {
     _currentVariant = await _repository.load();
