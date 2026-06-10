@@ -64,11 +64,11 @@
 | ID | Requisito | Evidencia |
 | --- | --- | --- |
 | RNF-07.1 | Projeto Flutter multi-plataforma | Confirmado — pastas android, ios, web, etc. |
-| RNF-07.2 | Release candidate Android | Pendente — Sprint 9 |
+| RNF-07.2 | Release candidate Android | Pendente — Sprint 10, com validacao em device fisico no Sprint 12 |
 
 ## RNF-08 — Privacidade local
 
 | ID | Requisito | Status |
 | --- | --- | --- |
 | RNF-08.1 | SQLite local sem criptografia nativa no MVP | Confirmado |
-| RNF-08.2 | Criptografia de banco local | Pendente — Sprint 10 (planejada em `docs/sprint10/`) |
+| RNF-08.2 | Criptografia de banco local | Parcialmente antecipada no Sprint 9; hardening futuro em `docs/sprint11/` |

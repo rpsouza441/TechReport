@@ -157,4 +157,4 @@ Transferidas para [10-pendencias-e-perguntas-abertas.md](./10-pendencias-e-pergu
 - numeracao automatica de RAT;
 - sync remoto de assinatura;
 - escopo final de admin_empresa / convites (Sprint 8.5);
-- criptografia SQLite (Sprint 10).
+- hardening local residual/reset, sem migracao de banco legado nesta fase (Sprint 11).

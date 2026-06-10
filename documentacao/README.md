@@ -33,9 +33,11 @@ documentacao/
 
 ## Sprint atual
 
-**Sprint 8.2** — documento opcional do responsavel na RAT + acentuacao PT-BR.
+**Sprint 9** — decisoes e ajustes pos Sprint 8: hardening local (criptografia,
+PIN com hash), sync de assinatura, backup local, tema configuravel com dark mode
+e polimento de telas.
 
-Detalhes operacionais da sprint: consultar `docs/sprint8.2/` localmente (nao
+Detalhes operacionais da sprint: consultar `docs/sprint9/` localmente (nao
 versionado).
 
 ## Relacao com `docs/`
@@ -48,5 +50,5 @@ versionado).
 Ao implementar uma feature, atualize a spec em `documentacao/spec/` quando o
 comportamento mudar; registre pendencias em
 `spec/10-pendencias-e-perguntas-abertas.md`.
-Sprint 8.5 (equipe, convites e provisionamento pelo app): consultar
-`docs/sprint8.5/spec-driven.md` localmente.
+Sprint 9 (hardening local, sync de assinatura, backup e polimento): consultar
+`docs/sprint9/README.md` localmente.

@@ -50,8 +50,8 @@ manual ou validacao indireta.
   - transicoes basicas da fila de sync.
 - Lacunas que exigem Supabase real ficam documentadas em roteiro manual.
 
-## Relacao com Sprint 9
+## Relacao com Sprint 10
 
-Esta sprint deve acontecer antes ou junto do congelamento da Sprint 9. Se o
+Esta cobertura deve acontecer antes ou junto do congelamento da Sprint 10. Se o
 release candidate for iniciado sem esta cobertura, registrar explicitamente o
 risco de regressao em sync, convites, PDF/share e export/import.

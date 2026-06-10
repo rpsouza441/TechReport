@@ -56,6 +56,8 @@ Bootstrap e navegacao: `lib/app/` (`AppScope`, `TechReportApp`, `CompanyShell`).
 ## Persistencia
 
 O app usa SQLite local (Drift) para operacao offline e experiencia local-first.
+O banco local e criptografado via SQLite3MultipleCiphers (`sqlite3mc`), com a
+chave guardada em storage seguro.
 
 O backend remoto e responsabilidade do operador da instancia Supabase. O app
 **nao** aplica migrations remotas em runtime.

@@ -51,8 +51,8 @@ Confirmado como **nao implementado** (referencia `docs/prompt.md` e codigo):
 - auditoria de ultimo modificador;
 - RBAC avancado alem dos papeis atuais;
 - provisionamento automatico de instancia Supabase;
-- build Android / release candidate (Sprint 9);
-- criptografia SQLite (Sprint 10).
+- build Android / release candidate (Sprint 10);
+- hardening local residual/reset, sem migracao de banco legado nesta fase (Sprint 11).
 
 ---
 

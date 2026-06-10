@@ -112,5 +112,5 @@ Objetivos (`docs/sprint8.2/README.md`):
 - sync remoto de assinatura;
 - upload remoto de anexos;
 - validacao fiscal de CPF/CNPJ no campo documento;
-- build Android / release candidate (Sprint 9);
-- criptografia do SQLite (Sprint 10 — planejada internamente).
+- build Android / release candidate (Sprint 10);
+- hardening local residual/reset, sem migracao de banco legado nesta fase (Sprint 11).

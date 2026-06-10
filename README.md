@@ -14,6 +14,7 @@ O produto e local-first e possui dois modos:
 
 - Flutter como app principal.
 - Drift/SQLite para persistencia local.
+- Banco local criptografado via SQLite3MultipleCiphers (`sqlite3mc`).
 - Supabase como backend remoto oficial do MVP.
 - RLS e policies para isolamento remoto.
 - Arquitetura por camadas: presentation, domain, data/infra.
@@ -44,22 +45,29 @@ Para entender o projeto de forma limpa, comece por:
 Para retomar desenvolvimento por sprint:
 
 - [`docs/README.md`](docs/README.md)
-- [`docs/sprint6/README.md`](docs/sprint6/README.md)
-- [`docs/sprint6/passos.md`](docs/sprint6/passos.md)
+- [`docs/sprint9/README.md`](docs/sprint9/README.md)
+- [`docs/sprint9/passos.md`](docs/sprint9/passos.md)
 
 ## Estado Atual
 
-Sprint 5 foi fechada funcionalmente em 2026-05-12:
+**Sprint 9 - decisoes e ajustes pos Sprint 8** (em andamento).
 
-- modo local existe;
-- modo empresa autentica via Supabase;
-- sessao remota nao expoe tokens puros no dominio;
-- RLS basica foi validada;
-- sync MVP de RAT existe;
-- tecnico comum e gerente possuem escopos diferentes.
+Ja entregue:
 
-Proxima frente: Sprint 6 - conformidade do produto base, com RAT completo, PDF,
-schema local/remoto e Metric Slate nas telas tocadas.
+- modo local com onboarding, PIN opcional (hash + salt, 4-8 digitos),
+  bloqueio/desbloqueio, CRUD de RAT, assinatura e compartilhamento textual/PDF;
+- banco local criptografado (`sqlite3mc`) e backup local versionado;
+- modo empresa com login Supabase, sessao remota sem tokens puros, RLS,
+  sync de RAT e de assinatura (Supabase Storage privado);
+- papeis tecnico/gerente/admin_empresa/app_admin com equipe e convites;
+- admin global com detalhe da empresa para gerir admins;
+- edicao do nome exibido no perfil, deep link `techreport://convite`,
+  reenvio de confirmacao de e-mail e exception handler global;
+- tema configuravel em 3 variantes (cobalt, volt, burgundy) com light/dark
+  respeitando o sistema;
+- previa e remodelacao do PDF, polimento das telas principais e filtros/busca.
+
+Proxima frente: Sprint 10 - QA, build Android e release candidate.
 
 ## Como Rodar
 

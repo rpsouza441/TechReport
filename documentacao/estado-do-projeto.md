@@ -4,18 +4,22 @@ O TechReport esta em desenvolvimento ativo.
 
 **Sprint atual:** **Sprint 9 - decisoes e ajustes pos Sprint 8**.
 
-**Ultima atualizacao desta pagina:** 2026-06-04 (Sprint 8 Final fechado e Sprint 9 reorganizado).
+**Ultima atualizacao desta pagina:** 2026-06-08 (maioria dos ajustes do Sprint 9 implementados).
 
 ## Ja Existe
 
 ### Base e modo local
 
 - base Flutter multi-plataforma;
-- modo local com onboarding, PIN, bloqueio/desbloqueio;
+- modo local com onboarding, PIN opcional (hash + salt, 4-8 digitos),
+  bloqueio/desbloqueio;
+- banco local criptografado via SQLite3MultipleCiphers (`sqlite3mc`);
 - CRUD de RAT local;
-- captura de assinatura local;
-- compartilhamento textual e PDF;
-- exportacao/importacao local em JSON legado.
+- captura de assinatura local persistida em BLOB no SQLite;
+- compartilhamento textual e PDF, com previa do PDF;
+- backup local completo versionado (fluxo principal) e export/import JSON legado;
+- tema configuravel em 3 variantes (cobalt, volt, burgundy) com light/dark
+  respeitando o sistema.
 
 ### Modo empresa
 
@@ -23,8 +27,8 @@ O TechReport esta em desenvolvimento ativo.
 - configuracao de servidor remoto (URL + chave publica);
 - login remoto com Supabase Auth;
 - sessao remota sem tokens puros no dominio;
-- schema Supabase: empresas, tecnicos, rats, app_admins e convites (migrations
-  0001-0014);
+- schema Supabase: empresas, tecnicos, rats, app_admins, convites e anexos de
+  assinatura (migrations 0001-0016);
 - fila local de sync para RAT;
 - upload/download incremental de RATs;
 - status de sync na lista;
@@ -40,6 +44,11 @@ O TechReport esta em desenvolvimento ativo.
 - aceite de convite com conta existente;
 - gerente com area Equipe limitada, convite de tecnico e gestao de tecnico;
 - admin da empresa com convite e gestao de gerente/tecnico;
+- admin global com tela de detalhe da empresa para gerir admins da empresa;
+- edicao do nome exibido no perfil (persistida no Supabase, migration 0016);
+- sync remoto de assinatura via Supabase Storage privado (migration 0015);
+- deep link nativo `techreport://convite`, reenvio de confirmacao de e-mail e
+  exception handler global;
 - tema Metric Slate e widgets compartilhados (cobertura parcial).
 
 ### RAT estendida
@@ -85,7 +94,7 @@ QA/build/release candidate.
 ```text
 Sprint 9           -> decisoes e ajustes pos Sprint 8
 Sprint 10          -> QA, build Android, release candidate
-Sprint 11          -> hardening futuro/migracao/reset local conforme decisao
+Sprint 11          -> hardening residual/reset local, sem migracao de banco legado nesta fase
 ```
 
 Fonte do replanejamento: `docs/decisions/plano-pos-sprint5-prompt2.md` e
@@ -93,20 +102,16 @@ validacao manual de Sprint 8.5.
 
 ## Ainda Fora Do Escopo Implementado
 
-- sync remoto de assinatura;
-- upload remoto de anexos;
+- upload remoto de anexos genericos (alem da assinatura);
 - visualizacao/restauracao de RATs deletados;
 - area gerencial dedicada com filtros avancados;
 - edicao gerencial de RAT de outro tecnico;
 - auditoria de ultimo modificador;
 - RBAC avancado;
 - provisionamento automatico de instancia Supabase;
-- deep link nativo para `techreport://convite`;
-- exception handler global;
-- reenviar confirmacao de e-mail;
-- tela de detalhe da empresa para admin global controlar admins da empresa;
-- edicao de nome no perfil e exibicao do nome da empresa;
-- migracao de banco local antigo criptografado para usuarios reais;
+- exibicao/edicao do nome da empresa pelo proprio usuario;
+- migracao de banco local antigo para usuarios reais; sem aplicacao nesta fase,
+  pois ainda nao ha usuarios reais com dados a preservar;
 - reset/recuperacao de PIN esquecido;
 - build Android/release candidate.
 
@@ -115,13 +120,13 @@ validacao manual de Sprint 8.5.
 O Sprint 9 atual concentra melhorias que surgiram durante a validacao do Sprint
 8 Final. Fonte operacional: `docs/sprint9/`.
 
-Entram no Sprint 9:
+Itens ja implementados no Sprint 9:
 
 - detalhe da empresa para admin global controlar admins da empresa;
 - deep link nativo `techreport://convite`;
 - exception handler global;
 - reenviar confirmacao de e-mail;
-- investigacao da configuracao Supabase sumindo apos `flutter run`;
+- correcao da configuracao Supabase sumindo apos `flutter run`;
 - loading/desabilitar botao no logout remoto;
 - regra final do PIN local: opcional, minimo 4 e maximo 8 digitos;
 - PIN salvo como hash/verificador com salt;
@@ -131,13 +136,21 @@ Entram no Sprint 9:
   RAT como fluxo principal;
 - assinatura local em BLOB no SQLite/Drift, em tabela separada da RAT;
 - sync remoto de assinatura via Supabase Storage privado + tabela de metadados
-  com RLS/policies;
-- remodelacao do PDF ao final, depois das decisoes de assinatura/backup.
+  com RLS/policies (migration 0015);
+- edicao do nome exibido no perfil persistida no Supabase (migration 0016);
+- tema configuravel em 3 variantes com light/dark respeitando o sistema;
+- previa do PDF e remodelacao do PDF;
+- polimento das telas principais e filtros/busca na lista de RAT.
+
+Em acompanhamento/backlog do Sprint 9:
+
+- revisao ampla de acentuacao PT-BR;
+- testes automatizados de auth/sync/convites.
 
 Decisoes fechadas:
 
-- nao planejar migracao de banco local antigo durante desenvolvimento; ao
-  aplicar criptografia, limpar dados/cache do app;
+- nao planejar migracao de banco local antigo nesta fase; ao aplicar
+  criptografia em desenvolvimento, limpar dados/cache do app;
 - iOS nao e alvo atual;
 - plano B para criptografia: `encrypted_drift + sqflite_sqlcipher` se
   `sqlite3mc` falhar no Android;
@@ -146,8 +159,9 @@ Decisoes fechadas:
 
 Ficam para Sprint 11/futuro:
 
-- migracao de banco local antigo para usuarios reais;
 - reset/recuperacao de PIN esquecido;
+- migracao de banco legado fica fora do plano atual, pois o app ainda nao foi
+  lancado; reabrir somente se houver usuarios reais com dados a preservar;
 - suporte avancado para limpeza segura de dados locais.
 
 ## Testes Recentes Documentados

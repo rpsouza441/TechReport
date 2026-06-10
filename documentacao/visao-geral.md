@@ -31,12 +31,18 @@ email e senha remotos e o app sincroniza RATs de forma local-first conforme a
 sessao e as permissoes remotas.
 
 Na etapa atual, o modo empresa ja cobre configuracao, login remoto, sessao
-remota, sync de RAT, central de sincronizacao, conta/perfil, logout com
-pendencias, administracao basica de papeis e isolamento por RLS.
+remota, sync de RAT e de assinatura, central de sincronizacao, conta/perfil com
+edicao de nome, logout com pendencias, equipe/convites, detalhe de empresa para
+admin global e isolamento por RLS.
 
-**Sprint atual (2026-05-30):** Sprint 8.2 — campo opcional de documento do
-responsavel na RAT e revisao de acentuacao PT-BR. Ver
-[estado-do-projeto.md](./estado-do-projeto.md) e [spec/README.md](./spec/README.md).
+O modo local ja cobre banco criptografado (`sqlite3mc`), PIN opcional com hash,
+assinatura em BLOB local, backup local versionado e tema configuravel com dark
+mode.
+
+**Sprint atual (2026-06):** Sprint 9 — decisoes e ajustes pos Sprint 8
+(hardening local, sync de assinatura, backup, tema configuravel e polimento de
+telas). Ver [estado-do-projeto.md](./estado-do-projeto.md) e
+[spec/README.md](./spec/README.md).
 
 ## Principios
 

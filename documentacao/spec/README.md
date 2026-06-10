@@ -29,6 +29,7 @@ versionados).
 | [09-decisoes-tecnicas.md](./09-decisoes-tecnicas.md) | ADRs e decisoes consolidadas |
 | [10-pendencias-e-perguntas-abertas.md](./10-pendencias-e-perguntas-abertas.md) | Lacunas, duvidas e proximos passos |
 | [11-sprint-testes-automatizados.md](./11-sprint-testes-automatizados.md) | Sprint proposta para cobrir funcionalidades ja implementadas com testes |
+| [12-qa-android-fisico.md](./12-qa-android-fisico.md) | Achados de QA em Android fisico convertidos em requisitos e criterios de aceite |
 
 ## Relacao com outras pastas
 

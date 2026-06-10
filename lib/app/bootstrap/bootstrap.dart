@@ -81,14 +81,7 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: error == null
-                    ? const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('Iniciando TechReport...'),
-                        ],
-                      )
+                    ? const _BootstrapSplash()
                     : Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -112,6 +105,69 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
           ),
         );
       },
+    );
+  }
+}
+
+class _BootstrapSplash extends StatelessWidget {
+  const _BootstrapSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withValues(alpha: 0.12),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Image.asset(
+              'assets/branding/techreport_logo.png',
+              width: 112,
+              height: 112,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'TechReport',
+          textAlign: TextAlign.center,
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Preparando o TechReport...',
+          textAlign: TextAlign.center,
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            color: colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 }
