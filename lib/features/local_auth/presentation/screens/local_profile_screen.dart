@@ -17,10 +17,14 @@ class ProfileEditingNotifier extends ChangeNotifier {
 
   bool _isEditing = false;
   bool _isLoading = true;
+  void Function()? _onStartEditing;
 
   void setEditing(bool value) {
     if (_isEditing == value) return;
     _isEditing = value;
+    if (value && _onStartEditing != null) {
+      _onStartEditing!();
+    }
     notifyListeners();
   }
 
@@ -28,6 +32,13 @@ class ProfileEditingNotifier extends ChangeNotifier {
     if (_isLoading == value) return;
     _isLoading = value;
     notifyListeners();
+  }
+
+  /// Registers a callback to be called when [setEditing] is invoked with
+  /// `true`. Used by [_LocalProfileScreenState] to fill text controllers
+  /// before entering edit mode.
+  void setStartEditingCallback(void Function()? cb) {
+    _onStartEditing = cb;
   }
 }
 
@@ -37,27 +48,20 @@ class LocalProfileScreen extends StatefulWidget {
     required this.appSessionViewModel,
     required this.tecnicoLocalRepository,
     this.appBar,
+    this.editingNotifier,
   });
 
   final AppSessionViewModel appSessionViewModel;
   final TecnicoLocalRepository tecnicoLocalRepository;
   final PreferredSizeWidget? appBar;
-
-  /// Read-only access to the editing/loading state so a parent (e.g. the
-  /// profile tab in LocalHomeScreen) can listen and rebuild a custom appBar.
-  ProfileEditingNotifier get profileEditingNotifier => _state._editingNotifier;
-
-  /// Triggers the edit mode. Safe to call from outside the widget.
-  void startEditing() => _state._startEditing();
-
-  _LocalProfileScreenState get _state => this as _LocalProfileScreenState;
+  final ProfileEditingNotifier? editingNotifier;
 
   @override
   State<LocalProfileScreen> createState() => _LocalProfileScreenState();
 }
 
 class _LocalProfileScreenState extends State<LocalProfileScreen> {
-  final _editingNotifier = ProfileEditingNotifier();
+  late final ProfileEditingNotifier _editingNotifier;
 
   TecnicoLocal? _tecnico;
   String? _errorMessage;
@@ -70,11 +74,16 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _editingNotifier = widget.editingNotifier ?? ProfileEditingNotifier();
+    _editingNotifier.setStartEditingCallback(_onNotifierStartEditing);
     _loadTecnico();
   }
 
   @override
   void dispose() {
+    if (widget.editingNotifier == null) {
+      _editingNotifier.dispose();
+    }
     _nomeController.dispose();
     _emailController.dispose();
     super.dispose();
@@ -109,6 +118,11 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
 
   void _cancelEditing() {
     _editingNotifier.setEditing(false);
+  }
+
+  void _onNotifierStartEditing() {
+    _nomeController.text = _tecnico?.nome ?? '';
+    _emailController.text = _tecnico?.email ?? '';
   }
 
   Future<void> _saveEditing() async {

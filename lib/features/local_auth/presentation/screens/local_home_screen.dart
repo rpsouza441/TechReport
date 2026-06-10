@@ -75,6 +75,7 @@ class LocalHomeScreen extends StatefulWidget {
 
 class _LocalHomeScreenState extends State<LocalHomeScreen> {
   late final RatListViewModel _ratListViewModel;
+  late final ProfileEditingNotifier _profileEditingNotifier;
   _LocalTab _selectedTab = _LocalTab.rats;
 
   @override
@@ -87,6 +88,15 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
       scope: const RatListScope.local(),
     );
     _ratListViewModel.load();
+
+    _profileEditingNotifier = ProfileEditingNotifier();
+  }
+
+  @override
+  void dispose() {
+    _ratListViewModel.dispose();
+    _profileEditingNotifier.dispose();
+    super.dispose();
   }
 
   @override
@@ -94,6 +104,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
     return AnimatedBuilder(
       animation: Listenable.merge([
         _ratListViewModel,
+        _profileEditingNotifier,
         widget.themeViewModel,
         widget.viewModel,
       ]),
@@ -148,31 +159,23 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
         );
 
       case _LocalTab.profile:
-        final profileScreen = LocalProfileScreen(
+        return LocalProfileScreen(
           appSessionViewModel: widget.viewModel,
           tecnicoLocalRepository: widget.tecnicoLocalRepository,
-        );
-        return ListenableBuilder(
-          listenable: profileScreen.profileEditingNotifier,
-          builder: (context, _) {
-            return LocalProfileScreen(
-              appSessionViewModel: widget.viewModel,
-              tecnicoLocalRepository: widget.tecnicoLocalRepository,
-              appBar: AppBar(
-                automaticallyImplyLeading: false,
-                title: const TechReportModeTitle(modeLabel: 'Modo Local'),
-                actions: [
-                  if (!profileScreen.profileEditingNotifier.isEditing &&
-                      !profileScreen.profileEditingNotifier.isLoading)
-                    IconButton(
-                      onPressed: profileScreen.startEditing,
-                      icon: const Icon(Icons.edit_outlined),
-                      tooltip: 'Editar perfil',
-                    ),
-                ],
-              ),
-            );
-          },
+          editingNotifier: _profileEditingNotifier,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: const TechReportModeTitle(modeLabel: 'Modo Local'),
+            actions: [
+              if (!_profileEditingNotifier.isEditing &&
+                  !_profileEditingNotifier.isLoading)
+                IconButton(
+                  onPressed: () => _profileEditingNotifier.setEditing(true),
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Editar perfil',
+                ),
+            ],
+          ),
         );
     }
   }
