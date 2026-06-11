@@ -29,25 +29,16 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
   String? _errorMessage;
   CreateTecnicoConviteResult? _result;
 
-  String get _email => _emailController.text.trim();
-
   List<AdminTecnicoPapel> get _allowedPapeis =>
       widget.viewModel.allowedInvitePapeis;
-
-  String get _inviteLink {
-    final code = _result?.codigoConvite ?? '';
-    return 'techreport://convite?codigo=${Uri.encodeComponent(code)}';
-  }
 
   String get _shareText {
     final result = _result;
     if (result == null) return '';
 
     return 'Voce recebeu um convite para acessar o TechReport.\n\n'
-        'E-mail: $_email\n'
-        'Codigo: ${result.codigoConvite}\n'
-        'Link: $_inviteLink\n\n'
-        'Abra o app, escolha "Aceitar convite" e crie sua senha.';
+        'Codigo de convite: ${result.codigoConvite}\n\n'
+        'Abra o app, escolha "Aceitar convite" e insira o codigo.';
   }
 
   @override
@@ -180,7 +171,7 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
           const TechReportFormHeader(
             icon: Icons.check_circle_outline,
             title: 'Convite pronto',
-            subtitle: 'Envie o link ou codigo para o convidado.',
+            subtitle: 'Copie o codigo e envie para o convidado.',
           ),
           const SizedBox(height: MetricSlateSpacing.lg),
           SelectableText(
@@ -190,19 +181,11 @@ class _CompanyInviteMemberScreenState extends State<CompanyInviteMemberScreen> {
               context,
             ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: MetricSlateSpacing.sm),
-          SelectableText(_inviteLink, textAlign: TextAlign.center),
           const SizedBox(height: MetricSlateSpacing.lg),
           FilledButton.icon(
             onPressed: () => _copy(result.codigoConvite, 'Codigo copiado.'),
             icon: const Icon(Icons.copy_outlined),
             label: const Text('Copiar codigo'),
-          ),
-          const SizedBox(height: MetricSlateSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: () => _copy(_inviteLink, 'Link copiado.'),
-            icon: const Icon(Icons.link_outlined),
-            label: const Text('Copiar link'),
           ),
           const SizedBox(height: MetricSlateSpacing.sm),
           OutlinedButton.icon(
