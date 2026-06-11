@@ -58,18 +58,23 @@ class RatListItemCard extends StatelessWidget {
                 ),
                 Column(
                   children: [
-                    if (hasSignature)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: MetricSlateSpacing.xs,
-                          bottom: MetricSlateSpacing.xxs,
-                        ),
+                    Tooltip(
+                      message: hasSignature
+                          ? 'Assinatura capturada'
+                          : 'Assinatura não capturada',
+                      child: Opacity(
+                        opacity: hasSignature ? 1.0 : 0.4,
                         child: Icon(
-                          Icons.draw_outlined,
+                          hasSignature
+                              ? Icons.draw
+                              : Icons.draw_outlined,
                           size: 22,
-                          color: theme.colorScheme.primary,
+                          color: hasSignature
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
                         ),
                       ),
+                    ),
                     IconButton(
                       onPressed: onPreviewPdf,
                       icon: Icon(

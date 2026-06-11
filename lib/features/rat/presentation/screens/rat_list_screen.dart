@@ -166,26 +166,30 @@ class _RatListScreenState extends State<RatListScreen> {
           ),
         ),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              MetricSlateSpacing.md,
-              0,
-              MetricSlateSpacing.md,
-              88,
+          child: RefreshIndicator(
+            onRefresh: _syncNow,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                MetricSlateSpacing.md,
+                0,
+                MetricSlateSpacing.md,
+                88,
+              ),
+              itemCount: rats.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: MetricSlateSpacing.sm),
+              itemBuilder: (context, index) {
+                final rat = rats[index];
+                return RatListItemCard(
+                  rat: rat,
+                  hasSignature: widget.viewModel.hasSignature(rat.id),
+                  onTap: () => _openEdit(rat),
+                  onPreviewPdf: () => _openPdfPreview(rat),
+                  showSyncStatus: true,
+                );
+              },
             ),
-            itemCount: rats.length,
-            separatorBuilder: (_, _) =>
-                const SizedBox(height: MetricSlateSpacing.sm),
-            itemBuilder: (context, index) {
-              final rat = rats[index];
-              return RatListItemCard(
-                rat: rat,
-                hasSignature: widget.viewModel.hasSignature(rat.id),
-                onTap: () => _openEdit(rat),
-                onPreviewPdf: () => _openPdfPreview(rat),
-                showSyncStatus: true,
-              );
-            },
           ),
         ),
       ],
