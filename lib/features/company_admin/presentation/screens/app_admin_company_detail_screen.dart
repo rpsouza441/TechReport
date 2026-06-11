@@ -254,6 +254,7 @@ class _AppAdminCompanyDetailScreenState
         empresaId: widget.viewModel.empresa.id,
         nome: novoNome,
       );
+      await widget.viewModel.load();
       if (mounted) {
         ScaffoldMessenger.of(
           context,
