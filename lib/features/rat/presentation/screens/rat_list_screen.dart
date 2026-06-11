@@ -297,6 +297,7 @@ class _RatListScreenState extends State<RatListScreen> {
       enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
       processSyncQueue: widget.processSyncQueue,
       downloadRemoteRats: widget.downloadRemoteRats,
+      supabaseClientFactory: widget.supabaseClientFactory,
     );
 
     await viewModel.loadSignatureStatus();
