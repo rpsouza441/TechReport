@@ -13,6 +13,7 @@ import 'package:techreport/features/rat/presentation/view_models/rat_list_view_m
 import 'package:techreport/features/sync/presentation/screens/sync_center_screen.dart';
 import 'package:techreport/features/sync/presentation/view_models/sync_center_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_mode_title.dart';
+import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 
 enum CompanyArea { rats, profile, adminEmpresa, appAdmin }
 
@@ -291,7 +292,9 @@ class _CompanyShellState extends State<CompanyShell> {
           ),
         ],
       ),
-      body: _buildArea(_selectedArea, currentSession),
+      body: HierarchicalBackground(
+        child: _buildArea(_selectedArea, currentSession),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: areas.indexOf(_selectedArea),
         onDestinationSelected: (index) {

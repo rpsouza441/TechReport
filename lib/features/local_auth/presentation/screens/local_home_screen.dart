@@ -28,6 +28,7 @@ import 'package:techreport/features/signature/data/services/local_signature_asse
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_mode_title.dart';
+import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 
 enum _LocalTab { rats, profile }
 
@@ -110,7 +111,7 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
       ]),
       builder: (context, _) {
         return Scaffold(
-          body: _buildBody(),
+          body: HierarchicalBackground(child: _buildBody()),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _selectedTab.index,
             onDestinationSelected: (index) {
