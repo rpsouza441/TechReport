@@ -431,6 +431,7 @@ class MetricSlateComponentThemes {
   static SnackBarThemeData snackBar(MetricSlatePalette palette) {
     return SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
       backgroundColor: palette.onSurface,
       contentTextStyle: TextStyle(
         color: palette.surface,
@@ -440,7 +441,6 @@ class MetricSlateComponentThemes {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(MetricSlateRadii.sm),
       ),
-      insetPadding: const EdgeInsets.all(MetricSlateSpacing.md),
     );
   }
 
