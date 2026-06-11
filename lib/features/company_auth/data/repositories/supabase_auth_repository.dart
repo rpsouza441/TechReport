@@ -534,28 +534,17 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> updateOwnDisplayName(String name) async {
     try {
-      final client = await requireClient();
-
-      // Tenta atualizar tecnicos.nome primeiro.
-      try {
-        await client
-            .from('tecnicos')
-            .update({'nome': name})
-            .eq('user_id', client.auth.currentUser?.id ?? '')
-            .select()
-            .maybeSingle();
-        return;
-      } on PostgrestException {
-        // Técnico não encontrado ou sem vínculo — tenta app_admins.
+      final client = await _clientFactory.tryCreateAuthenticatedClient();
+      if (client == null) {
+        throw const RemoteAuthException(
+          'Sessão expirada. Entre novamente para continuar.',
+        );
       }
 
-      // Tenta atualizar app_admins.nome.
-      await client
-          .from('app_admins')
-          .update({'nome': name})
-          .eq('user_id', client.auth.currentUser?.id ?? '')
-          .select()
-          .maybeSingle();
+      await client.rpc(
+        'update_own_display_name',
+        params: {'p_nome': name.trim()},
+      );
     } on RemoteAuthException {
       rethrow;
     } on AuthException catch (e) {

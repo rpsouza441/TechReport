@@ -7,6 +7,7 @@ import 'package:techreport/app/theme/metric_slate_radii.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_pdf_preview_screen.dart';
+import 'package:techreport/features/rat/presentation/screens/rat_reopen_reason_screen.dart';
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
@@ -502,7 +503,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
   }
 
   Future<void> _handleReopenForCorrection() async {
-    final motivo = await _askReopenReason();
+    final motivo = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const RatReopenReasonScreen()),
+    );
     if (!mounted || motivo == null) {
       return;
     }
@@ -519,71 +522,6 @@ class _RatFormScreenState extends State<RatFormScreen> {
         ),
       );
     }
-  }
-
-  Future<String?> _askReopenReason() async {
-    final controller = TextEditingController();
-    String? errorText;
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Reabrir para correção'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Esta RAT já possui assinatura. Ao reabrir, a assinatura atual deixará de valer e será necessário coletar uma nova.',
-                  ),
-                  const SizedBox(height: MetricSlateSpacing.md),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      labelText: 'Motivo da reabertura *',
-                      errorText: errorText,
-                    ),
-                    onChanged: (_) {
-                      if (errorText != null) {
-                        setDialogState(() => errorText = null);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final motivo = controller.text.trim();
-                    if (motivo.length < 5) {
-                      setDialogState(() {
-                        errorText = 'Informe pelo menos 5 caracteres.';
-                      });
-                      return;
-                    }
-
-                    Navigator.of(context).pop(motivo);
-                  },
-                  child: const Text('Confirmar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    controller.dispose();
-    return result;
   }
 
   Future<void> _handleDelete() async {
