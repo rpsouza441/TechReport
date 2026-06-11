@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
+import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
@@ -34,6 +35,7 @@ class RatListScreen extends StatefulWidget {
     this.enqueueAssinaturaSync,
     this.processSyncQueue,
     this.downloadRemoteRats,
+    this.supabaseClientFactory,
     this.embedded = false,
   });
 
@@ -48,6 +50,7 @@ class RatListScreen extends StatefulWidget {
   final EnqueueAssinaturaSync? enqueueAssinaturaSync;
   final ProcessSyncQueue? processSyncQueue;
   final DownloadRemoteRats? downloadRemoteRats;
+  final SupabaseClientFactory? supabaseClientFactory;
   final bool embedded;
 
   @override
@@ -243,6 +246,7 @@ class _RatListScreenState extends State<RatListScreen> {
             enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
             processSyncQueue: widget.processSyncQueue,
             downloadRemoteRats: widget.downloadRemoteRats,
+            supabaseClientFactory: widget.supabaseClientFactory,
           ),
         ),
       ),
@@ -269,6 +273,7 @@ class _RatListScreenState extends State<RatListScreen> {
             enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
             processSyncQueue: widget.processSyncQueue,
             downloadRemoteRats: widget.downloadRemoteRats,
+            supabaseClientFactory: widget.supabaseClientFactory,
           ),
         ),
       ),
@@ -307,6 +312,7 @@ class _RatListScreenState extends State<RatListScreen> {
         builder: (_) => RatPdfPreviewScreen(
           rat: previewData.rat,
           signatureBytes: previewData.signatureBytes,
+          assinaturaPendente: previewData.assinaturaPendente,
           empresaNome: previewData.empresaNome,
           tecnicoNome: previewData.tecnicoNome,
           onShare: () async {

@@ -82,6 +82,17 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
         createdAt: DateTime.parse(row['criado_em_dispositivo'] as String),
         updatedAt: serverUpdatedAt,
         deletedAt: (row['deletado'] as bool) ? serverUpdatedAt : null,
+        ultimoAlteradorUserId: row['ultimo_alterador_user_id'] as String?,
+        ultimaAlteracaoEm: _parseDateTime(row['ultima_alteracao_em']),
+        reabertaParaCorrecaoEm: _parseDateTime(
+          row['reaberta_para_correcao_em'],
+        ),
+        reabertaParaCorrecaoPorUserId:
+            row['reaberta_para_correcao_por_user_id'] as String?,
+        motivoReabertura: row['motivo_reabertura'] as String?,
+        assinaturaInvalidadaEm: _parseDateTime(row['assinatura_invalidada_em']),
+        assinaturaInvalidadaPorUserId:
+            row['assinatura_invalidada_por_user_id'] as String?,
       ),
       serverUpdatedAt: serverUpdatedAt,
     );
@@ -108,6 +119,14 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
   }
 
   DateTime? _parseDate(dynamic value) {
+    if (value is! String || value.isEmpty) {
+      return null;
+    }
+
+    return DateTime.parse(value);
+  }
+
+  DateTime? _parseDateTime(dynamic value) {
     if (value is! String || value.isEmpty) {
       return null;
     }

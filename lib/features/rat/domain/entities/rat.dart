@@ -35,6 +35,13 @@ class Rat {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.ultimoAlteradorUserId,
+    this.ultimaAlteracaoEm,
+    this.reabertaParaCorrecaoEm,
+    this.reabertaParaCorrecaoPorUserId,
+    this.motivoReabertura,
+    this.assinaturaInvalidadaEm,
+    this.assinaturaInvalidadaPorUserId,
   });
 
   final String id;
@@ -59,12 +66,25 @@ class Rat {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? ultimoAlteradorUserId;
+  final DateTime? ultimaAlteracaoEm;
+  final DateTime? reabertaParaCorrecaoEm;
+  final String? reabertaParaCorrecaoPorUserId;
+  final String? motivoReabertura;
+  final DateTime? assinaturaInvalidadaEm;
+  final String? assinaturaInvalidadaPorUserId;
 
   bool get isDraft => status == RatStatus.draft;
 
   bool get isFinalizado => status == RatStatus.finalizado;
 
   bool get isArquivado => status == RatStatus.arquivado;
+
+  bool get isEnviado => status == RatStatus.enviado;
+
+  bool get isReabertaParaCorrecao => reabertaParaCorrecaoEm != null;
+
+  bool get hasAssinaturaInvalidada => assinaturaInvalidadaEm != null;
 
   bool get isDeleted => deletedAt != null;
 
@@ -91,6 +111,13 @@ class Rat {
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _sentinel,
+    Object? ultimoAlteradorUserId = _sentinel,
+    Object? ultimaAlteracaoEm = _sentinel,
+    Object? reabertaParaCorrecaoEm = _sentinel,
+    Object? reabertaParaCorrecaoPorUserId = _sentinel,
+    Object? motivoReabertura = _sentinel,
+    Object? assinaturaInvalidadaEm = _sentinel,
+    Object? assinaturaInvalidadaPorUserId = _sentinel,
   }) {
     return Rat(
       id: id ?? this.id,
@@ -133,6 +160,27 @@ class Rat {
       deletedAt: deletedAt == _sentinel
           ? this.deletedAt
           : deletedAt as DateTime?,
+      ultimoAlteradorUserId: ultimoAlteradorUserId == _sentinel
+          ? this.ultimoAlteradorUserId
+          : ultimoAlteradorUserId as String?,
+      ultimaAlteracaoEm: ultimaAlteracaoEm == _sentinel
+          ? this.ultimaAlteracaoEm
+          : ultimaAlteracaoEm as DateTime?,
+      reabertaParaCorrecaoEm: reabertaParaCorrecaoEm == _sentinel
+          ? this.reabertaParaCorrecaoEm
+          : reabertaParaCorrecaoEm as DateTime?,
+      reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId == _sentinel
+          ? this.reabertaParaCorrecaoPorUserId
+          : reabertaParaCorrecaoPorUserId as String?,
+      motivoReabertura: motivoReabertura == _sentinel
+          ? this.motivoReabertura
+          : motivoReabertura as String?,
+      assinaturaInvalidadaEm: assinaturaInvalidadaEm == _sentinel
+          ? this.assinaturaInvalidadaEm
+          : assinaturaInvalidadaEm as DateTime?,
+      assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId == _sentinel
+          ? this.assinaturaInvalidadaPorUserId
+          : assinaturaInvalidadaPorUserId as String?,
     );
   }
 
@@ -164,7 +212,14 @@ class Rat {
         other.syncStatus == syncStatus &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
-        other.deletedAt == deletedAt;
+        other.deletedAt == deletedAt &&
+        other.ultimoAlteradorUserId == ultimoAlteradorUserId &&
+        other.ultimaAlteracaoEm == ultimaAlteracaoEm &&
+        other.reabertaParaCorrecaoEm == reabertaParaCorrecaoEm &&
+        other.reabertaParaCorrecaoPorUserId == reabertaParaCorrecaoPorUserId &&
+        other.motivoReabertura == motivoReabertura &&
+        other.assinaturaInvalidadaEm == assinaturaInvalidadaEm &&
+        other.assinaturaInvalidadaPorUserId == assinaturaInvalidadaPorUserId;
   }
 
   @override
@@ -191,6 +246,13 @@ class Rat {
     createdAt,
     updatedAt,
     deletedAt,
+    ultimoAlteradorUserId,
+    ultimaAlteracaoEm,
+    reabertaParaCorrecaoEm,
+    reabertaParaCorrecaoPorUserId,
+    motivoReabertura,
+    assinaturaInvalidadaEm,
+    assinaturaInvalidadaPorUserId,
   ]);
 }
 

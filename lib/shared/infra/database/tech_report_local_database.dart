@@ -63,6 +63,13 @@ class Rats extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get ultimoAlteradorUserId => text().nullable()();
+  DateTimeColumn get ultimaAlteracaoEm => dateTime().nullable()();
+  DateTimeColumn get reabertaParaCorrecaoEm => dateTime().nullable()();
+  TextColumn get reabertaParaCorrecaoPorUserId => text().nullable()();
+  TextColumn get motivoReabertura => text().nullable()();
+  DateTimeColumn get assinaturaInvalidadaEm => dateTime().nullable()();
+  TextColumn get assinaturaInvalidadaPorUserId => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -114,7 +121,7 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
   /// Cria banco com criptografia via SQLite3MultipleCiphers.
   /// O [executor] deve ser aberto via openEncryptedDatabase() com PRAGMA key.
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -192,6 +199,43 @@ class TechReportLocalDatabase extends _$TechReportLocalDatabase {
           m,
           'mime_type',
           assinaturas.mimeType,
+        );
+      }
+      if (from >= 2 && from < 9) {
+        await _addRatColumnIfMissing(
+          m,
+          'ultimo_alterador_user_id',
+          rats.ultimoAlteradorUserId,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'ultima_alteracao_em',
+          rats.ultimaAlteracaoEm,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'reaberta_para_correcao_em',
+          rats.reabertaParaCorrecaoEm,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'reaberta_para_correcao_por_user_id',
+          rats.reabertaParaCorrecaoPorUserId,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'motivo_reabertura',
+          rats.motivoReabertura,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'assinatura_invalidada_em',
+          rats.assinaturaInvalidadaEm,
+        );
+        await _addRatColumnIfMissing(
+          m,
+          'assinatura_invalidada_por_user_id',
+          rats.assinaturaInvalidadaPorUserId,
         );
       }
     },

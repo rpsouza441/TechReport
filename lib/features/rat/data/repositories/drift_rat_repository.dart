@@ -212,6 +212,13 @@ class DriftRatRepository implements RatRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
+      ultimoAlteradorUserId: row.ultimoAlteradorUserId,
+      ultimaAlteracaoEm: row.ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm: row.reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: row.reabertaParaCorrecaoPorUserId,
+      motivoReabertura: row.motivoReabertura,
+      assinaturaInvalidadaEm: row.assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: row.assinaturaInvalidadaPorUserId,
     );
   }
 
@@ -239,6 +246,17 @@ class DriftRatRepository implements RatRepository {
       createdAt: Value(entity.createdAt),
       updatedAt: Value(entity.updatedAt),
       deletedAt: Value(entity.deletedAt),
+      ultimoAlteradorUserId: Value(entity.ultimoAlteradorUserId),
+      ultimaAlteracaoEm: Value(entity.ultimaAlteracaoEm),
+      reabertaParaCorrecaoEm: Value(entity.reabertaParaCorrecaoEm),
+      reabertaParaCorrecaoPorUserId: Value(
+        entity.reabertaParaCorrecaoPorUserId,
+      ),
+      motivoReabertura: Value(entity.motivoReabertura),
+      assinaturaInvalidadaEm: Value(entity.assinaturaInvalidadaEm),
+      assinaturaInvalidadaPorUserId: Value(
+        entity.assinaturaInvalidadaPorUserId,
+      ),
     );
   }
 

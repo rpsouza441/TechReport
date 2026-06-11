@@ -14,12 +14,14 @@ class RatPdfPreviewScreen extends StatefulWidget {
     required this.onShare,
     required this.onSave,
     this.signatureBytes,
+    this.assinaturaPendente = false,
     this.empresaNome,
     this.tecnicoNome,
   });
 
   final Rat rat;
   final Uint8List? signatureBytes;
+  final bool assinaturaPendente;
   final Future<void> Function() onShare;
   final Future<void> Function() onSave;
   final String? empresaNome;
@@ -50,6 +52,7 @@ class _RatPdfPreviewScreenState extends State<RatPdfPreviewScreen> {
                 child: _A4DocumentPreview(
                   rat: widget.rat,
                   signatureBytes: widget.signatureBytes,
+                  assinaturaPendente: widget.assinaturaPendente,
                   empresaNome: widget.empresaNome,
                   tecnicoNome: widget.tecnicoNome,
                 ),
@@ -119,12 +122,14 @@ class _A4DocumentPreview extends StatelessWidget {
   const _A4DocumentPreview({
     required this.rat,
     this.signatureBytes,
+    this.assinaturaPendente = false,
     this.empresaNome,
     this.tecnicoNome,
   });
 
   final Rat rat;
   final Uint8List? signatureBytes;
+  final bool assinaturaPendente;
   final String? empresaNome;
   final String? tecnicoNome;
 
@@ -224,7 +229,22 @@ class _A4DocumentPreview extends StatelessWidget {
                 context,
                 title: 'Assinatura',
                 children: [
-                  if (signatureBytes == null)
+                  if (assinaturaPendente)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber[50],
+                        border: Border.all(color: Colors.amber[700]!),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Assinatura pendente.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                    )
+                  else if (signatureBytes == null)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -266,7 +286,9 @@ class _A4DocumentPreview extends StatelessWidget {
         Container(
           padding: const EdgeInsets.only(bottom: 8),
           decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFF1565C0), width: 2)),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFF1565C0), width: 2),
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,

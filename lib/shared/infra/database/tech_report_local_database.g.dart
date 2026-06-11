@@ -1590,6 +1590,84 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _ultimoAlteradorUserIdMeta =
+      const VerificationMeta('ultimoAlteradorUserId');
+  @override
+  late final GeneratedColumn<String> ultimoAlteradorUserId =
+      GeneratedColumn<String>(
+        'ultimo_alterador_user_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _ultimaAlteracaoEmMeta = const VerificationMeta(
+    'ultimaAlteracaoEm',
+  );
+  @override
+  late final GeneratedColumn<DateTime> ultimaAlteracaoEm =
+      GeneratedColumn<DateTime>(
+        'ultima_alteracao_em',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _reabertaParaCorrecaoEmMeta =
+      const VerificationMeta('reabertaParaCorrecaoEm');
+  @override
+  late final GeneratedColumn<DateTime> reabertaParaCorrecaoEm =
+      GeneratedColumn<DateTime>(
+        'reaberta_para_correcao_em',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _reabertaParaCorrecaoPorUserIdMeta =
+      const VerificationMeta('reabertaParaCorrecaoPorUserId');
+  @override
+  late final GeneratedColumn<String> reabertaParaCorrecaoPorUserId =
+      GeneratedColumn<String>(
+        'reaberta_para_correcao_por_user_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _motivoReaberturaMeta = const VerificationMeta(
+    'motivoReabertura',
+  );
+  @override
+  late final GeneratedColumn<String> motivoReabertura = GeneratedColumn<String>(
+    'motivo_reabertura',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _assinaturaInvalidadaEmMeta =
+      const VerificationMeta('assinaturaInvalidadaEm');
+  @override
+  late final GeneratedColumn<DateTime> assinaturaInvalidadaEm =
+      GeneratedColumn<DateTime>(
+        'assinatura_invalidada_em',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _assinaturaInvalidadaPorUserIdMeta =
+      const VerificationMeta('assinaturaInvalidadaPorUserId');
+  @override
+  late final GeneratedColumn<String> assinaturaInvalidadaPorUserId =
+      GeneratedColumn<String>(
+        'assinatura_invalidada_por_user_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1614,6 +1692,13 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
     createdAt,
     updatedAt,
     deletedAt,
+    ultimoAlteradorUserId,
+    ultimaAlteracaoEm,
+    reabertaParaCorrecaoEm,
+    reabertaParaCorrecaoPorUserId,
+    motivoReabertura,
+    assinaturaInvalidadaEm,
+    assinaturaInvalidadaPorUserId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1800,6 +1885,69 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('ultimo_alterador_user_id')) {
+      context.handle(
+        _ultimoAlteradorUserIdMeta,
+        ultimoAlteradorUserId.isAcceptableOrUnknown(
+          data['ultimo_alterador_user_id']!,
+          _ultimoAlteradorUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ultima_alteracao_em')) {
+      context.handle(
+        _ultimaAlteracaoEmMeta,
+        ultimaAlteracaoEm.isAcceptableOrUnknown(
+          data['ultima_alteracao_em']!,
+          _ultimaAlteracaoEmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reaberta_para_correcao_em')) {
+      context.handle(
+        _reabertaParaCorrecaoEmMeta,
+        reabertaParaCorrecaoEm.isAcceptableOrUnknown(
+          data['reaberta_para_correcao_em']!,
+          _reabertaParaCorrecaoEmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reaberta_para_correcao_por_user_id')) {
+      context.handle(
+        _reabertaParaCorrecaoPorUserIdMeta,
+        reabertaParaCorrecaoPorUserId.isAcceptableOrUnknown(
+          data['reaberta_para_correcao_por_user_id']!,
+          _reabertaParaCorrecaoPorUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('motivo_reabertura')) {
+      context.handle(
+        _motivoReaberturaMeta,
+        motivoReabertura.isAcceptableOrUnknown(
+          data['motivo_reabertura']!,
+          _motivoReaberturaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('assinatura_invalidada_em')) {
+      context.handle(
+        _assinaturaInvalidadaEmMeta,
+        assinaturaInvalidadaEm.isAcceptableOrUnknown(
+          data['assinatura_invalidada_em']!,
+          _assinaturaInvalidadaEmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('assinatura_invalidada_por_user_id')) {
+      context.handle(
+        _assinaturaInvalidadaPorUserIdMeta,
+        assinaturaInvalidadaPorUserId.isAcceptableOrUnknown(
+          data['assinatura_invalidada_por_user_id']!,
+          _assinaturaInvalidadaPorUserIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1897,6 +2045,34 @@ class $RatsTable extends Rats with TableInfo<$RatsTable, Rat> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
+      ultimoAlteradorUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ultimo_alterador_user_id'],
+      ),
+      ultimaAlteracaoEm: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ultima_alteracao_em'],
+      ),
+      reabertaParaCorrecaoEm: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reaberta_para_correcao_em'],
+      ),
+      reabertaParaCorrecaoPorUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reaberta_para_correcao_por_user_id'],
+      ),
+      motivoReabertura: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}motivo_reabertura'],
+      ),
+      assinaturaInvalidadaEm: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}assinatura_invalidada_em'],
+      ),
+      assinaturaInvalidadaPorUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assinatura_invalidada_por_user_id'],
+      ),
     );
   }
 
@@ -1929,6 +2105,13 @@ class Rat extends DataClass implements Insertable<Rat> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? ultimoAlteradorUserId;
+  final DateTime? ultimaAlteracaoEm;
+  final DateTime? reabertaParaCorrecaoEm;
+  final String? reabertaParaCorrecaoPorUserId;
+  final String? motivoReabertura;
+  final DateTime? assinaturaInvalidadaEm;
+  final String? assinaturaInvalidadaPorUserId;
   const Rat({
     required this.id,
     required this.authorId,
@@ -1952,6 +2135,13 @@ class Rat extends DataClass implements Insertable<Rat> {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.ultimoAlteradorUserId,
+    this.ultimaAlteracaoEm,
+    this.reabertaParaCorrecaoEm,
+    this.reabertaParaCorrecaoPorUserId,
+    this.motivoReabertura,
+    this.assinaturaInvalidadaEm,
+    this.assinaturaInvalidadaPorUserId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2008,6 +2198,35 @@ class Rat extends DataClass implements Insertable<Rat> {
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
+    if (!nullToAbsent || ultimoAlteradorUserId != null) {
+      map['ultimo_alterador_user_id'] = Variable<String>(ultimoAlteradorUserId);
+    }
+    if (!nullToAbsent || ultimaAlteracaoEm != null) {
+      map['ultima_alteracao_em'] = Variable<DateTime>(ultimaAlteracaoEm);
+    }
+    if (!nullToAbsent || reabertaParaCorrecaoEm != null) {
+      map['reaberta_para_correcao_em'] = Variable<DateTime>(
+        reabertaParaCorrecaoEm,
+      );
+    }
+    if (!nullToAbsent || reabertaParaCorrecaoPorUserId != null) {
+      map['reaberta_para_correcao_por_user_id'] = Variable<String>(
+        reabertaParaCorrecaoPorUserId,
+      );
+    }
+    if (!nullToAbsent || motivoReabertura != null) {
+      map['motivo_reabertura'] = Variable<String>(motivoReabertura);
+    }
+    if (!nullToAbsent || assinaturaInvalidadaEm != null) {
+      map['assinatura_invalidada_em'] = Variable<DateTime>(
+        assinaturaInvalidadaEm,
+      );
+    }
+    if (!nullToAbsent || assinaturaInvalidadaPorUserId != null) {
+      map['assinatura_invalidada_por_user_id'] = Variable<String>(
+        assinaturaInvalidadaPorUserId,
+      );
+    }
     return map;
   }
 
@@ -2060,6 +2279,29 @@ class Rat extends DataClass implements Insertable<Rat> {
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      ultimoAlteradorUserId: ultimoAlteradorUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ultimoAlteradorUserId),
+      ultimaAlteracaoEm: ultimaAlteracaoEm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ultimaAlteracaoEm),
+      reabertaParaCorrecaoEm: reabertaParaCorrecaoEm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reabertaParaCorrecaoEm),
+      reabertaParaCorrecaoPorUserId:
+          reabertaParaCorrecaoPorUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reabertaParaCorrecaoPorUserId),
+      motivoReabertura: motivoReabertura == null && nullToAbsent
+          ? const Value.absent()
+          : Value(motivoReabertura),
+      assinaturaInvalidadaEm: assinaturaInvalidadaEm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assinaturaInvalidadaEm),
+      assinaturaInvalidadaPorUserId:
+          assinaturaInvalidadaPorUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assinaturaInvalidadaPorUserId),
     );
   }
 
@@ -2105,6 +2347,25 @@ class Rat extends DataClass implements Insertable<Rat> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      ultimoAlteradorUserId: serializer.fromJson<String?>(
+        json['ultimoAlteradorUserId'],
+      ),
+      ultimaAlteracaoEm: serializer.fromJson<DateTime?>(
+        json['ultimaAlteracaoEm'],
+      ),
+      reabertaParaCorrecaoEm: serializer.fromJson<DateTime?>(
+        json['reabertaParaCorrecaoEm'],
+      ),
+      reabertaParaCorrecaoPorUserId: serializer.fromJson<String?>(
+        json['reabertaParaCorrecaoPorUserId'],
+      ),
+      motivoReabertura: serializer.fromJson<String?>(json['motivoReabertura']),
+      assinaturaInvalidadaEm: serializer.fromJson<DateTime?>(
+        json['assinaturaInvalidadaEm'],
+      ),
+      assinaturaInvalidadaPorUserId: serializer.fromJson<String?>(
+        json['assinaturaInvalidadaPorUserId'],
+      ),
     );
   }
   @override
@@ -2143,6 +2404,23 @@ class Rat extends DataClass implements Insertable<Rat> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'ultimoAlteradorUserId': serializer.toJson<String?>(
+        ultimoAlteradorUserId,
+      ),
+      'ultimaAlteracaoEm': serializer.toJson<DateTime?>(ultimaAlteracaoEm),
+      'reabertaParaCorrecaoEm': serializer.toJson<DateTime?>(
+        reabertaParaCorrecaoEm,
+      ),
+      'reabertaParaCorrecaoPorUserId': serializer.toJson<String?>(
+        reabertaParaCorrecaoPorUserId,
+      ),
+      'motivoReabertura': serializer.toJson<String?>(motivoReabertura),
+      'assinaturaInvalidadaEm': serializer.toJson<DateTime?>(
+        assinaturaInvalidadaEm,
+      ),
+      'assinaturaInvalidadaPorUserId': serializer.toJson<String?>(
+        assinaturaInvalidadaPorUserId,
+      ),
     };
   }
 
@@ -2169,6 +2447,13 @@ class Rat extends DataClass implements Insertable<Rat> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> ultimoAlteradorUserId = const Value.absent(),
+    Value<DateTime?> ultimaAlteracaoEm = const Value.absent(),
+    Value<DateTime?> reabertaParaCorrecaoEm = const Value.absent(),
+    Value<String?> reabertaParaCorrecaoPorUserId = const Value.absent(),
+    Value<String?> motivoReabertura = const Value.absent(),
+    Value<DateTime?> assinaturaInvalidadaEm = const Value.absent(),
+    Value<String?> assinaturaInvalidadaPorUserId = const Value.absent(),
   }) => Rat(
     id: id ?? this.id,
     authorId: authorId ?? this.authorId,
@@ -2206,6 +2491,27 @@ class Rat extends DataClass implements Insertable<Rat> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    ultimoAlteradorUserId: ultimoAlteradorUserId.present
+        ? ultimoAlteradorUserId.value
+        : this.ultimoAlteradorUserId,
+    ultimaAlteracaoEm: ultimaAlteracaoEm.present
+        ? ultimaAlteracaoEm.value
+        : this.ultimaAlteracaoEm,
+    reabertaParaCorrecaoEm: reabertaParaCorrecaoEm.present
+        ? reabertaParaCorrecaoEm.value
+        : this.reabertaParaCorrecaoEm,
+    reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId.present
+        ? reabertaParaCorrecaoPorUserId.value
+        : this.reabertaParaCorrecaoPorUserId,
+    motivoReabertura: motivoReabertura.present
+        ? motivoReabertura.value
+        : this.motivoReabertura,
+    assinaturaInvalidadaEm: assinaturaInvalidadaEm.present
+        ? assinaturaInvalidadaEm.value
+        : this.assinaturaInvalidadaEm,
+    assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId.present
+        ? assinaturaInvalidadaPorUserId.value
+        : this.assinaturaInvalidadaPorUserId,
   );
   Rat copyWithCompanion(RatsCompanion data) {
     return Rat(
@@ -2251,6 +2557,27 @@ class Rat extends DataClass implements Insertable<Rat> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      ultimoAlteradorUserId: data.ultimoAlteradorUserId.present
+          ? data.ultimoAlteradorUserId.value
+          : this.ultimoAlteradorUserId,
+      ultimaAlteracaoEm: data.ultimaAlteracaoEm.present
+          ? data.ultimaAlteracaoEm.value
+          : this.ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm: data.reabertaParaCorrecaoEm.present
+          ? data.reabertaParaCorrecaoEm.value
+          : this.reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: data.reabertaParaCorrecaoPorUserId.present
+          ? data.reabertaParaCorrecaoPorUserId.value
+          : this.reabertaParaCorrecaoPorUserId,
+      motivoReabertura: data.motivoReabertura.present
+          ? data.motivoReabertura.value
+          : this.motivoReabertura,
+      assinaturaInvalidadaEm: data.assinaturaInvalidadaEm.present
+          ? data.assinaturaInvalidadaEm.value
+          : this.assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: data.assinaturaInvalidadaPorUserId.present
+          ? data.assinaturaInvalidadaPorUserId.value
+          : this.assinaturaInvalidadaPorUserId,
     );
   }
 
@@ -2278,7 +2605,18 @@ class Rat extends DataClass implements Insertable<Rat> {
           ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('ultimoAlteradorUserId: $ultimoAlteradorUserId, ')
+          ..write('ultimaAlteracaoEm: $ultimaAlteracaoEm, ')
+          ..write('reabertaParaCorrecaoEm: $reabertaParaCorrecaoEm, ')
+          ..write(
+            'reabertaParaCorrecaoPorUserId: $reabertaParaCorrecaoPorUserId, ',
+          )
+          ..write('motivoReabertura: $motivoReabertura, ')
+          ..write('assinaturaInvalidadaEm: $assinaturaInvalidadaEm, ')
+          ..write(
+            'assinaturaInvalidadaPorUserId: $assinaturaInvalidadaPorUserId',
+          )
           ..write(')'))
         .toString();
   }
@@ -2307,6 +2645,13 @@ class Rat extends DataClass implements Insertable<Rat> {
     createdAt,
     updatedAt,
     deletedAt,
+    ultimoAlteradorUserId,
+    ultimaAlteracaoEm,
+    reabertaParaCorrecaoEm,
+    reabertaParaCorrecaoPorUserId,
+    motivoReabertura,
+    assinaturaInvalidadaEm,
+    assinaturaInvalidadaPorUserId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2333,7 +2678,16 @@ class Rat extends DataClass implements Insertable<Rat> {
           other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt);
+          other.deletedAt == this.deletedAt &&
+          other.ultimoAlteradorUserId == this.ultimoAlteradorUserId &&
+          other.ultimaAlteracaoEm == this.ultimaAlteracaoEm &&
+          other.reabertaParaCorrecaoEm == this.reabertaParaCorrecaoEm &&
+          other.reabertaParaCorrecaoPorUserId ==
+              this.reabertaParaCorrecaoPorUserId &&
+          other.motivoReabertura == this.motivoReabertura &&
+          other.assinaturaInvalidadaEm == this.assinaturaInvalidadaEm &&
+          other.assinaturaInvalidadaPorUserId ==
+              this.assinaturaInvalidadaPorUserId);
 }
 
 class RatsCompanion extends UpdateCompanion<Rat> {
@@ -2359,6 +2713,13 @@ class RatsCompanion extends UpdateCompanion<Rat> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
+  final Value<String?> ultimoAlteradorUserId;
+  final Value<DateTime?> ultimaAlteracaoEm;
+  final Value<DateTime?> reabertaParaCorrecaoEm;
+  final Value<String?> reabertaParaCorrecaoPorUserId;
+  final Value<String?> motivoReabertura;
+  final Value<DateTime?> assinaturaInvalidadaEm;
+  final Value<String?> assinaturaInvalidadaPorUserId;
   final Value<int> rowid;
   const RatsCompanion({
     this.id = const Value.absent(),
@@ -2383,6 +2744,13 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.ultimoAlteradorUserId = const Value.absent(),
+    this.ultimaAlteracaoEm = const Value.absent(),
+    this.reabertaParaCorrecaoEm = const Value.absent(),
+    this.reabertaParaCorrecaoPorUserId = const Value.absent(),
+    this.motivoReabertura = const Value.absent(),
+    this.assinaturaInvalidadaEm = const Value.absent(),
+    this.assinaturaInvalidadaPorUserId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RatsCompanion.insert({
@@ -2408,6 +2776,13 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
+    this.ultimoAlteradorUserId = const Value.absent(),
+    this.ultimaAlteracaoEm = const Value.absent(),
+    this.reabertaParaCorrecaoEm = const Value.absent(),
+    this.reabertaParaCorrecaoPorUserId = const Value.absent(),
+    this.motivoReabertura = const Value.absent(),
+    this.assinaturaInvalidadaEm = const Value.absent(),
+    this.assinaturaInvalidadaPorUserId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        authorId = Value(authorId),
@@ -2442,6 +2817,13 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
+    Expression<String>? ultimoAlteradorUserId,
+    Expression<DateTime>? ultimaAlteracaoEm,
+    Expression<DateTime>? reabertaParaCorrecaoEm,
+    Expression<String>? reabertaParaCorrecaoPorUserId,
+    Expression<String>? motivoReabertura,
+    Expression<DateTime>? assinaturaInvalidadaEm,
+    Expression<String>? assinaturaInvalidadaPorUserId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2474,6 +2856,18 @@ class RatsCompanion extends UpdateCompanion<Rat> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (ultimoAlteradorUserId != null)
+        'ultimo_alterador_user_id': ultimoAlteradorUserId,
+      if (ultimaAlteracaoEm != null) 'ultima_alteracao_em': ultimaAlteracaoEm,
+      if (reabertaParaCorrecaoEm != null)
+        'reaberta_para_correcao_em': reabertaParaCorrecaoEm,
+      if (reabertaParaCorrecaoPorUserId != null)
+        'reaberta_para_correcao_por_user_id': reabertaParaCorrecaoPorUserId,
+      if (motivoReabertura != null) 'motivo_reabertura': motivoReabertura,
+      if (assinaturaInvalidadaEm != null)
+        'assinatura_invalidada_em': assinaturaInvalidadaEm,
+      if (assinaturaInvalidadaPorUserId != null)
+        'assinatura_invalidada_por_user_id': assinaturaInvalidadaPorUserId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2501,6 +2895,13 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
+    Value<String?>? ultimoAlteradorUserId,
+    Value<DateTime?>? ultimaAlteracaoEm,
+    Value<DateTime?>? reabertaParaCorrecaoEm,
+    Value<String?>? reabertaParaCorrecaoPorUserId,
+    Value<String?>? motivoReabertura,
+    Value<DateTime?>? assinaturaInvalidadaEm,
+    Value<String?>? assinaturaInvalidadaPorUserId,
     Value<int>? rowid,
   }) {
     return RatsCompanion(
@@ -2531,6 +2932,18 @@ class RatsCompanion extends UpdateCompanion<Rat> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      ultimoAlteradorUserId:
+          ultimoAlteradorUserId ?? this.ultimoAlteradorUserId,
+      ultimaAlteracaoEm: ultimaAlteracaoEm ?? this.ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm:
+          reabertaParaCorrecaoEm ?? this.reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId:
+          reabertaParaCorrecaoPorUserId ?? this.reabertaParaCorrecaoPorUserId,
+      motivoReabertura: motivoReabertura ?? this.motivoReabertura,
+      assinaturaInvalidadaEm:
+          assinaturaInvalidadaEm ?? this.assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId:
+          assinaturaInvalidadaPorUserId ?? this.assinaturaInvalidadaPorUserId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2618,6 +3031,37 @@ class RatsCompanion extends UpdateCompanion<Rat> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (ultimoAlteradorUserId.present) {
+      map['ultimo_alterador_user_id'] = Variable<String>(
+        ultimoAlteradorUserId.value,
+      );
+    }
+    if (ultimaAlteracaoEm.present) {
+      map['ultima_alteracao_em'] = Variable<DateTime>(ultimaAlteracaoEm.value);
+    }
+    if (reabertaParaCorrecaoEm.present) {
+      map['reaberta_para_correcao_em'] = Variable<DateTime>(
+        reabertaParaCorrecaoEm.value,
+      );
+    }
+    if (reabertaParaCorrecaoPorUserId.present) {
+      map['reaberta_para_correcao_por_user_id'] = Variable<String>(
+        reabertaParaCorrecaoPorUserId.value,
+      );
+    }
+    if (motivoReabertura.present) {
+      map['motivo_reabertura'] = Variable<String>(motivoReabertura.value);
+    }
+    if (assinaturaInvalidadaEm.present) {
+      map['assinatura_invalidada_em'] = Variable<DateTime>(
+        assinaturaInvalidadaEm.value,
+      );
+    }
+    if (assinaturaInvalidadaPorUserId.present) {
+      map['assinatura_invalidada_por_user_id'] = Variable<String>(
+        assinaturaInvalidadaPorUserId.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2649,6 +3093,17 @@ class RatsCompanion extends UpdateCompanion<Rat> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('ultimoAlteradorUserId: $ultimoAlteradorUserId, ')
+          ..write('ultimaAlteracaoEm: $ultimaAlteracaoEm, ')
+          ..write('reabertaParaCorrecaoEm: $reabertaParaCorrecaoEm, ')
+          ..write(
+            'reabertaParaCorrecaoPorUserId: $reabertaParaCorrecaoPorUserId, ',
+          )
+          ..write('motivoReabertura: $motivoReabertura, ')
+          ..write('assinaturaInvalidadaEm: $assinaturaInvalidadaEm, ')
+          ..write(
+            'assinaturaInvalidadaPorUserId: $assinaturaInvalidadaPorUserId, ',
+          )
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4772,6 +5227,13 @@ typedef $$RatsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
+      Value<String?> ultimoAlteradorUserId,
+      Value<DateTime?> ultimaAlteracaoEm,
+      Value<DateTime?> reabertaParaCorrecaoEm,
+      Value<String?> reabertaParaCorrecaoPorUserId,
+      Value<String?> motivoReabertura,
+      Value<DateTime?> assinaturaInvalidadaEm,
+      Value<String?> assinaturaInvalidadaPorUserId,
       Value<int> rowid,
     });
 typedef $$RatsTableUpdateCompanionBuilder =
@@ -4798,6 +5260,13 @@ typedef $$RatsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<String?> ultimoAlteradorUserId,
+      Value<DateTime?> ultimaAlteracaoEm,
+      Value<DateTime?> reabertaParaCorrecaoEm,
+      Value<String?> reabertaParaCorrecaoPorUserId,
+      Value<String?> motivoReabertura,
+      Value<DateTime?> assinaturaInvalidadaEm,
+      Value<String?> assinaturaInvalidadaPorUserId,
       Value<int> rowid,
     });
 
@@ -4917,6 +5386,41 @@ class $$RatsTableFilterComposer
 
   ColumnFilters<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ultimoAlteradorUserId => $composableBuilder(
+    column: $table.ultimoAlteradorUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get ultimaAlteracaoEm => $composableBuilder(
+    column: $table.ultimaAlteracaoEm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reabertaParaCorrecaoEm => $composableBuilder(
+    column: $table.reabertaParaCorrecaoEm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reabertaParaCorrecaoPorUserId => $composableBuilder(
+    column: $table.reabertaParaCorrecaoPorUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get motivoReabertura => $composableBuilder(
+    column: $table.motivoReabertura,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get assinaturaInvalidadaEm => $composableBuilder(
+    column: $table.assinaturaInvalidadaEm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assinaturaInvalidadaPorUserId => $composableBuilder(
+    column: $table.assinaturaInvalidadaPorUserId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5039,6 +5543,43 @@ class $$RatsTableOrderingComposer
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get ultimoAlteradorUserId => $composableBuilder(
+    column: $table.ultimoAlteradorUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get ultimaAlteracaoEm => $composableBuilder(
+    column: $table.ultimaAlteracaoEm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reabertaParaCorrecaoEm => $composableBuilder(
+    column: $table.reabertaParaCorrecaoEm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reabertaParaCorrecaoPorUserId =>
+      $composableBuilder(
+        column: $table.reabertaParaCorrecaoPorUserId,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get motivoReabertura => $composableBuilder(
+    column: $table.motivoReabertura,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get assinaturaInvalidadaEm => $composableBuilder(
+    column: $table.assinaturaInvalidadaEm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assinaturaInvalidadaPorUserId =>
+      $composableBuilder(
+        column: $table.assinaturaInvalidadaPorUserId,
+        builder: (column) => ColumnOrderings(column),
+      );
 }
 
 class $$RatsTableAnnotationComposer
@@ -5135,6 +5676,43 @@ class $$RatsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get ultimoAlteradorUserId => $composableBuilder(
+    column: $table.ultimoAlteradorUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get ultimaAlteracaoEm => $composableBuilder(
+    column: $table.ultimaAlteracaoEm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get reabertaParaCorrecaoEm => $composableBuilder(
+    column: $table.reabertaParaCorrecaoEm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reabertaParaCorrecaoPorUserId =>
+      $composableBuilder(
+        column: $table.reabertaParaCorrecaoPorUserId,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get motivoReabertura => $composableBuilder(
+    column: $table.motivoReabertura,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get assinaturaInvalidadaEm => $composableBuilder(
+    column: $table.assinaturaInvalidadaEm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get assinaturaInvalidadaPorUserId =>
+      $composableBuilder(
+        column: $table.assinaturaInvalidadaPorUserId,
+        builder: (column) => column,
+      );
 }
 
 class $$RatsTableTableManager
@@ -5187,6 +5765,15 @@ class $$RatsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> ultimoAlteradorUserId = const Value.absent(),
+                Value<DateTime?> ultimaAlteracaoEm = const Value.absent(),
+                Value<DateTime?> reabertaParaCorrecaoEm = const Value.absent(),
+                Value<String?> reabertaParaCorrecaoPorUserId =
+                    const Value.absent(),
+                Value<String?> motivoReabertura = const Value.absent(),
+                Value<DateTime?> assinaturaInvalidadaEm = const Value.absent(),
+                Value<String?> assinaturaInvalidadaPorUserId =
+                    const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RatsCompanion(
                 id: id,
@@ -5211,6 +5798,13 @@ class $$RatsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                ultimoAlteradorUserId: ultimoAlteradorUserId,
+                ultimaAlteracaoEm: ultimaAlteracaoEm,
+                reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
+                reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId,
+                motivoReabertura: motivoReabertura,
+                assinaturaInvalidadaEm: assinaturaInvalidadaEm,
+                assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5237,6 +5831,15 @@ class $$RatsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> ultimoAlteradorUserId = const Value.absent(),
+                Value<DateTime?> ultimaAlteracaoEm = const Value.absent(),
+                Value<DateTime?> reabertaParaCorrecaoEm = const Value.absent(),
+                Value<String?> reabertaParaCorrecaoPorUserId =
+                    const Value.absent(),
+                Value<String?> motivoReabertura = const Value.absent(),
+                Value<DateTime?> assinaturaInvalidadaEm = const Value.absent(),
+                Value<String?> assinaturaInvalidadaPorUserId =
+                    const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RatsCompanion.insert(
                 id: id,
@@ -5261,6 +5864,13 @@ class $$RatsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                ultimoAlteradorUserId: ultimoAlteradorUserId,
+                ultimaAlteracaoEm: ultimaAlteracaoEm,
+                reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
+                reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId,
+                motivoReabertura: motivoReabertura,
+                assinaturaInvalidadaEm: assinaturaInvalidadaEm,
+                assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/domain/permissions/rat_permissions.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
@@ -32,6 +32,7 @@ class RatFormViewModel extends ChangeNotifier {
     EnqueueAssinaturaSync? enqueueAssinaturaSync,
     ProcessSyncQueue? processSyncQueue,
     DownloadRemoteRats? downloadRemoteRats,
+    SupabaseClientFactory? supabaseClientFactory,
   }) : _ratRepository = ratRepository,
        _assinaturaRepository = assinaturaRepository,
        _localSignatureAssetStore = localSignatureAssetStore,
@@ -53,11 +54,21 @@ class RatFormViewModel extends ChangeNotifier {
        equipamentoDescricao = initialRat?.equipamentoDescricao ?? '',
        equipamentoObservacao = initialRat?.equipamentoObservacao ?? '',
        status = initialRat?.status ?? RatStatus.draft,
+       ultimoAlteradorUserId = initialRat?.ultimoAlteradorUserId,
+       ultimaAlteracaoEm = initialRat?.ultimaAlteracaoEm,
+       reabertaParaCorrecaoEm = initialRat?.reabertaParaCorrecaoEm,
+       reabertaParaCorrecaoPorUserId =
+           initialRat?.reabertaParaCorrecaoPorUserId,
+       motivoReabertura = initialRat?.motivoReabertura,
+       assinaturaInvalidadaEm = initialRat?.assinaturaInvalidadaEm,
+       assinaturaInvalidadaPorUserId =
+           initialRat?.assinaturaInvalidadaPorUserId,
        _remoteSession = remoteSession,
        _processSyncQueue = processSyncQueue,
        _enqueueRatSync = enqueueRatSync,
        _enqueueAssinaturaSync = enqueueAssinaturaSync,
        _downloadRemoteRats = downloadRemoteRats,
+       _supabaseClientFactory = supabaseClientFactory,
        _isSaved = initialRat != null;
 
   static const _permissions = RatPermissions();
@@ -73,6 +84,7 @@ class RatFormViewModel extends ChangeNotifier {
   final EnqueueAssinaturaSync? _enqueueAssinaturaSync;
   final ProcessSyncQueue? _processSyncQueue;
   final DownloadRemoteRats? _downloadRemoteRats;
+  final SupabaseClientFactory? _supabaseClientFactory;
   final String ratId;
   final String numero;
   String clienteNome;
@@ -86,6 +98,13 @@ class RatFormViewModel extends ChangeNotifier {
   String equipamentoDescricao;
   String equipamentoObservacao;
   RatStatus status;
+  String? ultimoAlteradorUserId;
+  DateTime? ultimaAlteracaoEm;
+  DateTime? reabertaParaCorrecaoEm;
+  String? reabertaParaCorrecaoPorUserId;
+  String? motivoReabertura;
+  DateTime? assinaturaInvalidadaEm;
+  String? assinaturaInvalidadaPorUserId;
 
   bool _isSubmitting = false;
   bool _isSharing = false;
@@ -99,11 +118,33 @@ class RatFormViewModel extends ChangeNotifier {
   bool get isSharing => _isSharing;
   bool get isSaved => _isSaved;
   bool get hasSignature => _assinatura != null;
+  bool get hasValidSignature => _assinatura != null && !isSignaturePending;
   bool get isLoadingSignature => _isLoadingSignature;
   String? get errorMessage => _errorMessage;
   bool get isEditing => _initialRat != null;
   bool get shouldReloadOnClose => _isSaved;
   Uint8List? get signaturePreviewBytes => _signaturePreviewBytes;
+  bool get isSignaturePending {
+    final invalidatedAt = assinaturaInvalidadaEm;
+    if (invalidatedAt == null) {
+      return false;
+    }
+
+    final assinatura = _assinatura;
+    return assinatura == null || !assinatura.updatedAt.isAfter(invalidatedAt);
+  }
+
+  bool get isLockedUntilReopen {
+    if (!hasValidSignature) {
+      return false;
+    }
+
+    return canReopenForCorrection;
+  }
+
+  bool get canEditFields => canEdit && !isLockedUntilReopen;
+
+  bool get canPreviewPdf => _initialRat != null || _isSaved || canEditFields;
 
   /// True quando o formulário deve ser exibido em modo somente leitura.
   ///
@@ -125,6 +166,18 @@ class RatFormViewModel extends ChangeNotifier {
     final initialRat = _initialRat;
     if (initialRat == null) return true;
     return _permissions.canEdit(initialRat, _remoteSession);
+  }
+
+  bool get canReopenForCorrection {
+    final initialRat = _initialRat;
+    if (initialRat == null) {
+      return false;
+    }
+
+    return _permissions.canReopenForCorrection(
+      _ratWithCurrentAudit(initialRat),
+      _remoteSession,
+    );
   }
 
   void setClienteNome(String value) {
@@ -255,8 +308,10 @@ class RatFormViewModel extends ChangeNotifier {
   }
 
   Future<bool> save({bool enqueueSync = true}) async {
-    if (!canEdit) {
-      _errorMessage = 'Este RAT pertence a outro técnico.';
+    if (!canEditFields) {
+      _errorMessage = isLockedUntilReopen
+          ? 'Reabra este RAT para correção antes de editar.'
+          : 'Este RAT pertence a outro técnico.';
       notifyListeners();
       return false;
     }
@@ -277,6 +332,10 @@ class RatFormViewModel extends ChangeNotifier {
     notifyListeners();
 
     final now = DateTime.now();
+    final auditUserId = isCompanyMode
+        ? remoteSession!.usuarioId
+        : ultimoAlteradorUserId;
+    final auditUpdatedAt = isCompanyMode ? now : ultimaAlteracaoEm;
     final rat = Rat(
       id: ratId,
       authorId:
@@ -311,6 +370,13 @@ class RatFormViewModel extends ChangeNotifier {
       createdAt: _initialRat?.createdAt ?? now,
       updatedAt: now,
       deletedAt: _initialRat?.deletedAt,
+      ultimoAlteradorUserId: auditUserId,
+      ultimaAlteracaoEm: auditUpdatedAt,
+      reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId,
+      motivoReabertura: motivoReabertura,
+      assinaturaInvalidadaEm: assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
     );
 
     try {
@@ -328,12 +394,73 @@ class RatFormViewModel extends ChangeNotifier {
 
     _isSubmitting = false;
     _isSaved = true;
+    ultimoAlteradorUserId = rat.ultimoAlteradorUserId;
+    ultimaAlteracaoEm = rat.ultimaAlteracaoEm;
     notifyListeners();
     return true;
   }
 
   Future<void> submit() async {
     await save();
+  }
+
+  Future<bool> reopenForCorrection(String motivo) async {
+    final trimmed = motivo.trim();
+    if (!canReopenForCorrection) {
+      _errorMessage = 'Este RAT não pode ser reaberto para correção.';
+      notifyListeners();
+      return false;
+    }
+
+    if (trimmed.length < 5) {
+      _errorMessage = 'Informe um motivo com pelo menos 5 caracteres.';
+      notifyListeners();
+      return false;
+    }
+
+    final remoteSession = _remoteSession;
+    if (remoteSession == null || !remoteSession.hasCompanyContext) {
+      _errorMessage = 'Sessão remota não restaurada.';
+      notifyListeners();
+      return false;
+    }
+
+    final previousStatus = status;
+    final previousUltimoAlteradorUserId = ultimoAlteradorUserId;
+    final previousUltimaAlteracaoEm = ultimaAlteracaoEm;
+    final previousReabertaParaCorrecaoEm = reabertaParaCorrecaoEm;
+    final previousReabertaParaCorrecaoPorUserId = reabertaParaCorrecaoPorUserId;
+    final previousMotivoReabertura = motivoReabertura;
+    final previousAssinaturaInvalidadaEm = assinaturaInvalidadaEm;
+    final previousAssinaturaInvalidadaPorUserId = assinaturaInvalidadaPorUserId;
+    final now = DateTime.now();
+
+    status = RatStatus.draft;
+    ultimoAlteradorUserId = remoteSession.usuarioId;
+    ultimaAlteracaoEm = now;
+    reabertaParaCorrecaoEm = now;
+    reabertaParaCorrecaoPorUserId = remoteSession.usuarioId;
+    motivoReabertura = trimmed;
+    assinaturaInvalidadaEm = now;
+    assinaturaInvalidadaPorUserId = remoteSession.usuarioId;
+
+    final saved = await save();
+    if (!saved) {
+      status = previousStatus;
+      ultimoAlteradorUserId = previousUltimoAlteradorUserId;
+      ultimaAlteracaoEm = previousUltimaAlteracaoEm;
+      reabertaParaCorrecaoEm = previousReabertaParaCorrecaoEm;
+      reabertaParaCorrecaoPorUserId = previousReabertaParaCorrecaoPorUserId;
+      motivoReabertura = previousMotivoReabertura;
+      assinaturaInvalidadaEm = previousAssinaturaInvalidadaEm;
+      assinaturaInvalidadaPorUserId = previousAssinaturaInvalidadaPorUserId;
+      notifyListeners();
+      return false;
+    }
+
+    _signaturePreviewBytes = null;
+    notifyListeners();
+    return true;
   }
 
   Future<bool> deleteRat() async {
@@ -461,20 +588,40 @@ class RatFormViewModel extends ChangeNotifier {
 
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
-    final assinaturaEmpresaId = isCompanyMode ? remoteSession!.empresaId : null;
-    final assinaturaUsuarioId = isCompanyMode ? remoteSession!.usuarioId : null;
 
     if (isCompanyMode) {
+      final empresaId = remoteSession!.empresaId!;
+      final usuarioId = remoteSession.usuarioId;
       await _enqueueAssinaturaSync?.upsert(
         assinatura,
-        empresaId: assinaturaEmpresaId!,
-        usuarioId: assinaturaUsuarioId!,
+        empresaId: empresaId,
+        usuarioId: usuarioId,
         ratId: ratId,
       );
-      _syncInBackground(assinaturaEmpresaId!);
+      _syncInBackground(empresaId);
     }
 
     return true;
+  }
+
+  Future<String?> _resolveEmpresaNome() async {
+    final empresaId = _remoteSession?.empresaId;
+    if (empresaId == null || _supabaseClientFactory == null) return null;
+    try {
+      final client = await _supabaseClientFactory
+          .tryCreateAuthenticatedClient();
+      if (client == null) {
+        return null;
+      }
+      final row = await client
+          .from('empresas')
+          .select('nome')
+          .eq('id', empresaId)
+          .maybeSingle();
+      return row?['nome'] as String?;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Retorna os dados necessários para a tela de preview do PDF.
@@ -486,11 +633,16 @@ class RatFormViewModel extends ChangeNotifier {
   ///   salvar — útil inclusive para RAT de outro técnico (somente leitura).
   /// Nunca enfileira sync.
   Future<PdfPreviewData?> prepareForPdfPreview({bool persist = true}) async {
-    if (persist) {
+    empresaNome ??= await _resolveEmpresaNome();
+    if (persist && canEditFields) {
       final saved = await save(enqueueSync: false);
       if (!saved) {
         return null;
       }
+    } else if (_initialRat == null && !_isSaved) {
+      _errorMessage = 'Salve o RAT antes de gerar a prévia.';
+      notifyListeners();
+      return null;
     }
 
     // Garante que a assinatura está carregada.
@@ -515,7 +667,8 @@ class RatFormViewModel extends ChangeNotifier {
 
     return PdfPreviewData(
       rat: shareData.rat!,
-      signatureBytes: _signaturePreviewBytes,
+      signatureBytes: isSignaturePending ? null : _signaturePreviewBytes,
+      assinaturaPendente: isSignaturePending,
       empresaNome: empresaNome,
       tecnicoNome: tecnicoNome,
     );
@@ -523,8 +676,14 @@ class RatFormViewModel extends ChangeNotifier {
 
   /// Compartilha o PDF da RAT atual.
   Future<bool> sharePdf() async {
-    final saved = await save(enqueueSync: false);
-    if (!saved) {
+    if (canEditFields) {
+      final saved = await save(enqueueSync: false);
+      if (!saved) {
+        return false;
+      }
+    } else if (_initialRat == null && !_isSaved) {
+      _errorMessage = 'Salve o RAT antes de compartilhar o PDF.';
+      notifyListeners();
       return false;
     }
 
@@ -542,7 +701,12 @@ class RatFormViewModel extends ChangeNotifier {
         return false;
       }
 
-      await _ratPdfShareService.share(shareData);
+      await _ratPdfShareService.share(
+        shareData,
+        empresaNome: empresaNome,
+        tecnicoNome: tecnicoNome,
+        assinaturaPendente: isSignaturePending,
+      );
       return true;
     } catch (_) {
       _errorMessage = 'Não foi possível compartilhar o PDF.';
@@ -555,8 +719,14 @@ class RatFormViewModel extends ChangeNotifier {
 
   /// Salva o PDF no dispositivo (seletor de arquivo), sem abrir share sheet.
   Future<bool> savePdf() async {
-    final saved = await save(enqueueSync: false);
-    if (!saved) {
+    if (canEditFields) {
+      final saved = await save(enqueueSync: false);
+      if (!saved) {
+        return false;
+      }
+    } else if (_initialRat == null && !_isSaved) {
+      _errorMessage = 'Salve o RAT antes de salvar o PDF.';
+      notifyListeners();
       return false;
     }
 
@@ -574,7 +744,12 @@ class RatFormViewModel extends ChangeNotifier {
         return false;
       }
 
-      final exported = await _ratPdfShareService.exportToDevice(shareData);
+      final exported = await _ratPdfShareService.exportToDevice(
+        shareData,
+        empresaNome: empresaNome,
+        tecnicoNome: tecnicoNome,
+        assinaturaPendente: isSignaturePending,
+      );
       if (!exported) {
         return false;
       }
@@ -607,6 +782,19 @@ class RatFormViewModel extends ChangeNotifier {
     return RatListScope.companyTechnician(
       empresaId: empresaId,
       tecnicoId: tecnicoId,
+    );
+  }
+
+  Rat _ratWithCurrentAudit(Rat rat) {
+    return rat.copyWith(
+      status: status,
+      ultimoAlteradorUserId: ultimoAlteradorUserId,
+      ultimaAlteracaoEm: ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId,
+      motivoReabertura: motivoReabertura,
+      assinaturaInvalidadaEm: assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
     );
   }
 }
@@ -673,12 +861,14 @@ class PdfPreviewData {
   const PdfPreviewData({
     required this.rat,
     this.signatureBytes,
+    this.assinaturaPendente = false,
     this.empresaNome,
     this.tecnicoNome,
   });
 
   final Rat rat;
   final Uint8List? signatureBytes;
+  final bool assinaturaPendente;
   final String? empresaNome;
   final String? tecnicoNome;
 }

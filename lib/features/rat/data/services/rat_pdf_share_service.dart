@@ -23,11 +23,13 @@ class RatPdfShareService {
     ShareRatLocallyResult shareData, {
     String? empresaNome,
     String? tecnicoNome,
+    bool assinaturaPendente = false,
   }) async {
     final pdfBytes = await _buildPdf(
       shareData,
       empresaNome: empresaNome,
       tecnicoNome: tecnicoNome,
+      assinaturaPendente: assinaturaPendente,
     );
     final file = await _saveTemporaryPdf(
       fileName: _pdfFileName(shareData.subject!),
@@ -48,11 +50,13 @@ class RatPdfShareService {
     ShareRatLocallyResult shareData, {
     String? empresaNome,
     String? tecnicoNome,
+    bool assinaturaPendente = false,
   }) async {
     final pdfBytes = await _buildPdf(
       shareData,
       empresaNome: empresaNome,
       tecnicoNome: tecnicoNome,
+      assinaturaPendente: assinaturaPendente,
     );
     final fileName = _pdfFileName(shareData.subject!);
 
@@ -73,6 +77,7 @@ class RatPdfShareService {
     Uint8List? assinaturaBytes,
     String? empresaNome,
     String? tecnicoNome,
+    bool assinaturaPendente = false,
   }) async {
     final pdf = pw.Document();
 
@@ -91,7 +96,10 @@ class RatPdfShareService {
             pw.SizedBox(height: 18),
             _buildEquipamentoSection(rat),
             pw.SizedBox(height: 24),
-            _buildAssinaturaSection(assinaturaBytes),
+            _buildAssinaturaSection(
+              assinaturaBytes,
+              assinaturaPendente: assinaturaPendente,
+            ),
           ];
         },
       ),
@@ -104,8 +112,11 @@ class RatPdfShareService {
     ShareRatLocallyResult shareData, {
     String? empresaNome,
     String? tecnicoNome,
+    bool assinaturaPendente = false,
   }) async {
-    final assinaturaBytes = await _loadAssinaturaBytes(shareData.assinatura);
+    final assinaturaBytes = assinaturaPendente
+        ? null
+        : await _loadAssinaturaBytes(shareData.assinatura);
     final rat = shareData.rat;
     if (rat == null) {
       throw StateError('RAT ausente para gerar PDF.');
@@ -128,7 +139,10 @@ class RatPdfShareService {
             pw.SizedBox(height: 18),
             _buildEquipamentoSection(rat),
             pw.SizedBox(height: 24),
-            _buildAssinaturaSection(assinaturaBytes),
+            _buildAssinaturaSection(
+              assinaturaBytes,
+              assinaturaPendente: assinaturaPendente,
+            ),
           ];
         },
       ),
@@ -165,7 +179,10 @@ class RatPdfShareService {
                 padding: const pw.EdgeInsets.only(bottom: 3),
                 child: pw.Text(
                   'Relatório de Atendimento Técnico',
-                  style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+                  style: const pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey600,
+                  ),
                 ),
               ),
             ],
@@ -242,13 +259,32 @@ class RatPdfShareService {
     );
   }
 
-  pw.Widget _buildAssinaturaSection(Uint8List? assinaturaBytes) {
+  pw.Widget _buildAssinaturaSection(
+    Uint8List? assinaturaBytes, {
+    bool assinaturaPendente = false,
+  }) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         _sectionTitle('Assinatura'),
         pw.SizedBox(height: 8),
-        if (assinaturaBytes == null)
+        if (assinaturaPendente)
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.amber50,
+              border: pw.Border.all(color: PdfColors.amber700),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Text(
+              'Assinatura pendente.',
+              style: const pw.TextStyle(
+                fontSize: 10,
+                color: PdfColors.amber900,
+              ),
+            ),
+          )
+        else if (assinaturaBytes == null)
           pw.Container(
             padding: const pw.EdgeInsets.all(12),
             decoration: pw.BoxDecoration(

@@ -40,6 +40,13 @@ class EnqueueRatSync {
       status: rat.status.name,
       deletado: rat.deletedAt != null,
       criadoEmDispositivo: rat.createdAt,
+      ultimoAlteradorUserId: rat.ultimoAlteradorUserId,
+      ultimaAlteracaoEm: rat.ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm: rat.reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: rat.reabertaParaCorrecaoPorUserId,
+      motivoReabertura: rat.motivoReabertura,
+      assinaturaInvalidadaEm: rat.assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: rat.assinaturaInvalidadaPorUserId,
     );
 
     await _queueRepository.enqueue(
@@ -74,6 +81,13 @@ class EnqueueRatSync {
       status: rat.status.name,
       deletado: true,
       criadoEmDispositivo: rat.createdAt,
+      ultimoAlteradorUserId: rat.ultimoAlteradorUserId,
+      ultimaAlteracaoEm: rat.ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm: rat.reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: rat.reabertaParaCorrecaoPorUserId,
+      motivoReabertura: rat.motivoReabertura,
+      assinaturaInvalidadaEm: rat.assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: rat.assinaturaInvalidadaPorUserId,
     );
 
     await _queueRepository.enqueue(

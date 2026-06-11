@@ -20,6 +20,13 @@ class RatRemoteDto {
     required this.status,
     required this.deletado,
     required this.criadoEmDispositivo,
+    this.ultimoAlteradorUserId,
+    this.ultimaAlteracaoEm,
+    this.reabertaParaCorrecaoEm,
+    this.reabertaParaCorrecaoPorUserId,
+    this.motivoReabertura,
+    this.assinaturaInvalidadaEm,
+    this.assinaturaInvalidadaPorUserId,
   });
 
   final String id;
@@ -40,9 +47,16 @@ class RatRemoteDto {
   final String status;
   final bool deletado;
   final DateTime criadoEmDispositivo;
+  final String? ultimoAlteradorUserId;
+  final DateTime? ultimaAlteracaoEm;
+  final DateTime? reabertaParaCorrecaoEm;
+  final String? reabertaParaCorrecaoPorUserId;
+  final String? motivoReabertura;
+  final DateTime? assinaturaInvalidadaEm;
+  final String? assinaturaInvalidadaPorUserId;
 
   Map<String, dynamic> toJson() {
-    return {
+    final data = <String, dynamic>{
       'id': id,
       'empresa_id': empresaId,
       'tecnico_id': tecnicoId,
@@ -64,7 +78,41 @@ class RatRemoteDto {
       'deletado': deletado,
       'criado_em_dispositivo': criadoEmDispositivo.toIso8601String(),
     };
+
+    _addIfNotNull(data, 'ultimo_alterador_user_id', ultimoAlteradorUserId);
+    _addIfNotNull(data, 'ultima_alteracao_em', _dateTime(ultimaAlteracaoEm));
+    _addIfNotNull(
+      data,
+      'reaberta_para_correcao_em',
+      _dateTime(reabertaParaCorrecaoEm),
+    );
+    _addIfNotNull(
+      data,
+      'reaberta_para_correcao_por_user_id',
+      reabertaParaCorrecaoPorUserId,
+    );
+    _addIfNotNull(data, 'motivo_reabertura', motivoReabertura);
+    _addIfNotNull(
+      data,
+      'assinatura_invalidada_em',
+      _dateTime(assinaturaInvalidadaEm),
+    );
+    _addIfNotNull(
+      data,
+      'assinatura_invalidada_por_user_id',
+      assinaturaInvalidadaPorUserId,
+    );
+
+    return data;
   }
+
+  void _addIfNotNull(Map<String, dynamic> data, String key, Object? value) {
+    if (value != null) {
+      data[key] = value;
+    }
+  }
+
+  String? _dateTime(DateTime? value) => value?.toIso8601String();
 
   String? _dateOnly(DateTime? value) {
     if (value == null) {

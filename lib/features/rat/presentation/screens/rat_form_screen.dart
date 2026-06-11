@@ -138,12 +138,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
                             Expanded(
                               child: Text(
                                 'Somente leitura — você não pode editar esta RAT.',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
                               ),
                             ),
                           ],
@@ -154,27 +150,27 @@ class _RatFormScreenState extends State<RatFormScreen> {
                       children: [
                         MetricSlateTextField(
                           controller: _clienteController,
-                          enabled: vm.canEdit,
+                          enabled: vm.canEditFields,
                           label: 'Cliente',
                           onChanged: vm.setClienteNome,
                         ),
                         const SizedBox(height: MetricSlateSpacing.md),
                         MetricSlateTextField(
                           controller: _responsavelController,
-                          enabled: vm.canEdit,
+                          enabled: vm.canEditFields,
                           label: 'Responsável pelo recebimento',
                           onChanged: vm.setResponsavelRecebimento,
                         ),
                         const SizedBox(height: MetricSlateSpacing.md),
                         MetricSlateTextField(
                           controller: _responsavelDocumentoController,
-                          enabled: vm.canEdit,
+                          enabled: vm.canEditFields,
                           label: 'Documento do responsável (opcional)',
                           onChanged: vm.setResponsavelDocumento,
                         ),
                         const SizedBox(height: MetricSlateSpacing.md),
                         InkWell(
-                          onTap: vm.canEdit ? _pickDataVisita : null,
+                          onTap: vm.canEditFields ? _pickDataVisita : null,
                           borderRadius: BorderRadius.circular(
                             MetricSlateRadii.sm,
                           ),
@@ -192,7 +188,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
                             Expanded(
                               child: MetricSlateTextField(
                                 controller: _inicioController,
-                                enabled: vm.canEdit,
+                                enabled: vm.canEditFields,
                                 keyboardType: TextInputType.number,
                                 inputFormatters: const [
                                   _HourTextInputFormatter(),
@@ -205,7 +201,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
                             Expanded(
                               child: MetricSlateTextField(
                                 controller: _terminoController,
-                                enabled: vm.canEdit,
+                                enabled: vm.canEditFields,
                                 keyboardType: TextInputType.number,
                                 inputFormatters: const [
                                   _HourTextInputFormatter(),
@@ -223,7 +219,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
                       children: [
                         MetricSlateTextField(
                           controller: _descricaoController,
-                          enabled: vm.canEdit,
+                          enabled: vm.canEditFields,
                           maxLines: 5,
                           label: 'Descrição',
                           onChanged: vm.setDescricao,
@@ -248,7 +244,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
                               child: Text(equipamentoMovimentoLabel(tipo)),
                             );
                           }).toList(),
-                          onChanged: vm.canEdit
+                          onChanged: vm.canEditFields
                               ? (value) {
                                   if (value != null) {
                                     vm.setEquipamentoMovimentoTipo(value);
@@ -259,14 +255,14 @@ class _RatFormScreenState extends State<RatFormScreen> {
                         const SizedBox(height: MetricSlateSpacing.md),
                         MetricSlateTextField(
                           controller: _equipamentoController,
-                          enabled: vm.canEdit,
+                          enabled: vm.canEditFields,
                           label: 'Descrição do equipamento',
                           onChanged: vm.setEquipamentoDescricao,
                         ),
                         const SizedBox(height: MetricSlateSpacing.md),
                         MetricSlateTextField(
                           controller: _equipamentoObservacaoController,
-                          enabled: vm.canEdit,
+                          enabled: vm.canEditFields,
                           maxLines: 2,
                           label: 'Observação do equipamento',
                           onChanged: vm.setEquipamentoObservacao,
@@ -289,7 +285,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
                               child: Text(ratStatusLabel(status)),
                             );
                           }).toList(),
-                          onChanged: vm.canEdit
+                          onChanged: vm.canEditFields
                               ? (value) {
                                   if (value != null) {
                                     vm.setStatus(value);
@@ -299,6 +295,29 @@ class _RatFormScreenState extends State<RatFormScreen> {
                         ),
                       ],
                     ),
+                    if (vm.canReopenForCorrection) ...[
+                      _FormSection(
+                        title: 'Correção',
+                        children: [
+                          Text(
+                            'Reabra este RAT para alterar os dados operacionais. A assinatura atual deixará de valer e uma nova assinatura será necessária.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: MetricSlateSpacing.sm),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: isBusy
+                                  ? null
+                                  : _handleReopenForCorrection,
+                              icon: const Icon(Icons.lock_open_outlined),
+                              label: const Text('Reabrir para correção'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (vm.errorMessage != null) ...[
                       const SizedBox(height: MetricSlateSpacing.md),
                       TechReportErrorBanner(message: vm.errorMessage!),
@@ -312,12 +331,12 @@ class _RatFormScreenState extends State<RatFormScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
-                            onPressed: isBusy || !vm.canEdit
+                            onPressed: isBusy || !vm.canEditFields
                                 ? null
                                 : _handleSignature,
                             icon: const Icon(Icons.draw_outlined),
                             label: Text(
-                              vm.hasSignature
+                              vm.hasValidSignature
                                   ? 'Substituir assinatura'
                                   : 'Capturar assinatura',
                             ),
@@ -327,7 +346,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
                     ),
                     const SizedBox(height: MetricSlateSpacing.md),
                     OutlinedButton.icon(
-                      onPressed: isBusy || !vm.canEdit ? null : _handleSharePdf,
+                      onPressed: isBusy || !vm.canPreviewPdf
+                          ? null
+                          : _handleSharePdf,
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: Text(
                         vm.isSharing ? 'Preparando...' : 'Prévia do PDF',
@@ -335,7 +356,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
                     ),
                     const SizedBox(height: MetricSlateSpacing.sm),
                     FilledButton.icon(
-                      onPressed: isBusy || !vm.canEdit ? null : _handleSubmit,
+                      onPressed: isBusy || !vm.canEditFields
+                          ? null
+                          : _handleSubmit,
                       icon: vm.isSubmitting
                           ? SizedBox.square(
                               dimension: 20,
@@ -372,7 +395,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
   }
 
   Future<void> _handleSignature() async {
-    if (widget.viewModel.hasSignature) {
+    if (widget.viewModel.hasValidSignature) {
       final shouldReplace = await _confirmReplaceSignature();
       if (!shouldReplace || !mounted) {
         return;
@@ -435,7 +458,9 @@ class _RatFormScreenState extends State<RatFormScreen> {
   }
 
   Future<void> _handleSharePdf() async {
-    final previewData = await widget.viewModel.prepareForPdfPreview();
+    final previewData = await widget.viewModel.prepareForPdfPreview(
+      persist: widget.viewModel.canEditFields,
+    );
     if (!mounted || previewData == null) {
       return;
     }
@@ -445,6 +470,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
         builder: (_) => RatPdfPreviewScreen(
           rat: previewData.rat,
           signatureBytes: previewData.signatureBytes,
+          assinaturaPendente: previewData.assinaturaPendente,
           empresaNome: previewData.empresaNome,
           tecnicoNome: previewData.tecnicoNome,
           onShare: () async {
@@ -473,6 +499,91 @@ class _RatFormScreenState extends State<RatFormScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleReopenForCorrection() async {
+    final motivo = await _askReopenReason();
+    if (!mounted || motivo == null) {
+      return;
+    }
+
+    final reopened = await widget.viewModel.reopenForCorrection(motivo);
+    if (!mounted) {
+      return;
+    }
+
+    if (reopened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('RAT reaberta. Colete uma nova assinatura.'),
+        ),
+      );
+    }
+  }
+
+  Future<String?> _askReopenReason() async {
+    final controller = TextEditingController();
+    String? errorText;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Reabrir para correção'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Esta RAT já possui assinatura. Ao reabrir, a assinatura atual deixará de valer e será necessário coletar uma nova.',
+                  ),
+                  const SizedBox(height: MetricSlateSpacing.md),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: 'Motivo da reabertura *',
+                      errorText: errorText,
+                    ),
+                    onChanged: (_) {
+                      if (errorText != null) {
+                        setDialogState(() => errorText = null);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final motivo = controller.text.trim();
+                    if (motivo.length < 5) {
+                      setDialogState(() {
+                        errorText = 'Informe pelo menos 5 caracteres.';
+                      });
+                      return;
+                    }
+
+                    Navigator.of(context).pop(motivo);
+                  },
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+    return result;
   }
 
   Future<void> _handleDelete() async {
@@ -563,6 +674,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
     }
 
     final previewBytes = viewModel.signaturePreviewBytes;
+    final isPending = viewModel.isSignaturePending;
+    final hasValidSignature = viewModel.hasValidSignature;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,23 +683,38 @@ class _RatFormScreenState extends State<RatFormScreen> {
         Row(
           children: [
             Icon(
-              viewModel.hasSignature
+              isPending
+                  ? Icons.pending_actions_outlined
+                  : hasValidSignature
                   ? Icons.check_circle_outline
                   : Icons.info_outline,
-              color: viewModel.hasSignature
+              color: isPending
+                  ? theme.colorScheme.tertiary
+                  : hasValidSignature
                   ? theme.colorScheme.primary
                   : theme.colorScheme.outline,
             ),
             const SizedBox(width: MetricSlateSpacing.xs),
             Text(
-              viewModel.hasSignature
+              isPending
+                  ? 'Assinatura pendente'
+                  : hasValidSignature
                   ? 'Assinatura salva'
                   : 'Nenhuma assinatura salva',
               style: theme.textTheme.titleMedium,
             ),
           ],
         ),
-        if (previewBytes != null) ...[
+        if (isPending) ...[
+          const SizedBox(height: MetricSlateSpacing.xs),
+          Text(
+            'A assinatura anterior foi invalidada. Colete uma nova assinatura antes de finalizar o atendimento.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+        if (previewBytes != null && !isPending) ...[
           const SizedBox(height: MetricSlateSpacing.sm),
           DecoratedBox(
             decoration: BoxDecoration(
