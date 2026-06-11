@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
@@ -263,7 +264,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
         if (pendingConvites.isNotEmpty) ...[
           const TechReportSectionHeader(
             title: 'Convites pendentes',
-            subtitle: 'Compartilhe o código gerado com o convidado.',
+            subtitle: 'Aguarde o convidado aceitar ou cancele o convite.',
           ),
           const SizedBox(height: MetricSlateSpacing.sm),
           for (final convite in pendingConvites) ...[
@@ -515,11 +516,27 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
   }
 }
 
-class _ConviteCard extends StatelessWidget {
+class _ConviteCard extends StatefulWidget {
   const _ConviteCard({required this.convite, required this.onCancel});
 
   final AdminConviteResumo convite;
   final VoidCallback? onCancel;
+
+  @override
+  State<_ConviteCard> createState() => _ConviteCardState();
+}
+
+class _ConviteCardState extends State<_ConviteCard> {
+  void _share() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => _ConviteShareSheet(
+        convite: widget.convite,
+        papelLabel: _papelLabel(widget.convite.papel),
+        formattedExpiry: _formatDateTime(widget.convite.expiresAt),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -535,25 +552,30 @@ class _ConviteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(convite.nome, style: theme.textTheme.titleMedium),
+                Text(widget.convite.nome, style: theme.textTheme.titleMedium),
                 const SizedBox(height: MetricSlateSpacing.xxs),
-                Text(convite.email),
+                Text(widget.convite.email),
                 const SizedBox(height: MetricSlateSpacing.xxs),
                 Text(
-                  _papelLabel(convite.papel),
+                  _papelLabel(widget.convite.papel),
                   style: theme.textTheme.labelMedium,
                 ),
                 const SizedBox(height: MetricSlateSpacing.xxs),
                 Text(
-                  'Expira em ${_formatDateTime(convite.expiresAt)}',
+                  'Expira em ${_formatDateTime(widget.convite.expiresAt)}',
                   style: theme.textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          if (onCancel != null)
+          IconButton(
+            onPressed: _share,
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Compartilhar convite',
+          ),
+          if (widget.onCancel != null)
             IconButton(
-              onPressed: onCancel,
+              onPressed: widget.onCancel,
               icon: const Icon(Icons.cancel_outlined),
               tooltip: 'Cancelar convite',
             ),
@@ -574,6 +596,84 @@ class _ConviteCard extends StatelessWidget {
     return '${value.day.toString().padLeft(2, '0')}/'
         '${value.month.toString().padLeft(2, '0')}/'
         '${value.year}';
+  }
+}
+
+class _ConviteShareSheet extends StatelessWidget {
+  const _ConviteShareSheet({
+    required this.convite,
+    required this.papelLabel,
+    required this.formattedExpiry,
+  });
+
+  final AdminConviteResumo convite;
+  final String papelLabel;
+  final String formattedExpiry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: MetricSlateSpacing.lg,
+        right: MetricSlateSpacing.lg,
+        top: MetricSlateSpacing.lg,
+        bottom:
+            MetricSlateSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mail_outline, color: theme.colorScheme.primary),
+              const SizedBox(width: MetricSlateSpacing.sm),
+              Text('Compartilhar convite', style: theme.textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: MetricSlateSpacing.md),
+          Text('Nome: ${convite.nome}', style: theme.textTheme.bodyMedium),
+          Text('E-mail: ${convite.email}', style: theme.textTheme.bodyMedium),
+          Text('Perfil: $papelLabel', style: theme.textTheme.bodyMedium),
+          Text('Expira em: $formattedExpiry', style: theme.textTheme.bodySmall),
+          const SizedBox(height: MetricSlateSpacing.sm),
+          Text(
+            'O código do convite foi exibido na tela após a criação. '
+            'Se não copiou, gere um novo convite.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: MetricSlateSpacing.lg),
+          FilledButton.icon(
+            onPressed: () {
+              SharePlus.instance.share(
+                ShareParams(
+                  subject: 'Convite TechReport',
+                  text:
+                      'Convite TechReport\n\n'
+                      'Nome: ${convite.nome}\n'
+                      'E-mail: ${convite.email}\n'
+                      'Perfil: $papelLabel\n\n'
+                      'O código foi exibido após a criação do convite. '
+                      'Se não copiou, gere um novo convite no app.',
+                ),
+              );
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Compartilhar'),
+          ),
+          const SizedBox(height: MetricSlateSpacing.sm),
+          OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

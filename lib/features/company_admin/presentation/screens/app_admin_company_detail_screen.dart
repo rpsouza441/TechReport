@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
@@ -324,7 +325,7 @@ class _AppAdminCompanyDetailScreenState
       children: [
         const TechReportSectionHeader(
           title: 'Convites pendentes',
-          subtitle: 'Compartilhe o código gerado com o convidado.',
+          subtitle: 'Aguarde o convidado aceitar ou cancele o convite.',
         ),
         if (convites.isEmpty)
           const TechReportStateView.empty(
@@ -437,7 +438,7 @@ class _AdminCard extends StatelessWidget {
   }
 }
 
-class _ConviteCard extends StatelessWidget {
+class _ConviteCard extends StatefulWidget {
   const _ConviteCard({
     required this.convite,
     required this.isSubmitting,
@@ -447,6 +448,18 @@ class _ConviteCard extends StatelessWidget {
   final AdminConviteResumo convite;
   final bool isSubmitting;
   final VoidCallback onCancel;
+
+  @override
+  State<_ConviteCard> createState() => _ConviteCardState();
+}
+
+class _ConviteCardState extends State<_ConviteCard> {
+  void _share() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => _ConviteShareSheet(convite: widget.convite),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -465,23 +478,28 @@ class _ConviteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(convite.nome, style: theme.textTheme.titleSmall),
+                Text(widget.convite.nome, style: theme.textTheme.titleSmall),
                 const SizedBox(height: MetricSlateSpacing.xxs),
-                Text(convite.email, style: theme.textTheme.bodySmall),
+                Text(widget.convite.email, style: theme.textTheme.bodySmall),
                 const SizedBox(height: MetricSlateSpacing.xxs),
                 TechReportStatusChip(
-                  label: convite.isExpired ? 'Expirado' : 'Pendente',
-                  tone: convite.isExpired
+                  label: widget.convite.isExpired ? 'Expirado' : 'Pendente',
+                  tone: widget.convite.isExpired
                       ? TechReportStatusTone.error
                       : TechReportStatusTone.info,
                 ),
               ],
             ),
           ),
-          if (!convite.isExpired)
+          IconButton(
+            onPressed: _share,
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Compartilhar convite',
+          ),
+          if (!widget.convite.isExpired)
             IconButton(
-              onPressed: isSubmitting ? null : onCancel,
-              icon: isSubmitting
+              onPressed: widget.isSubmitting ? null : widget.onCancel,
+              icon: widget.isSubmitting
                   ? const SizedBox(
                       width: 18,
                       height: 18,
@@ -493,5 +511,84 @@ class _ConviteCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ConviteShareSheet extends StatelessWidget {
+  const _ConviteShareSheet({required this.convite});
+
+  final AdminConviteResumo convite;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: MetricSlateSpacing.lg,
+        right: MetricSlateSpacing.lg,
+        top: MetricSlateSpacing.lg,
+        bottom:
+            MetricSlateSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mail_outline, color: theme.colorScheme.primary),
+              const SizedBox(width: MetricSlateSpacing.sm),
+              Text('Compartilhar convite', style: theme.textTheme.titleMedium),
+            ],
+          ),
+          const SizedBox(height: MetricSlateSpacing.md),
+          Text('Nome: ${convite.nome}', style: theme.textTheme.bodyMedium),
+          Text('E-mail: ${convite.email}', style: theme.textTheme.bodyMedium),
+          Text(
+            'Expira em: ${_formatDateTime(convite.expiresAt)}',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: MetricSlateSpacing.sm),
+          Text(
+            'O código do convite foi exibido na tela após a criação. '
+            'Se não copiou, gere um novo convite.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: MetricSlateSpacing.lg),
+          FilledButton.icon(
+            onPressed: () {
+              SharePlus.instance.share(
+                ShareParams(
+                  subject: 'Convite TechReport',
+                  text:
+                      'Convite TechReport\n\n'
+                      'Nome: ${convite.nome}\n'
+                      'E-mail: ${convite.email}\n\n'
+                      'O código foi exibido após a criação do convite. '
+                      'Se não copiou, gere um novo convite no app.',
+                ),
+              );
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Compartilhar'),
+          ),
+          const SizedBox(height: MetricSlateSpacing.sm),
+          OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime value) {
+    return '${value.day.toString().padLeft(2, '0')}/'
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year}';
   }
 }
