@@ -157,7 +157,9 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                         icon: widget.viewModel.isSubmitting
                             ? const SizedBox.square(
                                 dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.check_outlined),
                         tooltip: 'Salvar',
@@ -183,7 +185,9 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                         icon: widget.viewModel.isLoading
                             ? const SizedBox.square(
                                 dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.refresh_outlined),
                         tooltip: 'Atualizar',
@@ -591,38 +595,60 @@ class _TecnicoCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return TechReportCard(
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            tecnico.ativo ? Icons.badge_outlined : Icons.person_off_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: MetricSlateSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(tecnico.nome, style: theme.textTheme.titleMedium),
-                const SizedBox(height: MetricSlateSpacing.xxs),
-                Text(tecnico.email, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: MetricSlateSpacing.xxs),
-                Text(
-                  _papelLabel(tecnico.papel),
-                  style: theme.textTheme.labelMedium,
-                ),
-                if (tecnico.mustChangePassword) ...[
-                  const SizedBox(height: MetricSlateSpacing.xxs),
-                  Text(
-                    'Deve trocar senha no próximo acesso',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.tertiary,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                tecnico.ativo
+                    ? Icons.badge_outlined
+                    : Icons.person_off_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: MetricSlateSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tecnico.nome,
+                      style: theme.textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ],
-            ),
+                    const SizedBox(height: MetricSlateSpacing.xxs),
+                    Text(
+                      tecnico.email,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: MetricSlateSpacing.xxs),
+                    Text(
+                      _papelLabel(tecnico.papel),
+                      style: theme.textTheme.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (tecnico.mustChangePassword) ...[
+                      const SizedBox(height: MetricSlateSpacing.xxs),
+                      Text(
+                        'Deve trocar senha no próximo acesso',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.tertiary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: MetricSlateSpacing.sm),
           _TecnicoActions(
             ativo: tecnico.ativo,
             canManage: canManage,
@@ -676,7 +702,7 @@ class _TecnicoActions extends StatelessWidget {
         ),
         if (canManage) ...[
           ActionChip(
-            label: Text(ativo ? 'Desativar' : 'Ativar'),
+            label: Text(ativo ? 'Inativar' : 'Ativar'),
             avatar: Icon(
               ativo ? Icons.cancel_outlined : Icons.check_circle,
               size: 16,
@@ -687,7 +713,7 @@ class _TecnicoActions extends StatelessWidget {
             onPressed: () => onToggleAtivo(!ativo),
           ),
           ActionChip(
-            label: Text(mustChangePassword ? 'Senha OK' : 'Exigir senha'),
+            label: Text(mustChangePassword ? 'Senha OK' : 'Trocar senha'),
             avatar: Icon(
               Icons.key_outlined,
               size: 16,
