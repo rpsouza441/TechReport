@@ -5,7 +5,6 @@ import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/utils/rat_number_formatter.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 class RatPdfPreviewScreen extends StatefulWidget {
   const RatPdfPreviewScreen({
@@ -180,7 +179,7 @@ class _A4DocumentPreview extends StatelessWidget {
                     '${rat.horarioInicioAtendimento ?? '--:--'} até '
                         '${rat.horarioTerminoAtendimento ?? '--:--'}',
                   ),
-                  _buildStatusBadge(context, rat.status),
+                  _infoRow('Status', ratStatusLabel(rat.status)),
                 ],
               ),
               const SizedBox(height: 14),
@@ -378,16 +377,6 @@ class _A4DocumentPreview extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(BuildContext context, RatStatus status) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: TechReportStatusChip(
-        label: ratStatusLabel(status),
-        tone: ratStatusTone(status),
       ),
     );
   }
