@@ -408,6 +408,7 @@ class _CompanyShellState extends State<CompanyShell> {
         enqueueAssinaturaSync: widget.scope.enqueueAssinaturaSync,
         processSyncQueue: widget.scope.processSyncQueue,
         downloadRemoteRats: widget.scope.downloadRemoteRats,
+        supabaseClientFactory: widget.scope.supabaseClientFactory,
         embedded: true,
       ),
     );
