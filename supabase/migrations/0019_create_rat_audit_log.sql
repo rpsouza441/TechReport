@@ -43,7 +43,7 @@ create policy rat_audit_log_insert_authorized
       from public.rats r
       join public.tecnicos t on t.id = r.tecnico_id and t.empresa_id = r.empresa_id
       where r.id = rat_audit_log.rat_id
-        and t.user_id = auth.uid()
+        and t.user_id = (select auth.uid())
         and t.ativo = true
     )
     or exists (
@@ -52,7 +52,7 @@ create policy rat_audit_log_insert_authorized
       where t.empresa_id = (
         select empresa_id from public.rats where id = rat_audit_log.rat_id
       )
-      and t.user_id = auth.uid()
+      and t.user_id = (select auth.uid())
       and t.ativo = true
       and t.papel in ('gerente', 'admin_empresa')
     )
@@ -70,7 +70,7 @@ create policy rat_audit_log_select_manager
       from public.rats r
       join public.tecnicos t on t.empresa_id = r.empresa_id
       where r.id = rat_audit_log.rat_id
-        and t.user_id = auth.uid()
+        and t.user_id = (select auth.uid())
         and t.ativo = true
         and t.papel in ('gerente', 'admin_empresa')
     )
