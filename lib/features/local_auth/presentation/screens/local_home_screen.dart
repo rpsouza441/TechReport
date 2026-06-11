@@ -253,7 +253,7 @@ class _RatsTab extends StatelessWidget {
         title: const TechReportModeTitle(modeLabel: 'Modo Local'),
         actions: [
           if (viewModel.pinConfigured)
-            TextButton(onPressed: _lockLocal, child: const Text('Bloquear')),
+            TextButton(onPressed: () => _lockLocal(context), child: const Text('Bloquear')),
           IconButton(
             onPressed: onNavigateToSettings,
             icon: const Icon(Icons.settings_outlined),
@@ -356,7 +356,30 @@ class _RatsTab extends StatelessWidget {
     );
   }
 
-  Future<void> _lockLocal() async {
+  Future<void> _lockLocal(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Bloquear modo local?'),
+        content: const Text(
+          'Você precisará inserir o PIN para acessar novamente. '
+          'Seus RATs permanecem no dispositivo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Bloquear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     await viewModel.lock();
     onLocalLocked();
   }

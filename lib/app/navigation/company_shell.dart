@@ -325,11 +325,11 @@ class _CompanyShellState extends State<CompanyShell> {
   List<CompanyArea> _areasFor(SessaoRemota session) {
     return [
       if (session.hasCompanyContext) CompanyArea.rats,
-      CompanyArea.profile,
       if (session.hasCompanyContext &&
           (session.isAdminEmpresa || session.isGerente))
         CompanyArea.adminEmpresa,
       if (session.isAppAdmin) CompanyArea.appAdmin,
+      CompanyArea.profile,
     ];
   }
 
