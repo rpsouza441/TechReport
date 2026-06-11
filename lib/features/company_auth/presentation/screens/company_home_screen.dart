@@ -4,7 +4,6 @@ import 'package:techreport/app/theme/app_theme_variant.dart';
 import 'package:techreport/app/theme/app_theme_view_model.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
-import 'package:techreport/features/company_auth/domain/repositories/remote_session_repository.dart';
 import 'package:techreport/features/company_auth/domain/usecases/change_company_password.dart';
 import 'package:techreport/features/company_auth/domain/usecases/update_own_display_name.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/company_account_view_model.dart';
@@ -73,9 +72,9 @@ class _CompanyHomeScreenState extends State<CompanyHomeScreen> {
         return _CompanyHomeScreenBody(
           session: session,
           sessionNotifier: widget.sessionNotifier,
-          remoteSessionRepository: widget.scope.remoteSessionRepository,
           themeViewModel: widget.themeViewModel,
           onChangePassword: _openChangePasswordScreen,
+          accountViewModel: _accountViewModel,
         );
       },
     );
@@ -105,16 +104,16 @@ class _CompanyHomeScreenBody extends StatefulWidget {
   const _CompanyHomeScreenBody({
     required this.session,
     required this.sessionNotifier,
-    required this.remoteSessionRepository,
     required this.themeViewModel,
     required this.onChangePassword,
+    required this.accountViewModel,
   });
 
   final SessaoRemota session;
   final ValueNotifier<SessaoRemota?> sessionNotifier;
-  final dynamic remoteSessionRepository;
   final AppThemeViewModel themeViewModel;
   final VoidCallback onChangePassword;
+  final CompanyAccountViewModel accountViewModel;
 
   @override
   State<_CompanyHomeScreenBody> createState() => _CompanyHomeScreenBodyState();
@@ -423,25 +422,13 @@ class _CompanyHomeScreenBodyState extends State<_CompanyHomeScreenBody> {
         builder: (_) => CompanyEditProfileScreen(
           initialName: currentName,
           onSave: (name) async {
-            // Placeholder: integrar com session update quando API existir
-            // Por ora, apenas retorna true para permitir fluxo de UI
-            await Future.delayed(const Duration(milliseconds: 300));
-            return true;
+            return await widget.accountViewModel.updateDisplayName(name);
           },
         ),
       ),
     );
 
     if (!context.mounted || newName == null) return;
-
-    // Atualiza sessão em memória + persiste localmente.
-    final current = widget.sessionNotifier.value;
-    if (current != null) {
-      widget.sessionNotifier.value = current.copyWith(nome: newName);
-      await widget.remoteSessionRepository.updateSession(
-        current.copyWith(nome: newName),
-      );
-    }
   }
 
   String _initials(String name) {
