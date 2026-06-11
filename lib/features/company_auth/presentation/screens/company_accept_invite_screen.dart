@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/company_accept_invite_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
@@ -58,138 +59,142 @@ class _CompanyAcceptInviteScreenState extends State<CompanyAcceptInviteScreen> {
         final isSubmitting = widget.viewModel.isSubmitting;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Aceitar convite')),
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Form(
-                    key: _formKey,
-                    child: TechReportCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const TechReportFormHeader(
-                            icon: Icons.mail_lock_outlined,
-                            title: 'Entrar com convite',
-                            subtitle:
-                                'Use o e-mail convidado, senha e codigo '
-                                'informado pela empresa.',
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(
-                                value: true,
-                                icon: Icon(Icons.person_add_outlined),
-                                label: Text('Criar conta'),
-                              ),
-                              ButtonSegment(
-                                value: false,
-                                icon: Icon(Icons.login_outlined),
-                                label: Text('Ja tenho conta'),
+          backgroundColor: Colors.transparent,
+          body: HierarchicalBackground(
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Form(
+                      key: _formKey,
+                      child: TechReportCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const TechReportFormHeader(
+                              icon: Icons.mail_lock_outlined,
+                              title: 'Entrar com convite',
+                              subtitle:
+                                  'Use o e-mail convidado, senha e codigo '
+                                  'informado pela empresa.',
+                            ),
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            SegmentedButton<bool>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: true,
+                                  icon: Icon(Icons.person_add_outlined),
+                                  label: Text('Criar conta'),
+                                ),
+                                ButtonSegment(
+                                  value: false,
+                                  icon: Icon(Icons.login_outlined),
+                                  label: Text('Ja tenho conta'),
+                                ),
+                              ],
+                              selected: {_createAccount},
+                              onSelectionChanged: isSubmitting
+                                  ? null
+                                  : (values) {
+                                      setState(
+                                        () => _createAccount = values.first,
+                                      );
+                                    },
+                            ),
+                            if (widget.viewModel.errorMessage != null) ...[
+                              const SizedBox(height: MetricSlateSpacing.md),
+                              TechReportErrorBanner(
+                                message: widget.viewModel.errorMessage!,
                               ),
                             ],
-                            selected: {_createAccount},
-                            onSelectionChanged: isSubmitting
-                                ? null
-                                : (values) {
-                                    setState(
-                                      () => _createAccount = values.first,
-                                    );
-                                  },
-                          ),
-                          if (widget.viewModel.errorMessage != null) ...[
-                            const SizedBox(height: MetricSlateSpacing.md),
-                            TechReportErrorBanner(
-                              message: widget.viewModel.errorMessage!,
-                            ),
-                          ],
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          TextFormField(
-                            controller: _emailController,
-                            enabled: !isSubmitting,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: 'E-mail convidado',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                            validator: _validateEmail,
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          TextFormField(
-                            controller: _passwordController,
-                            enabled: !isSubmitting,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Senha',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                onPressed: isSubmitting
-                                    ? null
-                                    : () => setState(
-                                        () => _obscurePassword =
-                                            !_obscurePassword,
-                                      ),
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
-                              ),
-                            ),
-                            validator: _validatePassword,
-                          ),
-                          if (_createAccount) ...[
                             const SizedBox(height: MetricSlateSpacing.md),
                             TextFormField(
-                              controller: _confirmPasswordController,
+                              controller: _emailController,
+                              enabled: !isSubmitting,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'E-mail convidado',
+                                prefixIcon: Icon(Icons.email_outlined),
+                              ),
+                              validator: _validateEmail,
+                            ),
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            TextFormField(
+                              controller: _passwordController,
                               enabled: !isSubmitting,
                               obscureText: _obscurePassword,
-                              decoration: const InputDecoration(
-                                labelText: 'Confirmar senha',
-                                prefixIcon: Icon(Icons.lock_reset_outlined),
-                              ),
-                              validator: _validateConfirmPassword,
-                            ),
-                          ],
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          TextFormField(
-                            controller: _codigoController,
-                            enabled: !isSubmitting,
-                            textCapitalization: TextCapitalization.characters,
-                            decoration: const InputDecoration(
-                              labelText: 'Codigo do convite',
-                              prefixIcon: Icon(Icons.vpn_key_outlined),
-                            ),
-                            validator: _validateCode,
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.lg),
-                          FilledButton(
-                            onPressed: isSubmitting ? null : _submit,
-                            child: isSubmitting
-                                ? const SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    _createAccount
-                                        ? 'Criar conta e aceitar'
-                                        : 'Aceitar e entrar',
+                              decoration: InputDecoration(
+                                labelText: 'Senha',
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                  onPressed: isSubmitting
+                                      ? null
+                                      : () => setState(
+                                          () => _obscurePassword =
+                                              !_obscurePassword,
+                                        ),
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
                                   ),
-                          ),
-                          if (widget.onCancel != null) ...[
-                            const SizedBox(height: MetricSlateSpacing.sm),
-                            OutlinedButton(
-                              onPressed: isSubmitting ? null : widget.onCancel,
-                              child: const Text('Voltar'),
+                                ),
+                              ),
+                              validator: _validatePassword,
                             ),
+                            if (_createAccount) ...[
+                              const SizedBox(height: MetricSlateSpacing.md),
+                              TextFormField(
+                                controller: _confirmPasswordController,
+                                enabled: !isSubmitting,
+                                obscureText: _obscurePassword,
+                                decoration: const InputDecoration(
+                                  labelText: 'Confirmar senha',
+                                  prefixIcon: Icon(Icons.lock_reset_outlined),
+                                ),
+                                validator: _validateConfirmPassword,
+                              ),
+                            ],
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            TextFormField(
+                              controller: _codigoController,
+                              enabled: !isSubmitting,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: const InputDecoration(
+                                labelText: 'Codigo do convite',
+                                prefixIcon: Icon(Icons.vpn_key_outlined),
+                              ),
+                              validator: _validateCode,
+                            ),
+                            const SizedBox(height: MetricSlateSpacing.lg),
+                            FilledButton(
+                              onPressed: isSubmitting ? null : _submit,
+                              child: isSubmitting
+                                  ? const SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      _createAccount
+                                          ? 'Criar conta e aceitar'
+                                          : 'Aceitar e entrar',
+                                    ),
+                            ),
+                            if (widget.onCancel != null) ...[
+                              const SizedBox(height: MetricSlateSpacing.sm),
+                              OutlinedButton(
+                                onPressed: isSubmitting
+                                    ? null
+                                    : widget.onCancel,
+                                child: const Text('Voltar'),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -308,76 +313,79 @@ class _CompanyInviteEmailConfirmationScreenState
         final errorMsg = widget.viewModel.errorMessage;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Confirme o e-mail')),
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: TechReportCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const TechReportFormHeader(
-                          icon: Icons.mark_email_read_outlined,
-                          title: 'Conta criada',
-                          subtitle:
-                              'Confirme o e-mail antes de concluir o convite.',
-                        ),
-                        const SizedBox(height: MetricSlateSpacing.lg),
-                        SelectableText(
-                          'Enviamos a confirmacao para:\n${widget.email}\n\n'
-                          'Depois de confirmar o e-mail, volte ao login da empresa '
-                          'e entre com este e-mail e senha. O app vai concluir o '
-                          'convite automaticamente.\n\n'
-                          'Codigo salvo:\n${widget.codigoConvite}',
-                        ),
-                        if (successMsg != null) ...[
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          Container(
-                            padding: const EdgeInsets.all(
-                              MetricSlateSpacing.md,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.green.withOpacity(0.3),
+          backgroundColor: Colors.transparent,
+          body: HierarchicalBackground(
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: TechReportCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const TechReportFormHeader(
+                            icon: Icons.mark_email_read_outlined,
+                            title: 'Conta criada',
+                            subtitle:
+                                'Confirme o e-mail antes de concluir o convite.',
+                          ),
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          SelectableText(
+                            'Enviamos a confirmacao para:\n${widget.email}\n\n'
+                            'Depois de confirmar o e-mail, volte ao login da empresa '
+                            'e entre com este e-mail e senha. O app vai concluir o '
+                            'convite automaticamente.\n\n'
+                            'Codigo salvo:\n${widget.codigoConvite}',
+                          ),
+                          if (successMsg != null) ...[
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            Container(
+                              padding: const EdgeInsets.all(
+                                MetricSlateSpacing.md,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.green.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                successMsg,
+                                style: const TextStyle(color: Colors.green),
                               ),
                             ),
-                            child: Text(
-                              successMsg,
-                              style: const TextStyle(color: Colors.green),
-                            ),
+                          ],
+                          if (errorMsg != null) ...[
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            TechReportErrorBanner(message: errorMsg),
+                          ],
+                          const SizedBox(height: MetricSlateSpacing.lg),
+                          FilledButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Ja confirmei'),
+                          ),
+                          const SizedBox(height: MetricSlateSpacing.sm),
+                          OutlinedButton(
+                            onPressed: isResending
+                                ? null
+                                : () =>
+                                      widget.viewModel.resendConfirmationEmail(
+                                        email: widget.email,
+                                      ),
+                            child: isResending
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Reenviar confirmacao'),
                           ),
                         ],
-                        if (errorMsg != null) ...[
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          TechReportErrorBanner(message: errorMsg),
-                        ],
-                        const SizedBox(height: MetricSlateSpacing.lg),
-                        FilledButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Ja confirmei'),
-                        ),
-                        const SizedBox(height: MetricSlateSpacing.sm),
-                        OutlinedButton(
-                          onPressed: isResending
-                              ? null
-                              : () => widget.viewModel.resendConfirmationEmail(
-                                  email: widget.email,
-                                ),
-                          child: isResending
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Reenviar confirmacao'),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
