@@ -25,16 +25,29 @@ class UpdateOwnDisplayName {
       await _authRepository.updateOwnDisplayName(trimmed);
       return UpdateOwnDisplayNameResult(success: true, updatedName: trimmed);
     } on Exception catch (e) {
-      return UpdateOwnDisplayNameResult(
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('session') ||
+          msg.contains('unauthorized') ||
+          msg.contains('expir')) {
+        return const UpdateOwnDisplayNameResult(
+          success: false,
+          errorMessage: 'Sessão expirada. Entre novamente.',
+        );
+      }
+      return const UpdateOwnDisplayNameResult(
         success: false,
-        errorMessage: e.toString(),
+        errorMessage: 'Não foi possível salvar. Tente novamente.',
       );
     }
   }
 }
 
 class UpdateOwnDisplayNameResult {
-  const UpdateOwnDisplayNameResult({required this.success, this.errorMessage, this.updatedName});
+  const UpdateOwnDisplayNameResult({
+    required this.success,
+    this.errorMessage,
+    this.updatedName,
+  });
 
   final bool success;
   final String? errorMessage;
