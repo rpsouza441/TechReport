@@ -154,7 +154,12 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                         onPressed: widget.viewModel.isSubmitting
                             ? null
                             : _saveNome,
-                        icon: const Icon(Icons.check_outlined),
+                        icon: widget.viewModel.isSubmitting
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.check_outlined),
                         tooltip: 'Salvar',
                       ),
                       IconButton(
@@ -170,6 +175,18 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
                     children: [
                       Expanded(
                         child: Text(nome, style: theme.textTheme.titleMedium),
+                      ),
+                      IconButton(
+                        onPressed: widget.viewModel.isLoading
+                            ? null
+                            : widget.viewModel.load,
+                        icon: widget.viewModel.isLoading
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.refresh_outlined),
+                        tooltip: 'Atualizar',
                       ),
                       IconButton(
                         onPressed: _startEditNome,
