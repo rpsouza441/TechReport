@@ -413,6 +413,8 @@ class _RatFormScreenState extends State<RatFormScreen> {
         builder: (_) => RatPdfPreviewScreen(
           rat: previewData.rat,
           signatureBytes: previewData.signatureBytes,
+          empresaNome: previewData.empresaNome,
+          tecnicoNome: previewData.tecnicoNome,
           onShare: () async {
             await widget.viewModel.sharePdf();
             if (mounted) {

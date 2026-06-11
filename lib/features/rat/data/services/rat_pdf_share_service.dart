@@ -19,8 +19,16 @@ class RatPdfShareService {
 
   final AssinaturaRepository _assinaturaRepository;
 
-  Future<void> share(ShareRatLocallyResult shareData) async {
-    final pdfBytes = await _buildPdf(shareData);
+  Future<void> share(
+    ShareRatLocallyResult shareData, {
+    String? empresaNome,
+    String? tecnicoNome,
+  }) async {
+    final pdfBytes = await _buildPdf(
+      shareData,
+      empresaNome: empresaNome,
+      tecnicoNome: tecnicoNome,
+    );
     final file = await _saveTemporaryPdf(
       fileName: _pdfFileName(shareData.subject!),
       bytes: pdfBytes,
@@ -36,8 +44,16 @@ class RatPdfShareService {
   }
 
   /// Salva o PDF no dispositivo via seletor de arquivo (sem sheet de share).
-  Future<bool> exportToDevice(ShareRatLocallyResult shareData) async {
-    final pdfBytes = await _buildPdf(shareData);
+  Future<bool> exportToDevice(
+    ShareRatLocallyResult shareData, {
+    String? empresaNome,
+    String? tecnicoNome,
+  }) async {
+    final pdfBytes = await _buildPdf(
+      shareData,
+      empresaNome: empresaNome,
+      tecnicoNome: tecnicoNome,
+    );
     final fileName = _pdfFileName(shareData.subject!);
 
     final savedPath = await FilePicker.saveFile(
@@ -51,13 +67,13 @@ class RatPdfShareService {
     return savedPath != null;
   }
 
-  Future<Uint8List> _buildPdf(ShareRatLocallyResult shareData) async {
-    final assinaturaBytes = await _loadAssinaturaBytes(shareData.assinatura);
-    final rat = shareData.rat;
-    if (rat == null) {
-      throw StateError('RAT ausente para gerar PDF.');
-    }
-
+  /// Gera bytes do PDF para preview na tela — aceita empresa/técnico diretamente.
+  Future<Uint8List> buildPreviewBytes({
+    required Rat rat,
+    Uint8List? assinaturaBytes,
+    String? empresaNome,
+    String? tecnicoNome,
+  }) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -67,7 +83,7 @@ class RatPdfShareService {
         footer: (context) => _buildFooter(context),
         build: (context) {
           return [
-            _buildHeader(),
+            _buildHeader(empresaNome: empresaNome, tecnicoNome: tecnicoNome),
             pw.SizedBox(height: 24),
             _buildIdentificationSection(rat),
             pw.SizedBox(height: 18),
@@ -84,36 +100,94 @@ class RatPdfShareService {
     return pdf.save();
   }
 
-  pw.Widget _buildHeader() {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 16),
-      padding: const pw.EdgeInsets.only(bottom: 8),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(
-          bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
+  Future<Uint8List> _buildPdf(
+    ShareRatLocallyResult shareData, {
+    String? empresaNome,
+    String? tecnicoNome,
+  }) async {
+    final assinaturaBytes = await _loadAssinaturaBytes(shareData.assinatura);
+    final rat = shareData.rat;
+    if (rat == null) {
+      throw StateError('RAT ausente para gerar PDF.');
+    }
+
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        footer: (context) => _buildFooter(context),
+        build: (context) {
+          return [
+            _buildHeader(empresaNome: empresaNome, tecnicoNome: tecnicoNome),
+            pw.SizedBox(height: 24),
+            _buildIdentificationSection(rat),
+            pw.SizedBox(height: 18),
+            _buildDescriptionSection(rat),
+            pw.SizedBox(height: 18),
+            _buildEquipamentoSection(rat),
+            pw.SizedBox(height: 24),
+            _buildAssinaturaSection(assinaturaBytes),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  pw.Widget _buildHeader({String? empresaNome, String? tecnicoNome}) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 16),
+          padding: const pw.EdgeInsets.only(bottom: 8),
+          decoration: const pw.BoxDecoration(
+            border: pw.Border(
+              bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
+            ),
+          ),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text(
+                'TechReport',
+                style: pw.TextStyle(
+                  fontSize: 22,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                ),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 3),
+                child: pw.Text(
+                  'Relatório de Atendimento Técnico',
+                  style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.end,
-        children: [
-          pw.Text(
-            'TechReport',
-            style: pw.TextStyle(
-              fontSize: 22,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blue800,
-            ),
-          ),
-          pw.SizedBox(width: 8),
+        if (empresaNome != null)
           pw.Padding(
-            padding: const pw.EdgeInsets.only(bottom: 3),
+            padding: const pw.EdgeInsets.only(bottom: 2),
             child: pw.Text(
-              'Relatório de Atendimento Técnico',
-              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+              'Empresa: $empresaNome',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
             ),
           ),
-        ],
-      ),
+        if (tecnicoNome != null)
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 2),
+            child: pw.Text(
+              'Técnico: $tecnicoNome',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+            ),
+          ),
+      ],
     );
   }
 
@@ -191,14 +265,17 @@ class RatPdfShareService {
           pw.Container(
             height: 140,
             width: double.infinity,
-            padding: const pw.EdgeInsets.all(8),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey600),
+              border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
               borderRadius: pw.BorderRadius.circular(4),
             ),
-            child: pw.Image(
-              pw.MemoryImage(assinaturaBytes),
-              fit: pw.BoxFit.contain,
+            child: pw.Align(
+              alignment: pw.Alignment.topLeft,
+              child: pw.Image(
+                pw.MemoryImage(assinaturaBytes),
+                fit: pw.BoxFit.contain,
+              ),
             ),
           ),
       ],

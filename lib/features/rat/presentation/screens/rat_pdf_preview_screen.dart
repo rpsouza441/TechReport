@@ -14,12 +14,16 @@ class RatPdfPreviewScreen extends StatefulWidget {
     required this.onShare,
     required this.onSave,
     this.signatureBytes,
+    this.empresaNome,
+    this.tecnicoNome,
   });
 
   final Rat rat;
   final Uint8List? signatureBytes;
   final Future<void> Function() onShare;
   final Future<void> Function() onSave;
+  final String? empresaNome;
+  final String? tecnicoNome;
 
   @override
   State<RatPdfPreviewScreen> createState() => _RatPdfPreviewScreenState();
@@ -46,6 +50,8 @@ class _RatPdfPreviewScreenState extends State<RatPdfPreviewScreen> {
                 child: _A4DocumentPreview(
                   rat: widget.rat,
                   signatureBytes: widget.signatureBytes,
+                  empresaNome: widget.empresaNome,
+                  tecnicoNome: widget.tecnicoNome,
                 ),
               ),
             ),
@@ -110,10 +116,17 @@ class _RatPdfPreviewScreenState extends State<RatPdfPreviewScreen> {
 }
 
 class _A4DocumentPreview extends StatelessWidget {
-  const _A4DocumentPreview({required this.rat, this.signatureBytes});
+  const _A4DocumentPreview({
+    required this.rat,
+    this.signatureBytes,
+    this.empresaNome,
+    this.tecnicoNome,
+  });
 
   final Rat rat;
   final Uint8List? signatureBytes;
+  final String? empresaNome;
+  final String? tecnicoNome;
 
   @override
   Widget build(BuildContext context) {
@@ -247,32 +260,53 @@ class _A4DocumentPreview extends StatelessWidget {
   }
 
   Widget _buildHeader(ColorScheme scheme) {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF1565C0), width: 2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            'TechReport',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1565C0),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.only(bottom: 8),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFF1565C0), width: 2)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'TechReport',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1565C0),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  'Relatório de Atendimento Técnico',
+                  style: TextStyle(fontSize: 9, color: Colors.grey[600]),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (empresaNome != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2, top: 4),
+            child: Text(
+              'Empresa: $empresaNome',
+              style: TextStyle(fontSize: 8, color: Colors.grey[600]),
             ),
           ),
-          const SizedBox(width: 6),
+        if (tecnicoNome != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 2),
             child: Text(
-              'Relatório de Atendimento Técnico',
-              style: TextStyle(fontSize: 9, color: Colors.grey[600]),
+              'Técnico: $tecnicoNome',
+              style: TextStyle(fontSize: 8, color: Colors.grey[600]),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 

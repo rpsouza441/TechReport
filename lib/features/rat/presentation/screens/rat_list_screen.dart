@@ -258,6 +258,7 @@ class _RatListScreenState extends State<RatListScreen> {
       downloadRemoteRats: widget.downloadRemoteRats,
     );
 
+    await viewModel.loadSignatureStatus();
     final previewData = await viewModel.prepareForPdfPreview(persist: false);
     if (!mounted || previewData == null) {
       return;
@@ -270,6 +271,8 @@ class _RatListScreenState extends State<RatListScreen> {
         builder: (_) => RatPdfPreviewScreen(
           rat: previewData.rat,
           signatureBytes: previewData.signatureBytes,
+          empresaNome: previewData.empresaNome,
+          tecnicoNome: previewData.tecnicoNome,
           onShare: () async {
             final ok = await viewModel.sharePdf();
             if (!mounted) return;
