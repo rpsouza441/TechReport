@@ -63,124 +63,125 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
           body: HierarchicalBackground(
             child: SafeArea(
               child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: TechReportCard(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const TechReportFormHeader(
-                            icon: Icons.dns_outlined,
-                            title: 'Conectar ao servidor',
-                            subtitle:
-                                'Informe a URL do Supabase e a chave pública enviada pela empresa.',
-                          ),
-                          if (widget.viewModel.errorMessage != null) ...[
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: TechReportCard(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const TechReportFormHeader(
+                              icon: Icons.dns_outlined,
+                              title: 'Conectar ao servidor',
+                              subtitle:
+                                  'Informe a URL do Supabase e a chave pública enviada pela empresa.',
+                            ),
+                            if (widget.viewModel.errorMessage != null) ...[
+                              const SizedBox(height: MetricSlateSpacing.md),
+                              TechReportErrorBanner(
+                                message: widget.viewModel.errorMessage!,
+                              ),
+                            ],
+                            const SizedBox(height: MetricSlateSpacing.lg),
+                            TextFormField(
+                              controller: _urlController,
+                              enabled: !isSaving,
+                              decoration: const InputDecoration(
+                                labelText: 'URL do Supabase',
+                                hintText: 'https://seu-projeto.supabase.co',
+                                prefixIcon: Icon(Icons.link_outlined),
+                              ),
+                              keyboardType: TextInputType.url,
+                              textInputAction: TextInputAction.next,
+                              validator: _validateUrl,
+                            ),
                             const SizedBox(height: MetricSlateSpacing.md),
-                            TechReportErrorBanner(
-                              message: widget.viewModel.errorMessage!,
+                            TextFormField(
+                              controller: _publicKeyController,
+                              enabled: !isSaving,
+                              decoration: const InputDecoration(
+                                labelText: 'Anon/public key',
+                                prefixIcon: Icon(Icons.vpn_key_outlined),
+                              ),
+                              textInputAction: TextInputAction.done,
+                              validator: _validatePublicKey,
+                              onFieldSubmitted: (_) => _save(),
                             ),
-                          ],
-                          const SizedBox(height: MetricSlateSpacing.lg),
-                          TextFormField(
-                            controller: _urlController,
-                            enabled: !isSaving,
-                            decoration: const InputDecoration(
-                              labelText: 'URL do Supabase',
-                              hintText: 'https://seu-projeto.supabase.co',
-                              prefixIcon: Icon(Icons.link_outlined),
-                            ),
-                            keyboardType: TextInputType.url,
-                            textInputAction: TextInputAction.next,
-                            validator: _validateUrl,
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          TextFormField(
-                            controller: _publicKeyController,
-                            enabled: !isSaving,
-                            decoration: const InputDecoration(
-                              labelText: 'Anon/public key',
-                              prefixIcon: Icon(Icons.vpn_key_outlined),
-                            ),
-                            textInputAction: TextInputAction.done,
-                            validator: _validatePublicKey,
-                            onFieldSubmitted: (_) => _save(),
-                          ),
-                          const SizedBox(height: MetricSlateSpacing.md),
-                          OutlinedButton.icon(
-                            onPressed: isTesting || isSaving
-                                ? null
-                                : _testConnection,
-                            icon: isTesting
-                                ? SizedBox.square(
-                                    dimension: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                            const SizedBox(height: MetricSlateSpacing.md),
+                            OutlinedButton.icon(
+                              onPressed: isTesting || isSaving
+                                  ? null
+                                  : _testConnection,
+                              icon: isTesting
+                                  ? SizedBox.square(
+                                      dimension: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.wifi_find_outlined,
+                                      size: 18,
                                     ),
-                                  )
-                                : const Icon(
-                                    Icons.wifi_find_outlined,
-                                    size: 18,
-                                  ),
-                            label: Text(
-                              isTesting
-                                  ? 'Testando...'
-                                  : widget.viewModel.isTestSuccess
-                                  ? 'Conexão validada'
-                                  : 'Testar conexão',
+                              label: Text(
+                                isTesting
+                                    ? 'Testando...'
+                                    : widget.viewModel.isTestSuccess
+                                    ? 'Conexão validada'
+                                    : 'Testar conexão',
+                              ),
                             ),
-                          ),
-                          if (widget.viewModel.isTestSuccess) ...[
-                            const SizedBox(height: MetricSlateSpacing.xs),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_outline,
-                                  size: 16,
-                                  color: Colors.green,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Conexão validada. Salve para continuar.',
-                                  style: TextStyle(
-                                    fontSize: 12,
+                            if (widget.viewModel.isTestSuccess) ...[
+                              const SizedBox(height: MetricSlateSpacing.xs),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 16,
                                     color: Colors.green,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: MetricSlateSpacing.lg),
-                          FilledButton.icon(
-                            onPressed:
-                                isSaving || !widget.viewModel.isTestSuccess
-                                ? null
-                                : _save,
-                            icon: isSaving
-                                ? SizedBox.square(
-                                    dimension: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: scheme.onPrimary,
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Conexão validada. Salve para continuar.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.green,
                                     ),
-                                  )
-                                : const Icon(Icons.save_outlined, size: 20),
-                            label: Text(
-                              isSaving ? 'Salvando...' : 'Salvar servidor',
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: MetricSlateSpacing.lg),
+                            FilledButton.icon(
+                              onPressed:
+                                  isSaving || !widget.viewModel.isTestSuccess
+                                      ? null
+                                      : _save,
+                              icon: isSaving
+                                  ? SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: scheme.onPrimary,
+                                      ),
+                                    )
+                                  : const Icon(Icons.save_outlined, size: 20),
+                              label: Text(
+                                isSaving ? 'Salvando...' : 'Salvar servidor',
+                              ),
                             ),
-                          ),
-                          if (widget.onExit != null) ...[
-                            const SizedBox(height: MetricSlateSpacing.sm),
-                            OutlinedButton(
-                              onPressed: isSaving ? null : widget.onExit,
-                              child: const Text('Voltar'),
-                            ),
+                            if (widget.onExit != null) ...[
+                              const SizedBox(height: MetricSlateSpacing.sm),
+                              OutlinedButton(
+                                onPressed: isSaving ? null : widget.onExit,
+                                child: const Text('Voltar'),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -188,7 +189,7 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
               ),
             ),
           ),
-        ),
+        );
       },
     );
   }

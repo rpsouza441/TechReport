@@ -73,7 +73,7 @@ class AppModeChoiceScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
+            )),
           ),
         );
       },
