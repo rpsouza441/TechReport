@@ -23,6 +23,12 @@ class RatListViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Paginação
+  static const int _pageSize = 30;
+  int _offset = 0;
+  bool _hasMorePages = true;
+  bool _isLoadingMore = false;
+
   // Filtros em memória
   String _query = '';
   RatStatus? _statusFilter;
@@ -31,6 +37,8 @@ class RatListViewModel extends ChangeNotifier {
 
   List<Rat> get rats => _rats;
   bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMorePages => _hasMorePages;
   String? get errorMessage => _errorMessage;
   bool get isEmpty => _rats.isEmpty;
   String get query => _query;
@@ -45,23 +53,27 @@ class RatListViewModel extends ChangeNotifier {
 
   void setQuery(String value) {
     _query = value;
+    _resetPagination();
     notifyListeners();
   }
 
   void setStatusFilter(RatStatus? status) {
     _statusFilter = status;
+    _resetPagination();
     notifyListeners();
   }
 
   void setDateRange({DateTime? from, DateTime? to}) {
     _dateFrom = from;
     _dateTo = to;
+    _resetPagination();
     notifyListeners();
   }
 
   void clearDateRange() {
     _dateFrom = null;
     _dateTo = null;
+    _resetPagination();
     notifyListeners();
   }
 
@@ -70,6 +82,7 @@ class RatListViewModel extends ChangeNotifier {
     _statusFilter = null;
     _dateFrom = null;
     _dateTo = null;
+    _resetPagination();
     notifyListeners();
   }
 
@@ -118,31 +131,72 @@ class RatListViewModel extends ChangeNotifier {
   }
 
   Future<void> load() async {
+    _offset = 0;
+    _hasMorePages = true;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      switch (_scope.type) {
-        case RatListScopeType.local:
-          _rats = await _ratRepository.listLocal();
-        case RatListScopeType.companyTechnician:
-          _rats = await _ratRepository.listCompanyForTechnician(
-            empresaId: _scope.empresaId!,
-            tecnicoId: _scope.tecnicoId!,
-          );
-        case RatListScopeType.companyManager:
-          _rats = await _ratRepository.listCompanyForManager(
-            empresaId: _scope.empresaId!,
-          );
-      }
+      final page = await _fetchPage(_pageSize, 0);
+      _rats = page;
+      _hasMorePages = page.length == _pageSize;
 
       _signedRatIds = await _loadSignedRatIds(_rats);
     } catch (_) {
-      _errorMessage = 'Não foi possível carregar os RATs.';
+      _errorMessage = 'Nao foi possivel carregar os RATs.';
     }
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !_hasMorePages) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      final nextOffset = _offset + _pageSize;
+      final page = await _fetchPage(_pageSize, nextOffset);
+
+      _rats = [..._rats, ...page];
+      _offset = nextOffset;
+      _hasMorePages = page.length == _pageSize;
+
+      final moreIds = await _loadSignedRatIds(page);
+      _signedRatIds = {..._signedRatIds, ...moreIds};
+    } catch (_) {
+      // Silently fail — user can scroll again to retry
+    }
+    _isLoadingMore = false;
+    notifyListeners();
+  }
+
+  void _resetPagination() {
+    _offset = 0;
+    _hasMorePages = true;
+    _rats = [];
+  }
+
+  Future<List<Rat>> _fetchPage(int limit, int offset) async {
+    switch (_scope.type) {
+      case RatListScopeType.local:
+        return _ratRepository.listLocalPage(limit: limit, offset: offset);
+      case RatListScopeType.companyTechnician:
+        return _ratRepository.listCompanyForTechnicianPage(
+          empresaId: _scope.empresaId!,
+          tecnicoId: _scope.tecnicoId!,
+          limit: limit,
+          offset: offset,
+        );
+      case RatListScopeType.companyManager:
+        return _ratRepository.listCompanyForManagerPage(
+          empresaId: _scope.empresaId!,
+          limit: limit,
+          offset: offset,
+        );
+    }
   }
 
   Future<Set<String>> _loadSignedRatIds(List<Rat> rats) async {

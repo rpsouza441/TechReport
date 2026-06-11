@@ -72,6 +72,25 @@ class DriftRatRepository implements RatRepository {
   }
 
   @override
+  Future<List<domain.Rat>> listLocalPage({
+    required int limit,
+    required int offset,
+  }) async {
+    final rows =
+        await (_database.select(_database.rats)
+              ..where(
+                (tbl) =>
+                    tbl.deletedAt.isNull() &
+                    tbl.ownerType.equals(RatOwnerType.localTecnico.name),
+              )
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+              ..limit(limit, offset: offset))
+            .get();
+
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
   Future<List<domain.Rat>> listCompanyForTechnician({
     required String empresaId,
     required String tecnicoId,
@@ -92,6 +111,29 @@ class DriftRatRepository implements RatRepository {
   }
 
   @override
+  Future<List<domain.Rat>> listCompanyForTechnicianPage({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    required int offset,
+  }) async {
+    final rows =
+        await (_database.select(_database.rats)
+              ..where(
+                (tbl) =>
+                    tbl.deletedAt.isNull() &
+                    tbl.ownerType.equals(RatOwnerType.companyTecnico.name) &
+                    tbl.empresaId.equals(empresaId) &
+                    tbl.tecnicoId.equals(tecnicoId),
+              )
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+              ..limit(limit, offset: offset))
+            .get();
+
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
   Future<List<domain.Rat>> listCompanyForManager({
     required String empresaId,
   }) async {
@@ -104,6 +146,27 @@ class DriftRatRepository implements RatRepository {
                     tbl.empresaId.equals(empresaId),
               )
               ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]))
+            .get();
+
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
+  Future<List<domain.Rat>> listCompanyForManagerPage({
+    required String empresaId,
+    required int limit,
+    required int offset,
+  }) async {
+    final rows =
+        await (_database.select(_database.rats)
+              ..where(
+                (tbl) =>
+                    tbl.deletedAt.isNull() &
+                    tbl.ownerType.equals(RatOwnerType.companyTecnico.name) &
+                    tbl.empresaId.equals(empresaId),
+              )
+              ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+              ..limit(limit, offset: offset))
             .get();
 
     return rows.map(_toEntity).toList();

@@ -118,6 +118,12 @@ class _StubRatRepository implements RatRepository {
   Future<List<Rat>> listLocal() async => rats;
 
   @override
+  Future<List<Rat>> listLocalPage({required int limit, required int offset}) async {
+    if (offset >= rats.length) return [];
+    return rats.skip(offset).take(limit).toList();
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

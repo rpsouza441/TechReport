@@ -8,12 +8,27 @@ abstract class RatRepository {
 
   Future<List<Rat>> listLocal();
 
+  Future<List<Rat>> listLocalPage({required int limit, required int offset});
+
   Future<List<Rat>> listCompanyForTechnician({
     required String empresaId,
     required String tecnicoId,
   });
 
+  Future<List<Rat>> listCompanyForTechnicianPage({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    required int offset,
+  });
+
   Future<List<Rat>> listCompanyForManager({required String empresaId});
+
+  Future<List<Rat>> listCompanyForManagerPage({
+    required String empresaId,
+    required int limit,
+    required int offset,
+  });
 
   Future<void> save(Rat rat);
 

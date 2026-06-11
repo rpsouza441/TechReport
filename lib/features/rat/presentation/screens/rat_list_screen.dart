@@ -55,10 +55,30 @@ class RatListScreen extends StatefulWidget {
 }
 
 class _RatListScreenState extends State<RatListScreen> {
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     widget.viewModel.load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (maxScroll - currentScroll <= 200) {
+      widget.viewModel.loadMore();
+    }
   }
 
   @override
@@ -169,6 +189,7 @@ class _RatListScreenState extends State<RatListScreen> {
           child: RefreshIndicator(
             onRefresh: _syncNow,
             child: ListView.separated(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
                 MetricSlateSpacing.md,
@@ -176,10 +197,21 @@ class _RatListScreenState extends State<RatListScreen> {
                 MetricSlateSpacing.md,
                 88,
               ),
-              itemCount: rats.length,
+              itemCount: rats.length + (widget.viewModel.isLoadingMore ? 1 : 0),
               separatorBuilder: (_, _) =>
                   const SizedBox(height: MetricSlateSpacing.sm),
               itemBuilder: (context, index) {
+                if (index >= rats.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
                 final rat = rats[index];
                 return RatListItemCard(
                   rat: rat,
