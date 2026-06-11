@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/remote_server_config_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
@@ -53,9 +54,15 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
         final isTesting = widget.viewModel.isTesting;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Configurar servidor')),
-          body: SafeArea(
-            child: Center(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('Configurar servidor'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+          ),
+          body: HierarchicalBackground(
+            child: SafeArea(
+              child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(MetricSlateSpacing.lg),
                 child: ConstrainedBox(
@@ -181,7 +188,7 @@ class _RemoteServerConfigScreenState extends State<RemoteServerConfigScreen> {
               ),
             ),
           ),
-        );
+        ),
       },
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/company_sign_in_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 
 class CompanySignInScreen extends StatefulWidget {
@@ -47,19 +48,8 @@ class _CompanySignInScreenState extends State<CompanySignInScreen> {
         final isSubmitting = widget.viewModel.isSubmitting;
 
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  scheme.surface,
-                  scheme.surface.withValues(alpha: 0.92),
-                  scheme.surfaceContainerLow,
-                ],
-                stops: const [0.0, 0.5, 1.0],
-              ),
-            ),
+          backgroundColor: Colors.transparent,
+          body: HierarchicalBackground(
             child: SafeArea(
               child: Center(
                 child: SingleChildScrollView(

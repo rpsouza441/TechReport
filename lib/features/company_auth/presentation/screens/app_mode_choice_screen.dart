@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/app_mode_choice_view_model.dart';
+import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 
 class AppModeChoiceScreen extends StatelessWidget {
@@ -21,9 +22,11 @@ class AppModeChoiceScreen extends StatelessWidget {
       animation: viewModel,
       builder: (context, _) {
         return Scaffold(
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
+          backgroundColor: Colors.transparent,
+          body: HierarchicalBackground(
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
                 padding: const EdgeInsets.all(MetricSlateSpacing.lg),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 480),
