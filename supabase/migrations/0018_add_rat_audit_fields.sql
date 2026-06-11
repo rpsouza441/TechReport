@@ -7,7 +7,7 @@
 --   (não tecnico_id) — mais direto para auditoria de segurança.
 --
 -- Decisões aplicadas (PO-05 / PM-02):
--- - Backfill apenas com dado confiável (author_id onde existe).
+-- - Backfill apenas com dado confiável (criado_por_user_id onde existe).
 -- - Campos de reabertura/invalidação ficam NULL para RATs existentes.
 
 begin;
@@ -42,16 +42,16 @@ alter table public.rats
     references auth.users(id)
     on delete set null;
 
--- Backfill: ultimo_alterador_user_id recebe author_id onde existe.
--- author_id representa o usuário que criou a RAT — dado confiável
+-- Backfill: ultimo_alterador_user_id recebe criado_por_user_id onde existe.
+-- criado_por_user_id representa o usuário que criou a RAT — dado confiável
 -- para RATs que nunca foram editadas por terceiros.
 update public.rats
 set
-  ultimo_alterador_user_id = author_id,
+  ultimo_alterador_user_id = criado_por_user_id,
   ultima_alteracao_em = updated_at
 where
   ultimo_alterador_user_id is null
-  and author_id is not null;
+  and criado_por_user_id is not null;
 
 -- Campos de reabertura ficam NULL para RATs existentes.
 -- Não há dado confiável para backfill desses campos.
