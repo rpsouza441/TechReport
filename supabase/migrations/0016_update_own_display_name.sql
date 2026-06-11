@@ -18,11 +18,12 @@
 --   - self-update: próprio registro ativo
 -- Em uma única policy para evitar "multiple permissive policies".
 -- ─────────────────────────────────────────────────────────────
-drop policy if exists "tecnicos_update_by_admin" on tecnicos;
-drop policy if exists "tecnicos_update_own_nome" on tecnicos;
+drop policy if exists "tecnicos_update_by_admin" on public.tecnicos;
+drop policy if exists "tecnicos_update_own_nome" on public.tecnicos;
+drop policy if exists "tecnicos_update" on public.tecnicos;
 
 create policy "tecnicos_update"
-  on tecnicos
+  on public.tecnicos
   for update
   to authenticated
   using (
@@ -50,10 +51,10 @@ create policy "tecnicos_update"
   );
 
 -- ── app_admins: permitir self-update do campo nome ──────────
-drop policy if exists "app_admins_update_own_nome" on app_admins;
+drop policy if exists "app_admins_update_own_nome" on public.app_admins;
 
 create policy "app_admins_update_own_nome"
-  on app_admins
+  on public.app_admins
   for update
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
