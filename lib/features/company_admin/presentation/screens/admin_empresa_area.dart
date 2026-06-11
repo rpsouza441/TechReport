@@ -644,64 +644,46 @@ class _TecnicoActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final theme = Theme.of(context);
+
+    return Wrap(
+      spacing: MetricSlateSpacing.xxs,
+      runSpacing: MetricSlateSpacing.xxs,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        SizedBox(
-          width: 112,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: TechReportStatusChip(
-              label: ativo ? 'Ativo' : 'Inativo',
-              tone: ativo
-                  ? TechReportStatusTone.success
-                  : TechReportStatusTone.neutral,
+        TechReportStatusChip(
+          label: ativo ? 'Ativo' : 'Inativo',
+          tone: ativo
+              ? TechReportStatusTone.success
+              : TechReportStatusTone.neutral,
+        ),
+        if (canManage) ...[
+          ActionChip(
+            label: Text(ativo ? 'Desativar' : 'Ativar'),
+            avatar: Icon(
+              ativo ? Icons.cancel_outlined : Icons.check_circle,
+              size: 16,
+              color: ativo
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.primary,
             ),
+            onPressed: () => onToggleAtivo(!ativo),
           ),
-        ),
-        SizedBox(
-          width: 40,
-          height: 40,
-          child: canManage
-              ? PopupMenuButton<String>(
-                  padding: EdgeInsets.zero,
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'activate':
-                        onToggleAtivo(true);
-                      case 'deactivate':
-                        onToggleAtivo(false);
-                      case 'must_change_on':
-                        onToggleMustChangePassword(true);
-                      case 'must_change_off':
-                        onToggleMustChangePassword(false);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    if (!ativo)
-                      const PopupMenuItem(
-                        value: 'activate',
-                        child: Text('Ativar'),
-                      ),
-                    if (ativo)
-                      const PopupMenuItem(
-                        value: 'deactivate',
-                        child: Text('Desativar'),
-                      ),
-                    if (!mustChangePassword)
-                      const PopupMenuItem(
-                        value: 'must_change_on',
-                        child: Text('Exigir troca de senha'),
-                      ),
-                    if (mustChangePassword)
-                      const PopupMenuItem(
-                        value: 'must_change_off',
-                        child: Text('Remover exigência de senha'),
-                      ),
-                  ],
-                )
-              : null,
-        ),
+          ActionChip(
+            label: Text(mustChangePassword ? 'Senha OK' : 'Exigir senha'),
+            avatar: Icon(
+              Icons.key_outlined,
+              size: 16,
+              color: mustChangePassword
+                  ? theme.colorScheme.onErrorContainer
+                  : theme.colorScheme.outline,
+            ),
+            backgroundColor: mustChangePassword
+                ? theme.colorScheme.errorContainer
+                : null,
+            onPressed: () => onToggleMustChangePassword(!mustChangePassword),
+          ),
+        ],
       ],
     );
   }
