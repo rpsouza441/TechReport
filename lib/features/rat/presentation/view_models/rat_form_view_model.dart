@@ -184,6 +184,10 @@ class RatFormViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? empresaNome;
+
+  String? get tecnicoNome => _remoteSession?.nome;
+
   String? validate() {
     if (clienteNome.trim().isEmpty) {
       return 'Informe o cliente.';
@@ -514,6 +518,8 @@ class RatFormViewModel extends ChangeNotifier {
     return PdfPreviewData(
       rat: shareData.rat!,
       signatureBytes: _signaturePreviewBytes,
+      empresaNome: empresaNome,
+      tecnicoNome: tecnicoNome,
     );
   }
 
@@ -666,8 +672,15 @@ int _minutesSinceMidnight(String value) {
 }
 
 class PdfPreviewData {
-  const PdfPreviewData({required this.rat, this.signatureBytes});
+  const PdfPreviewData({
+    required this.rat,
+    this.signatureBytes,
+    this.empresaNome,
+    this.tecnicoNome,
+  });
 
   final Rat rat;
   final Uint8List? signatureBytes;
+  final String? empresaNome;
+  final String? tecnicoNome;
 }
