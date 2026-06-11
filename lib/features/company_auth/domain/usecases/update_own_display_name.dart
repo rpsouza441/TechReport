@@ -23,7 +23,7 @@ class UpdateOwnDisplayName {
 
     try {
       await _authRepository.updateOwnDisplayName(trimmed);
-      return const UpdateOwnDisplayNameResult(success: true);
+      return UpdateOwnDisplayNameResult(success: true, updatedName: trimmed);
     } on Exception catch (e) {
       return UpdateOwnDisplayNameResult(
         success: false,
@@ -34,8 +34,9 @@ class UpdateOwnDisplayName {
 }
 
 class UpdateOwnDisplayNameResult {
-  const UpdateOwnDisplayNameResult({required this.success, this.errorMessage});
+  const UpdateOwnDisplayNameResult({required this.success, this.errorMessage, this.updatedName});
 
   final bool success;
   final String? errorMessage;
+  final String? updatedName;
 }

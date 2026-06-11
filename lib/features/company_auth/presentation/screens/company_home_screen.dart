@@ -4,6 +4,7 @@ import 'package:techreport/app/theme/app_theme_variant.dart';
 import 'package:techreport/app/theme/app_theme_view_model.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
+import 'package:techreport/features/company_auth/domain/repositories/remote_session_repository.dart';
 import 'package:techreport/features/company_auth/domain/usecases/change_company_password.dart';
 import 'package:techreport/features/company_auth/domain/usecases/update_own_display_name.dart';
 import 'package:techreport/features/company_auth/presentation/view_models/company_account_view_model.dart';
@@ -44,6 +45,8 @@ class _CompanyHomeScreenState extends State<CompanyHomeScreen> {
       updateOwnDisplayName: UpdateOwnDisplayName(
         authRepository: widget.scope.authRepository,
       ),
+      remoteSessionRepository: widget.scope.remoteSessionRepository,
+      sessionNotifier: widget.sessionNotifier,
     );
     widget.sessionNotifier.addListener(_onSessionChanged);
   }
