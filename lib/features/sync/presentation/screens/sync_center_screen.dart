@@ -210,12 +210,12 @@ class _SyncItemCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${item.entityType.name.toUpperCase()} · ${item.operation.name}',
+                      _itemTitle(item),
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: MetricSlateSpacing.xxs),
                     Text(
-                      'Tentativas: ${item.attempts} · ${_formatDate(item.updatedAt)}',
+                      _itemSubtitle(item),
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -258,6 +258,34 @@ class _SyncItemCard extends StatelessWidget {
       SyncItemStatus.failed => Icon(Icons.error_outline, color: scheme.error),
     };
   }
+}
+
+String _entityTypeLabel(SyncEntityType type) {
+  return switch (type) {
+    SyncEntityType.rat => 'RAT',
+    SyncEntityType.assinatura => 'Assinatura',
+  };
+}
+
+String? _operationLabel(SyncOperation op) {
+  return switch (op) {
+    SyncOperation.upsert => null,
+    SyncOperation.delete => 'exclusão',
+  };
+}
+
+String _itemTitle(SyncItem item) {
+  final label = _entityTypeLabel(item.entityType);
+  final op = _operationLabel(item.operation);
+  return op == null ? label : '$label · $op';
+}
+
+String _itemSubtitle(SyncItem item) {
+  final date = _formatDate(item.updatedAt);
+  if (item.status == SyncItemStatus.synced) {
+    return date;
+  }
+  return 'Tentativas: ${item.attempts} · $date';
 }
 
 String _syncItemStatusLabel(SyncItemStatus status) {

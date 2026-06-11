@@ -40,8 +40,18 @@ class SyncCenterViewModel extends ChangeNotifier {
   List<SyncItem> get failed =>
       _items.where((i) => i.status == SyncItemStatus.failed).toList();
 
-  List<SyncItem> get synced =>
-      _items.where((i) => i.status == SyncItemStatus.synced).toList();
+  List<SyncItem> get synced {
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+    final syncedItems = _items
+        .where(
+          (i) =>
+              i.status == SyncItemStatus.synced &&
+              i.updatedAt.isAfter(sevenDaysAgo),
+        )
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return syncedItems.take(50).toList();
+  }
 
   bool get hasActionable => pending.isNotEmpty || failed.isNotEmpty;
 

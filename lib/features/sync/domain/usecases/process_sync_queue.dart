@@ -1,4 +1,6 @@
+import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/remote_rat_repository.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/features/signature/domain/repositories/remote_assinatura_repository.dart';
 import 'package:techreport/features/sync/domain/entities/sync_item.dart';
@@ -9,10 +11,12 @@ class ProcessSyncQueue {
   ProcessSyncQueue({
     required SyncQueueRepository queueRepository,
     required RemoteRatRepository remoteRatRepository,
+    required RatRepository ratRepository,
     required AssinaturaRepository assinaturaRepository,
     required RemoteAssinaturaRepository remoteAssinaturaRepository,
   }) : _queueRepository = queueRepository,
        _remoteRatRepository = remoteRatRepository,
+       _ratRepository = ratRepository,
        _processAssinaturaSync = ProcessAssinaturaSync(
          assinaturaRepository: assinaturaRepository,
          remoteAssinaturaRepository: remoteAssinaturaRepository,
@@ -20,6 +24,7 @@ class ProcessSyncQueue {
 
   final SyncQueueRepository _queueRepository;
   final RemoteRatRepository _remoteRatRepository;
+  final RatRepository _ratRepository;
   final ProcessAssinaturaSync _processAssinaturaSync;
 
   Future<void> call({
@@ -59,8 +64,24 @@ class ProcessSyncQueue {
     switch (item.operation) {
       case SyncOperation.upsert:
         await _remoteRatRepository.upsertFromPayload(item.payload);
+        await _markRatSynced(item);
       case SyncOperation.delete:
         await _remoteRatRepository.softDeleteFromPayload(item.payload);
+    }
+  }
+
+  Future<void> _markRatSynced(SyncItem item) async {
+    try {
+      final rat = await _ratRepository.getById(item.entityId);
+      if (rat != null) {
+        final synced = rat.copyWith(
+          syncStatus: RatSyncStatus.synced,
+        );
+        await _ratRepository.save(synced);
+      }
+    } catch (_) {
+      // RAT local pode não existir (ex.: deletada entre sync e leitura).
+      // Não bloqueia o sync — a RAT remota já foi atualizada.
     }
   }
 }

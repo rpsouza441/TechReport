@@ -227,6 +227,7 @@ class AppScope {
       final processSyncQueue = ProcessSyncQueue(
         queueRepository: syncQueueRepository,
         remoteRatRepository: remoteRatRepository,
+        ratRepository: ratRepository,
         assinaturaRepository: assinaturaRepository,
         remoteAssinaturaRepository: remoteAssinaturaRepository,
       );
