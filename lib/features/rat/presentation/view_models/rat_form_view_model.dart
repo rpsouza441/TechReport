@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
+import 'package:techreport/features/rat/domain/permissions/rat_permissions.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
@@ -59,6 +60,8 @@ class RatFormViewModel extends ChangeNotifier {
        _downloadRemoteRats = downloadRemoteRats,
        _isSaved = initialRat != null;
 
+  static const _permissions = RatPermissions();
+
   final RatRepository _ratRepository;
   final AssinaturaRepository _assinaturaRepository;
   final LocalSignatureAssetStore _localSignatureAssetStore;
@@ -101,32 +104,27 @@ class RatFormViewModel extends ChangeNotifier {
   bool get isEditing => _initialRat != null;
   bool get shouldReloadOnClose => _isSaved;
   Uint8List? get signaturePreviewBytes => _signaturePreviewBytes;
+
+  /// True quando o formulário deve ser exibido em modo somente leitura.
+  ///
+  /// Técnico não-dono (que não é gerente/admin) abre RAT de outro em modo
+  /// somente leitura — campos desabilitados, sem botão salvar.
+  bool get isReadOnly {
+    final initialRat = _initialRat;
+    if (initialRat == null) return false;
+    return !_permissions.canEdit(initialRat, _remoteSession);
+  }
+
   bool get canDelete {
     final initialRat = _initialRat;
-    if (initialRat == null) {
-      return false;
-    }
-
-    final remoteSession = _remoteSession;
-    if (remoteSession == null) {
-      return true;
-    }
-
-    return initialRat.tecnicoId == remoteSession.tecnicoId;
+    if (initialRat == null) return false;
+    return _permissions.canDelete(initialRat, _remoteSession);
   }
 
   bool get canEdit {
     final initialRat = _initialRat;
-    if (initialRat == null) {
-      return true;
-    }
-
-    final remoteSession = _remoteSession;
-    if (remoteSession == null) {
-      return true;
-    }
-
-    return initialRat.tecnicoId == remoteSession.tecnicoId;
+    if (initialRat == null) return true;
+    return _permissions.canEdit(initialRat, _remoteSession);
   }
 
   void setClienteNome(String value) {

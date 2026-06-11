@@ -117,6 +117,38 @@ class _RatFormScreenState extends State<RatFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (vm.isReadOnly)
+                      Container(
+                        margin: const EdgeInsets.only(
+                          bottom: MetricSlateSpacing.md,
+                        ),
+                        padding: const EdgeInsets.all(MetricSlateSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lock_outline,
+                              size: 18,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: MetricSlateSpacing.xs),
+                            Expanded(
+                              child: Text(
+                                'Somente leitura — você não pode editar esta RAT.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     _FormSection(
                       title: 'Cliente e visita',
                       children: [
