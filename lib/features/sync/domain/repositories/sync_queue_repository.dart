@@ -17,6 +17,13 @@ abstract class SyncQueueRepository {
 
   Future<void> markProcessing(String id);
 
+  /// Tenta marcar o item como 'processing' apenas se o status atual for
+  /// 'pending'. Retorna true se o lock foi adquirido, false se o item já
+  /// estava sendo processado por outro ou não existia.
+  /// Implementa lock otimista para evitar processamento concorrente do mesmo
+  /// item.
+  Future<bool> tryMarkProcessing(String id);
+
   Future<void> markSynced(String id);
 
   Future<void> markFailed({

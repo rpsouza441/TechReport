@@ -50,6 +50,8 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
   @override
   Future<void> markProcessing(String id) async {}
   @override
+  Future<bool> tryMarkProcessing(String id) async => true;
+  @override
   Future<void> markSynced(String id) async {}
   @override
   Future<void> markFailed({

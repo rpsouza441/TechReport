@@ -132,6 +132,9 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   Future<List<Assinatura>> listByRatId(String ratId) async => [];
 
   @override
+  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async => {};
+
+  @override
   Future<Uint8List?> readBytes(String id) async => null;
 
   @override

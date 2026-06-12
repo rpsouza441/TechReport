@@ -300,51 +300,55 @@ class _RatListScreenState extends State<RatListScreen> {
       supabaseClientFactory: widget.supabaseClientFactory,
     );
 
-    await viewModel.loadSignatureStatus();
-    final previewData = await viewModel.prepareForPdfPreview(persist: false);
-    if (!mounted || previewData == null) {
-      return;
-    }
+    try {
+      await viewModel.loadSignatureStatus();
+      final previewData = await viewModel.prepareForPdfPreview(persist: false);
+      if (!mounted || previewData == null) {
+        return;
+      }
 
-    final messenger = ScaffoldMessenger.of(context);
+      final messenger = ScaffoldMessenger.of(context);
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => RatPdfPreviewScreen(
-          rat: previewData.rat,
-          signatureBytes: previewData.signatureBytes,
-          assinaturaPendente: previewData.assinaturaPendente,
-          empresaNome: previewData.empresaNome,
-          tecnicoNome: previewData.tecnicoNome,
-          onShare: () async {
-            final ok = await viewModel.sharePdf();
-            if (!mounted) return;
-            if (ok) {
-              messenger.showSnackBar(
-                const SnackBar(content: Text('PDF pronto para envio.')),
-              );
-            } else if (viewModel.errorMessage != null) {
-              messenger.showSnackBar(
-                SnackBar(content: Text(viewModel.errorMessage!)),
-              );
-            }
-          },
-          onSave: () async {
-            final ok = await viewModel.savePdf();
-            if (!mounted) return;
-            if (ok) {
-              messenger.showSnackBar(
-                const SnackBar(content: Text('PDF salvo no dispositivo.')),
-              );
-            } else if (viewModel.errorMessage != null) {
-              messenger.showSnackBar(
-                SnackBar(content: Text(viewModel.errorMessage!)),
-              );
-            }
-          },
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => RatPdfPreviewScreen(
+            rat: previewData.rat,
+            signatureBytes: previewData.signatureBytes,
+            assinaturaPendente: previewData.assinaturaPendente,
+            empresaNome: previewData.empresaNome,
+            tecnicoNome: previewData.tecnicoNome,
+            onShare: () async {
+              final ok = await viewModel.sharePdf();
+              if (!mounted) return;
+              if (ok) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('PDF pronto para envio.')),
+                );
+              } else if (viewModel.errorMessage != null) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text(viewModel.errorMessage!)),
+                );
+              }
+            },
+            onSave: () async {
+              final ok = await viewModel.savePdf();
+              if (!mounted) return;
+              if (ok) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('PDF salvo no dispositivo.')),
+                );
+              } else if (viewModel.errorMessage != null) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text(viewModel.errorMessage!)),
+                );
+              }
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      viewModel.dispose();
+    }
   }
 
   Future<void> _syncNow() async {

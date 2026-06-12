@@ -27,6 +27,8 @@ class ProcessSyncQueue {
   final RatRepository _ratRepository;
   final ProcessAssinaturaSync _processAssinaturaSync;
 
+  static const int maxAttempts = 5;
+
   Future<void> call({
     required String empresaId,
     required String usuarioId,
@@ -39,7 +41,17 @@ class ProcessSyncQueue {
     );
 
     for (final item in items) {
-      await _queueRepository.markProcessing(item.id);
+      if (item.attempts >= maxAttempts) {
+        await _queueRepository.markFailed(
+          id: item.id,
+          errorMessage: 'Limite de tentativas excedido',
+          nextAttemptAt: DateTime.now().add(const Duration(days: 30)),
+        );
+        continue;
+      }
+
+      final locked = await _queueRepository.tryMarkProcessing(item.id);
+      if (!locked) continue; // já está sendo processado por outro
 
       try {
         switch (item.entityType) {

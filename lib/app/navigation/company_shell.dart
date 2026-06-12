@@ -66,6 +66,8 @@ class _CompanyShellState extends State<CompanyShell> {
 
   late CompanyArea _selectedArea;
   RatListViewModel? _ratListViewModel;
+  AdminEmpresaViewModel? _adminEmpresaViewModel;
+  AppAdminViewModel? _appAdminViewModel;
   bool _isSyncing = false;
   bool _isSigningOut = false;
 
@@ -219,6 +221,11 @@ class _CompanyShellState extends State<CompanyShell> {
       widget.sessionNotifier.addListener(_onSessionChanged);
     }
     _ratListViewModel?.dispose();
+    _adminEmpresaViewModel?.dispose();
+    _appAdminViewModel?.dispose();
+    _ratListViewModel = null;
+    _adminEmpresaViewModel = null;
+    _appAdminViewModel = null;
     final currentSession = session;
     if (currentSession != null) {
       _ratListViewModel = _createRatListViewModel(currentSession);
@@ -230,6 +237,8 @@ class _CompanyShellState extends State<CompanyShell> {
   void dispose() {
     widget.sessionNotifier.removeListener(_onSessionChanged);
     _ratListViewModel?.dispose();
+    _adminEmpresaViewModel?.dispose();
+    _appAdminViewModel?.dispose();
     super.dispose();
   }
 
@@ -349,9 +358,11 @@ class _CompanyShellState extends State<CompanyShell> {
           themeViewModel: widget.scope.appThemeViewModel,
         );
       case CompanyArea.adminEmpresa:
-        return AdminEmpresaArea(
-          viewModel: AdminEmpresaViewModel(
-            empresaId: currentSession.empresaId!,
+        final empresaId = currentSession.empresaId!;
+        if (_adminEmpresaViewModel?.empresaId != empresaId) {
+          _adminEmpresaViewModel?.dispose();
+          _adminEmpresaViewModel = AdminEmpresaViewModel(
+            empresaId: empresaId,
             currentTecnicoId: currentSession.tecnicoId,
             currentPapel: _adminPapelFor(currentSession),
             listTecnicos: widget.scope.listAdminTecnicos,
@@ -361,16 +372,22 @@ class _CompanyShellState extends State<CompanyShell> {
             updateTecnicoEquipe: widget.scope.updateTecnicoEquipe,
             getAdminEmpresa: widget.scope.getAdminEmpresa,
             updateAdminEmpresa: widget.scope.updateAdminEmpresa,
-          ),
+          );
+        }
+        return AdminEmpresaArea(
+          viewModel: _adminEmpresaViewModel!,
         );
       case CompanyArea.appAdmin:
-        return AppAdminArea(
-          viewModel: AppAdminViewModel(
+        if (_appAdminViewModel == null) {
+          _appAdminViewModel = AppAdminViewModel(
             listEmpresas: widget.scope.listAdminEmpresas,
             createEmpresa: widget.scope.createAdminEmpresa,
             createEmpresaConvite: widget.scope.createEmpresaConvite,
             updateEmpresa: widget.scope.updateAdminEmpresa,
-          ),
+          );
+        }
+        return AppAdminArea(
+          viewModel: _appAdminViewModel!,
           listEmpresaAdmins: widget.scope.listEmpresaAdmins,
           listEmpresaAdminConvites: widget.scope.listEmpresaAdminConvites,
           createEmpresaConvite: widget.scope.createEmpresaConvite,

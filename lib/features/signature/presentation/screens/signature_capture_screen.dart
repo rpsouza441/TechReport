@@ -166,13 +166,20 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
     painter.paint(canvas, size);
 
     final picture = recorder.endRecording();
-    final image = await picture.toImage(
-      rotatedSize.width.round(),
-      rotatedSize.height.round(),
-    );
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    ui.Image? image;
 
-    return byteData!.buffer.asUint8List();
+    try {
+      image = await picture.toImage(
+        rotatedSize.width.round(),
+        rotatedSize.height.round(),
+      );
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      return byteData!.buffer.asUint8List();
+    } finally {
+      image?.dispose();
+      picture.dispose();
+      recorder.dispose();
+    }
   }
 }
 

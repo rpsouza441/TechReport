@@ -38,6 +38,8 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   @override
   Future<List<Assinatura>> listByRatId(String ratId) async => [];
   @override
+  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async => {};
+  @override
   Future<void> saveBytes({
     required String assinaturaId,
     required List<int> bytes,
@@ -168,6 +170,8 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
   }) async => 0;
   @override
   Future<void> markProcessing(String id) async {}
+  @override
+  Future<bool> tryMarkProcessing(String id) async => true;
   @override
   Future<void> markSynced(String id) async {}
   @override

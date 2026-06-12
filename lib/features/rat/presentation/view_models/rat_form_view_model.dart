@@ -533,6 +533,13 @@ class RatFormViewModel extends ChangeNotifier {
   }
 
   Future<bool> saveSignature(Uint8List bytes) async {
+    const maxSignatureBytes = 1 * 1024 * 1024; // 1 MB
+    if (bytes.length > maxSignatureBytes) {
+      _errorMessage = 'Assinatura muito grande. Use um canvas menor.';
+      notifyListeners();
+      return false;
+    }
+
     final saved = await save(enqueueSync: false);
     if (!saved) {
       return false;

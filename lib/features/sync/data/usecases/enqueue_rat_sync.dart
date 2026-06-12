@@ -19,6 +19,15 @@ class EnqueueRatSync {
 
   Future<void> upsert(Rat rat) async {
     final context = _requireCompanyContext(rat);
+
+    final existing = await _queueRepository.hasPendingItem(
+      empresaId: context.empresaId,
+      usuarioId: context.usuarioId,
+      entityType: SyncEntityType.rat,
+      entityId: rat.id,
+    );
+    if (existing) return; // já existe item pendente para este RAT
+
     final now = DateTime.now();
 
     final dto = RatRemoteDto(
@@ -68,6 +77,15 @@ class EnqueueRatSync {
 
   Future<void> delete(Rat rat) async {
     final context = _requireCompanyContext(rat);
+
+    final existing = await _queueRepository.hasPendingItem(
+      empresaId: context.empresaId,
+      usuarioId: context.usuarioId,
+      entityType: SyncEntityType.rat,
+      entityId: rat.id,
+    );
+    if (existing) return; // já existe item pendente para este RAT
+
     final now = DateTime.now();
 
     final dto = RatRemoteDto(

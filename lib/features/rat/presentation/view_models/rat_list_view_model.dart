@@ -200,15 +200,14 @@ class RatListViewModel extends ChangeNotifier {
   }
 
   Future<Set<String>> _loadSignedRatIds(List<Rat> rats) async {
-    final signedIds = <String>{};
+    if (rats.isEmpty) return {};
 
-    for (final rat in rats) {
-      final assinaturas = await _assinaturaRepository.listByRatId(rat.id);
-      if (assinaturas.isNotEmpty) {
-        signedIds.add(rat.id);
-      }
-    }
+    final ratIds = rats.map((r) => r.id).toList();
+    final assinaturaMap = await _assinaturaRepository.listByRatIds(ratIds);
 
-    return signedIds;
+    return assinaturaMap.entries
+        .where((e) => e.value.isNotEmpty)
+        .map((e) => e.key)
+        .toSet();
   }
 }

@@ -95,6 +95,28 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
   }
 
   @override
+  Future<bool> tryMarkProcessing(String id) async {
+    final rows = await (_database.select(_database.syncQueueItems)
+          ..where((tbl) =>
+              tbl.id.equals(id) &
+              tbl.status.equals(domain.SyncItemStatus.pending.name)))
+        .get();
+
+    if (rows.isEmpty) return false; // não era pending ou não existe
+
+    await (_database.update(
+      _database.syncQueueItems,
+    )..where((tbl) => tbl.id.equals(id))).write(
+      SyncQueueItemsCompanion(
+        status: Value(domain.SyncItemStatus.processing.name),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    return true;
+  }
+
+  @override
   Future<void> markSynced(String id) async {
     await (_database.update(
       _database.syncQueueItems,

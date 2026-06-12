@@ -52,6 +52,26 @@ class DriftAssinaturaRepository implements AssinaturaRepository {
   }
 
   @override
+  Future<Map<String, List<domain.Assinatura>>> listByRatIds(
+      List<String> ratIds) async {
+    if (ratIds.isEmpty) return {};
+
+    final rows = await (_database.select(_database.assinaturas)
+      ..where(
+          (tbl) => tbl.ratId.isIn(ratIds) & tbl.deletedAt.isNull())).get();
+
+    final result = <String, List<domain.Assinatura>>{};
+    for (final id in ratIds) {
+      result[id] = [];
+    }
+    for (final row in rows) {
+      final entity = _toEntity(row);
+      result.putIfAbsent(row.ratId, () => []).add(entity);
+    }
+    return result;
+  }
+
+  @override
   Future<void> update(domain.Assinatura assinatura) async {
     await _database
         .into(_database.assinaturas)
@@ -96,6 +116,10 @@ class DriftAssinaturaRepository implements AssinaturaRepository {
     required String assetRef,
     required String ratId,
   }) async {
+    const maxSignatureBytes = 1 * 1024 * 1024; // 1 MB
+    if (bytes.length > maxSignatureBytes) {
+      throw ArgumentError('Assinatura excede limite de 1 MB.');
+    }
     final sha256Hash = sha256.convert(bytes).toString();
     final now = DateTime.now();
 
