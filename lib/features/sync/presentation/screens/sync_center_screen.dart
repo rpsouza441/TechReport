@@ -55,9 +55,9 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
                   SliverToBoxAdapter(child: _buildErrorBanner(vm.retryError!)),
                 if (vm.hasActionable)
                   SliverToBoxAdapter(child: _buildRetryButton(context, vm)),
-                _buildSection('Pendentes', vm.pending),
-                _buildSection('Com erro', vm.failed),
-                _buildSection('Sincronizados recentes', vm.synced),
+                _buildSection('Pendentes', vm.pending, vm),
+                _buildSection('Com erro', vm.failed, vm),
+                _buildSection('Sincronizados recentes', vm.synced, vm),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: MetricSlateSpacing.lg),
                 ),
@@ -156,7 +156,7 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
     );
   }
 
-  Widget _buildSection(String title, List<SyncItem> items) {
+  Widget _buildSection(String title, List<SyncItem> items, SyncCenterViewModel vm) {
     if (items.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
