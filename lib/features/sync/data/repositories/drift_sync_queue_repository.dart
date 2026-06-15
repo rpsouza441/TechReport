@@ -10,6 +10,17 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
 
   @override
   Future<void> enqueue(domain.SyncItem item) async {
+    // Se item já existe com status failed, não sobrescreve para pending.
+    // Isso evita que retry manual seja sobrescrito ao reabrir o app.
+    final existing = await (_database.select(_database.syncQueueItems)
+          ..where((tbl) => tbl.id.equals(item.id)))
+        .getSingleOrNull();
+
+    if (existing != null &&
+        existing.status == domain.SyncItemStatus.failed.name) {
+      return; // Item já falhou, preservar status
+    }
+
     await _database
         .into(_database.syncQueueItems)
         .insertOnConflictUpdate(_toCompanion(item));
