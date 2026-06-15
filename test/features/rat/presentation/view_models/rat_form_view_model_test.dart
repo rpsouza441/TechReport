@@ -19,7 +19,9 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   Future<List<Assinatura>> listByRatId(String ratId) async => assinaturas;
 
   @override
-  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async => {};
+  Future<Map<String, List<Assinatura>>> listByRatIds(
+    List<String> ratIds,
+  ) async => {};
 
   @override
   Future<Uint8List?> readBytes(String id) async => null;
@@ -61,6 +63,17 @@ class _StubLocalSignatureAssetStore implements LocalSignatureAssetStore {
 
 class _StubRatPdfShareService implements RatPdfShareService {
   @override
+  Future<Uint8List> buildPreviewBytes({
+    required Rat rat,
+    Uint8List? assinaturaBytes,
+    String? empresaNome,
+    String? tecnicoNome,
+    bool assinaturaPendente = false,
+  }) async {
+    return Uint8List(0);
+  }
+
+  @override
   Future<void> share(
     ShareRatLocallyResult shareData, {
     String? empresaNome,
@@ -74,8 +87,7 @@ class _StubRatPdfShareService implements RatPdfShareService {
     String? empresaNome,
     String? tecnicoNome,
     bool assinaturaPendente = false,
-  }) async =>
-      false;
+  }) async => false;
 }
 
 class _StubRatRepository implements RatRepository {
@@ -89,8 +101,7 @@ class _StubRatRepository implements RatRepository {
   Future<Rat?> getByIdScoped({
     required String id,
     required RatListScope scope,
-  }) async =>
-      null;
+  }) async => null;
 
   @override
   Future<List<Rat>> listLocal() async => [];
@@ -99,13 +110,10 @@ class _StubRatRepository implements RatRepository {
   Future<List<Rat>> listLocalPage({
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
-  Future<List<Rat>> listCompanyForManager({
-    required String empresaId,
-  }) async =>
+  Future<List<Rat>> listCompanyForManager({required String empresaId}) async =>
       [];
 
   @override
@@ -113,15 +121,13 @@ class _StubRatRepository implements RatRepository {
     required String empresaId,
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForTechnician({
     required String empresaId,
     required String tecnicoId,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForTechnicianPage({
@@ -129,8 +135,7 @@ class _StubRatRepository implements RatRepository {
     required String tecnicoId,
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<void> save(Rat rat) async {
@@ -227,10 +232,7 @@ void main() {
     shareRatLocally = _StubShareRatLocally();
   });
 
-  RatFormViewModel buildVm({
-    Rat? initialRat,
-    SessaoRemota? remoteSession,
-  }) {
+  RatFormViewModel buildVm({Rat? initialRat, SessaoRemota? remoteSession}) {
     return RatFormViewModel(
       assinaturaRepository: assinaturaRepo,
       localSignatureAssetStore: signatureAssetStore,
@@ -364,21 +366,24 @@ void main() {
       expect(result, isFalse);
     });
 
-    test('retorna true e salva RAT no repositório quando formulário é válido', () async {
-      final sut = buildVm();
-      sut.setClienteNome('Cliente Válido');
-      sut.setResponsavelRecebimento('Responsável');
-      sut.setDataVisita(DateTime.now());
-      sut.setHorarioInicioAtendimento('0800');
-      sut.setHorarioTerminoAtendimento('1000');
-      sut.setDescricao('Descrição válida');
+    test(
+      'retorna true e salva RAT no repositório quando formulário é válido',
+      () async {
+        final sut = buildVm();
+        sut.setClienteNome('Cliente Válido');
+        sut.setResponsavelRecebimento('Responsável');
+        sut.setDataVisita(DateTime.now());
+        sut.setHorarioInicioAtendimento('0800');
+        sut.setHorarioTerminoAtendimento('1000');
+        sut.setDescricao('Descrição válida');
 
-      final result = await sut.save();
+        final result = await sut.save();
 
-      expect(result, isTrue);
-      expect(ratRepo.savedRat, isNotNull);
-      expect(ratRepo.savedRat!.clienteNome, 'Cliente Válido');
-    });
+        expect(result, isTrue);
+        expect(ratRepo.savedRat, isNotNull);
+        expect(ratRepo.savedRat!.clienteNome, 'Cliente Válido');
+      },
+    );
 
     test('save() com remoteSession em modo empresa faz sync', () async {
       final remoteSession = _makeRemoteSession();
@@ -399,22 +404,25 @@ void main() {
       expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.pendingSync);
     });
 
-    test('save() sem remoteSession define ownerType como localTecnico', () async {
-      final sut = buildVm(remoteSession: null);
+    test(
+      'save() sem remoteSession define ownerType como localTecnico',
+      () async {
+        final sut = buildVm(remoteSession: null);
 
-      sut.setClienteNome('Cliente Válido');
-      sut.setResponsavelRecebimento('Responsável');
-      sut.setDataVisita(DateTime.now());
-      sut.setHorarioInicioAtendimento('0800');
-      sut.setHorarioTerminoAtendimento('1000');
-      sut.setDescricao('Descrição válida');
+        sut.setClienteNome('Cliente Válido');
+        sut.setResponsavelRecebimento('Responsável');
+        sut.setDataVisita(DateTime.now());
+        sut.setHorarioInicioAtendimento('0800');
+        sut.setHorarioTerminoAtendimento('1000');
+        sut.setDescricao('Descrição válida');
 
-      final result = await sut.save();
+        final result = await sut.save();
 
-      expect(result, isTrue);
-      expect(ratRepo.savedRat!.ownerType, RatOwnerType.localTecnico);
-      expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.localOnly);
-    });
+        expect(result, isTrue);
+        expect(ratRepo.savedRat!.ownerType, RatOwnerType.localTecnico);
+        expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.localOnly);
+      },
+    );
 
     test('isSaved vira true após save bem-sucedido', () async {
       final sut = buildVm();
@@ -456,26 +464,29 @@ void main() {
   // ─── loadSignatureStatus() ──────────────────────────────────────────────────
 
   group('loadSignatureStatus()', () {
-    test('carrega assinatura do repositório e atualiza notifyListeners', () async {
-      final now = DateTime.now();
-      final assinatura = Assinatura(
-        id: 'assinatura-1',
-        ratId: 'rat-new',
-        storageMode: StorageMode.inlineBinary,
-        assetRef: 'signatures/assinatura-1.png',
-        data: Uint8List.fromList([1, 2, 3]),
-        sizeBytes: 3,
-        mimeType: 'image/png',
-        createdAt: now,
-        updatedAt: now,
-      );
-      assinaturaRepo.assinaturas.add(assinatura);
+    test(
+      'carrega assinatura do repositório e atualiza notifyListeners',
+      () async {
+        final now = DateTime.now();
+        final assinatura = Assinatura(
+          id: 'assinatura-1',
+          ratId: 'rat-new',
+          storageMode: StorageMode.inlineBinary,
+          assetRef: 'signatures/assinatura-1.png',
+          data: Uint8List.fromList([1, 2, 3]),
+          sizeBytes: 3,
+          mimeType: 'image/png',
+          createdAt: now,
+          updatedAt: now,
+        );
+        assinaturaRepo.assinaturas.add(assinatura);
 
-      final sut = buildVm();
-      await sut.loadSignatureStatus();
+        final sut = buildVm();
+        await sut.loadSignatureStatus();
 
-      expect(sut.hasSignature, isTrue);
-    });
+        expect(sut.hasSignature, isTrue);
+      },
+    );
 
     test('hasSignature é false quando não há assinatura', () async {
       final sut = buildVm();
@@ -490,7 +501,9 @@ void main() {
   group('reopenForCorrection()', () {
     test('retorna false quando motivo tem menos de 5 caracteres', () async {
       final initialRat = _makeValidRat();
-      final remoteSession = _makeRemoteSession(papel: SessaoRemotaPapelEmpresa.tecnico);
+      final remoteSession = _makeRemoteSession(
+        papel: SessaoRemotaPapelEmpresa.tecnico,
+      );
       final sut = buildVm(initialRat: initialRat, remoteSession: remoteSession);
 
       final result = await sut.reopenForCorrection('curt');
@@ -503,7 +516,9 @@ void main() {
       final initialRat = _makeValidRat();
       final sut = buildVm(initialRat: initialRat, remoteSession: null);
 
-      final result = await sut.reopenForCorrection('Motivo válido para correção');
+      final result = await sut.reopenForCorrection(
+        'Motivo válido para correção',
+      );
 
       expect(result, isFalse);
     });
@@ -579,7 +594,9 @@ void main() {
       var notified = false;
       sut.addListener(() => notified = true);
 
-      sut.setEquipamentoMovimentoTipo(EquipamentoMovimentoTipo.retiradaParaReparo);
+      sut.setEquipamentoMovimentoTipo(
+        EquipamentoMovimentoTipo.retiradaParaReparo,
+      );
 
       expect(notified, isTrue);
     });
@@ -607,7 +624,7 @@ void main() {
       sut.setHorarioTerminoAtendimento('1000');
       sut.setDescricao('Descrição válida');
 
-      // 2 MB de bytes伪造
+      // 2 MB de bytes simulados
       final bigBytes = Uint8List(2 * 1024 * 1024);
 
       final result = await sut.saveSignature(bigBytes);
@@ -635,23 +652,26 @@ void main() {
       expect(result, isFalse); // save() fails because there's no valid RAT data
     });
 
-    test('rejeita assinatura maior que 1 MB mesmo que save() funcione', () async {
-      final remoteSession = _makeRemoteSession();
-      final sut = buildVm(remoteSession: remoteSession);
-      sut.setClienteNome('Cliente Válido');
-      sut.setResponsavelRecebimento('Responsável');
-      sut.setDataVisita(DateTime.now());
-      sut.setHorarioInicioAtendimento('0800');
-      sut.setHorarioTerminoAtendimento('1000');
-      sut.setDescricao('Descrição válida');
+    test(
+      'rejeita assinatura maior que 1 MB mesmo que save() funcione',
+      () async {
+        final remoteSession = _makeRemoteSession();
+        final sut = buildVm(remoteSession: remoteSession);
+        sut.setClienteNome('Cliente Válido');
+        sut.setResponsavelRecebimento('Responsável');
+        sut.setDataVisita(DateTime.now());
+        sut.setHorarioInicioAtendimento('0800');
+        sut.setHorarioTerminoAtendimento('1000');
+        sut.setDescricao('Descrição válida');
 
-      final bigBytes = Uint8List(2 * 1024 * 1024);
+        final bigBytes = Uint8List(2 * 1024 * 1024);
 
-      // A validação de tamanho deve ocorrer ANTES do save()
-      final result = await sut.saveSignature(bigBytes);
+        // A validação de tamanho deve ocorrer ANTES do save()
+        final result = await sut.saveSignature(bigBytes);
 
-      expect(result, isFalse);
-      expect(sut.errorMessage, contains('grande'));
-    });
+        expect(result, isFalse);
+        expect(sut.errorMessage, contains('grande'));
+      },
+    );
   });
 }

@@ -3,6 +3,7 @@ import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/local_auth/domain/entities/tecnico_local.dart';
 import 'package:techreport/features/local_auth/domain/repositories/tecnico_local_repository.dart';
 import 'package:techreport/features/local_auth/domain/usecases/update_tecnico_local.dart';
+import 'package:techreport/features/local_auth/presentation/widgets/local_info_card.dart';
 import 'package:techreport/features/local_auth/presentation/view_models/app_session_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
@@ -62,6 +63,7 @@ class LocalProfileScreen extends StatefulWidget {
 
 class _LocalProfileScreenState extends State<LocalProfileScreen> {
   late final ProfileEditingNotifier _editingNotifier;
+  late final UpdateTecnicoLocal _updateTecnicoLocal;
 
   TecnicoLocal? _tecnico;
   String? _errorMessage;
@@ -76,6 +78,7 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
     super.initState();
     _editingNotifier = widget.editingNotifier ?? ProfileEditingNotifier();
     _editingNotifier.setStartEditingCallback(_onNotifierStartEditing);
+    _updateTecnicoLocal = UpdateTecnicoLocal(widget.tecnicoLocalRepository);
     _loadTecnico();
   }
 
@@ -131,8 +134,7 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final update = UpdateTecnicoLocal(widget.tecnicoLocalRepository);
-      await update.call(
+      await _updateTecnicoLocal.call(
         nome: _nomeController.text,
         email: _emailController.text,
       );
@@ -224,12 +226,20 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ProfileCard(icon: Icons.person_outline, title: 'Nome', value: t.nome),
+        _buildProfileCard(
+          icon: Icons.person_outline,
+          title: 'Nome',
+          value: t.nome,
+        ),
         const SizedBox(height: MetricSlateSpacing.sm),
-        ProfileCard(icon: Icons.mail_outline, title: 'E-mail', value: t.email),
+        _buildProfileCard(
+          icon: Icons.mail_outline,
+          title: 'E-mail',
+          value: t.email,
+        ),
         if (t.telefone != null && t.telefone!.isNotEmpty) ...[
           const SizedBox(height: MetricSlateSpacing.sm),
-          ProfileCard(
+          _buildProfileCard(
             icon: Icons.phone_outlined,
             title: 'Telefone',
             value: t.telefone!,
@@ -237,14 +247,14 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
         ],
         if (t.empresaNome != null && t.empresaNome!.isNotEmpty) ...[
           const SizedBox(height: MetricSlateSpacing.sm),
-          ProfileCard(
+          _buildProfileCard(
             icon: Icons.business_outlined,
             title: 'Empresa',
             value: t.empresaNome!,
           ),
         ],
         const SizedBox(height: MetricSlateSpacing.sm),
-        ProfileCard(
+        _buildProfileCard(
           icon: t.pinConfigured
               ? Icons.lock_outlined
               : Icons.lock_open_outlined,
@@ -252,6 +262,24 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
           value: t.pinConfigured ? 'Configurado' : 'Não configurado',
         ),
       ],
+    );
+  }
+
+  Widget _buildProfileCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+
+    return LocalInfoCard(
+      icon: icon,
+      title: title,
+      body: value,
+      iconSize: 22,
+      gap: MetricSlateSpacing.sm,
+      titleStyle: theme.textTheme.labelMedium,
+      bodyStyle: theme.textTheme.bodyLarge,
     );
   }
 
@@ -309,41 +337,6 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class ProfileCard extends StatelessWidget {
-  const ProfileCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return TechReportCard(
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: MetricSlateSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.labelMedium),
-                const SizedBox(height: 2),
-                Text(value, style: Theme.of(context).textTheme.bodyLarge),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

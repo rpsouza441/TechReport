@@ -178,7 +178,6 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
     } finally {
       image?.dispose();
       picture.dispose();
-      recorder.dispose();
     }
   }
 }
@@ -212,6 +211,10 @@ class _SignaturePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SignaturePainter oldDelegate) {
-    return true;
+    if (strokes.length != oldDelegate.strokes.length) return true;
+    for (var i = 0; i < strokes.length; i++) {
+      if (strokes[i].length != oldDelegate.strokes[i].length) return true;
+    }
+    return false;
   }
 }

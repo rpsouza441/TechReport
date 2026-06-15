@@ -4,10 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/domain/permissions/rat_permissions.dart';
+import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
-import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
-import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../signature/data/services/local_signature_asset_store.dart';
@@ -28,9 +27,8 @@ class RatFormViewModel extends ChangeNotifier {
     required ShareRatLocally shareRatLocally,
     Rat? initialRat,
     SessaoRemota? remoteSession,
-    EnqueueRatSync? enqueueRatSync,
     EnqueueAssinaturaSync? enqueueAssinaturaSync,
-    ProcessSyncQueue? processSyncQueue,
+    RatSyncCoordinator? syncCoordinator,
     DownloadRemoteRats? downloadRemoteRats,
     SupabaseClientFactory? supabaseClientFactory,
   }) : _ratRepository = ratRepository,
@@ -64,14 +62,15 @@ class RatFormViewModel extends ChangeNotifier {
        assinaturaInvalidadaPorUserId =
            initialRat?.assinaturaInvalidadaPorUserId,
        _remoteSession = remoteSession,
-       _processSyncQueue = processSyncQueue,
-       _enqueueRatSync = enqueueRatSync,
        _enqueueAssinaturaSync = enqueueAssinaturaSync,
+       _syncCoordinator = syncCoordinator,
        _downloadRemoteRats = downloadRemoteRats,
        _supabaseClientFactory = supabaseClientFactory,
        _isSaved = initialRat != null;
 
   static const _permissions = RatPermissions();
+  /// 1 MB maximum signature size.
+  static const maxSignatureBytes = 1 * 1024 * 1024;
 
   final RatRepository _ratRepository;
   final AssinaturaRepository _assinaturaRepository;
@@ -80,9 +79,8 @@ class RatFormViewModel extends ChangeNotifier {
   final ShareRatLocally _shareRatLocally;
   final Rat? _initialRat;
   final SessaoRemota? _remoteSession;
-  final EnqueueRatSync? _enqueueRatSync;
   final EnqueueAssinaturaSync? _enqueueAssinaturaSync;
-  final ProcessSyncQueue? _processSyncQueue;
+  final RatSyncCoordinator? _syncCoordinator;
   final DownloadRemoteRats? _downloadRemoteRats;
   final SupabaseClientFactory? _supabaseClientFactory;
   final String ratId;
@@ -382,8 +380,12 @@ class RatFormViewModel extends ChangeNotifier {
     try {
       await _ratRepository.save(rat);
       if (enqueueSync && isCompanyMode) {
-        await _enqueueRatSync?.upsert(rat);
-        _syncInBackground(companyEmpresaId!);
+        await _syncCoordinator?.syncAfterSave(
+          rat: rat,
+          empresaId: companyEmpresaId!,
+          usuarioId: remoteSession!.usuarioId,
+        );
+        _downloadRemoteRatsAfterSync(companyEmpresaId!, remoteSession!.usuarioId);
       }
     } catch (_) {
       _isSubmitting = false;
@@ -444,8 +446,22 @@ class RatFormViewModel extends ChangeNotifier {
     assinaturaInvalidadaEm = now;
     assinaturaInvalidadaPorUserId = remoteSession.usuarioId;
 
-    final saved = await save();
-    if (!saved) {
+    try {
+      final saved = await save();
+      if (!saved) {
+        status = previousStatus;
+        ultimoAlteradorUserId = previousUltimoAlteradorUserId;
+        ultimaAlteracaoEm = previousUltimaAlteracaoEm;
+        reabertaParaCorrecaoEm = previousReabertaParaCorrecaoEm;
+        reabertaParaCorrecaoPorUserId = previousReabertaParaCorrecaoPorUserId;
+        motivoReabertura = previousMotivoReabertura;
+        assinaturaInvalidadaEm = previousAssinaturaInvalidadaEm;
+        assinaturaInvalidadaPorUserId = previousAssinaturaInvalidadaPorUserId;
+        notifyListeners();
+        return false;
+      }
+    } catch (error) {
+      // Rollback on exception to maintain consistent state
       status = previousStatus;
       ultimoAlteradorUserId = previousUltimoAlteradorUserId;
       ultimaAlteracaoEm = previousUltimaAlteracaoEm;
@@ -454,6 +470,7 @@ class RatFormViewModel extends ChangeNotifier {
       motivoReabertura = previousMotivoReabertura;
       assinaturaInvalidadaEm = previousAssinaturaInvalidadaEm;
       assinaturaInvalidadaPorUserId = previousAssinaturaInvalidadaPorUserId;
+      _errorMessage = 'Erro ao reabrir RAT para correção.';
       notifyListeners();
       return false;
     }
@@ -488,8 +505,12 @@ class RatFormViewModel extends ChangeNotifier {
     try {
       await _ratRepository.save(deletedRat);
       if (isCompanyMode) {
-        await _enqueueRatSync?.delete(deletedRat);
-        _syncInBackground(companyEmpresaId!);
+        await _syncCoordinator?.syncAfterDelete(
+          rat: deletedRat,
+          empresaId: companyEmpresaId!,
+          usuarioId: remoteSession!.usuarioId,
+        );
+        _downloadRemoteRatsAfterSync(companyEmpresaId!, remoteSession!.usuarioId);
       }
     } catch (_) {
       _isSubmitting = false;
@@ -504,36 +525,29 @@ class RatFormViewModel extends ChangeNotifier {
     return true;
   }
 
-  void _syncInBackground(String empresaId) {
-    final processSyncQueue = _processSyncQueue;
-    final remoteSession = _remoteSession;
-    final usuarioId = remoteSession?.usuarioId;
-
-    if (processSyncQueue == null || usuarioId == null) {
-      return;
-    }
+  void _downloadRemoteRatsAfterSync(String empresaId, String usuarioId) {
+    final downloadRemoteRats = _downloadRemoteRats;
+    if (downloadRemoteRats == null) return;
 
     final papel =
-        remoteSession?.papelEmpresa?.name ??
-        remoteSession?.papelGlobal?.name ??
+        _remoteSession?.papelEmpresa?.name ??
+        _remoteSession?.papelGlobal?.name ??
         'unknown';
 
     unawaited(() async {
       try {
-        await processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
-        await _downloadRemoteRats?.call(
+        await downloadRemoteRats.call(
           empresaId: empresaId,
           usuarioId: usuarioId,
           papel: papel,
         );
       } catch (_) {
-        // RAT local continua salvo; retry manual fica pela lista.
+        // RAT local ja salvo; retry pela lista de RATs.
       }
     }());
   }
 
   Future<bool> saveSignature(Uint8List bytes) async {
-    const maxSignatureBytes = 1 * 1024 * 1024; // 1 MB
     if (bytes.length > maxSignatureBytes) {
       _errorMessage = 'Assinatura muito grande. Use um canvas menor.';
       notifyListeners();
@@ -552,12 +566,13 @@ class RatFormViewModel extends ChangeNotifier {
       // sem este step.
       final remoteSession = _remoteSession;
       if (remoteSession != null && remoteSession.hasCompanyContext) {
-        await _enqueueAssinaturaSync?.delete(
+        // Fire-and-forget: local delete proceeds even if remote sync fails.
+        unawaited(_enqueueAssinaturaSync?.delete(
           assinatura,
           empresaId: remoteSession.empresaId!,
           usuarioId: remoteSession.usuarioId,
           ratId: ratId,
-        );
+        ));
       }
 
       if (assinatura.storageMode == StorageMode.localFile) {
@@ -567,6 +582,9 @@ class RatFormViewModel extends ChangeNotifier {
     }
 
     final now = DateTime.now();
+    // Using microsecondsSinceEpoch for signature IDs.
+    // Rationale: Single-user app, microsecond precision is sufficient.
+    // UUID would add dependency; risk of collision is negligible.
     final assinaturaId = 'assinatura-${now.microsecondsSinceEpoch}';
 
     await _assinaturaRepository.saveBytes(
@@ -599,13 +617,13 @@ class RatFormViewModel extends ChangeNotifier {
     if (isCompanyMode) {
       final empresaId = remoteSession!.empresaId!;
       final usuarioId = remoteSession.usuarioId;
-      await _enqueueAssinaturaSync?.upsert(
-        assinatura,
+      await _syncCoordinator?.syncAfterSignature(
+        assinatura: assinatura,
         empresaId: empresaId,
         usuarioId: usuarioId,
         ratId: ratId,
       );
-      _syncInBackground(empresaId);
+      _downloadRemoteRatsAfterSync(empresaId, usuarioId);
     }
 
     return true;
