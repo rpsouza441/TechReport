@@ -79,18 +79,26 @@ Sprint 12     → Physical device testing (future)
 - All INFO findings addressed or explicitly deferred
 - Tests pass after changes
 
-### Sprint 9.6: Sync Queue Bug Fixes (Current)
+### Sprint 9.6: Sync Queue Bug Fixes (Complete)
 **Source:** Bugs discovered during offline testing
 
 **Objectives:**
-- Corrigir RAT que fica pendente apos falha offline
-- Corrigir botao retry que nao funciona
-- Adicionar identificacao da operacao na fila
+- Corrigir RAT que fica pendente apos falha offline ✅
+- Corrigir botao retry que nao funciona ✅
+- Adicionar identificacao da operacao na fila ✅
 
 **Deliverables:**
-- RAT fica pendente apos falha — itens processados apos restart
-- Retry funcional — botao dispara sync corretamente
-- Fila indica operacao — mostra qual RAT/assinatura
+- RAT fica pendente apos falha — itens processados apos restart ✅
+- Retry funcional — botao dispara sync corretamente ✅
+- Fila indica operacao — mostra qual RAT/assinatura ✅
+
+**Commits:**
+- `76163c6` fix(v9.6): sync queue bug fixes
+- `87d3b7a` fix(v9.6): pass vm to _buildSection for getRatInfo access
+- `3fbc7cb` fix(v9.6): retry manual ignora nextAttemptAt e processa falhados imediatamente
+- `2274e91` fix(v9.6): nao sobrescreve status failed ao reabrir app
+- `5fbeda0` fix(v9.6): tryMarkProcessing aceita status failed para retry
+- `16e5dff` fix(v9.6): recarregar lista RATs apos retry de sync
 
 ---
 
