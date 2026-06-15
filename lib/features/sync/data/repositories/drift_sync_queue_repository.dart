@@ -112,10 +112,11 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
     final rows = await (_database.select(_database.syncQueueItems)
           ..where((tbl) =>
               tbl.id.equals(id) &
-              tbl.status.equals(domain.SyncItemStatus.pending.name)))
+              (tbl.status.equals(domain.SyncItemStatus.pending.name) |
+                  tbl.status.equals(domain.SyncItemStatus.failed.name))))
         .get();
 
-    if (rows.isEmpty) return false; // não era pending ou não existe
+    if (rows.isEmpty) return false; // não era pending/failed ou não existe
 
     await (_database.update(
       _database.syncQueueItems,
