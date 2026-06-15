@@ -493,7 +493,8 @@ class _CompanyShellState extends State<CompanyShell> {
         papel: papel,
       );
       await _ratListViewModel?.load();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error syncing: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Não foi possível sincronizar.')),

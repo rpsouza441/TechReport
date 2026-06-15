@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:techreport/features/company_auth/data/exceptions/remote_auth_exception.dart';
 import 'package:techreport/features/company_auth/data/services/secure_token_store.dart';
@@ -70,7 +71,7 @@ class SupabaseAuthRepository implements AuthRepository {
       await _remoteSessionRepository.saveSession(remoteSession);
 
       return remoteSession;
-    } catch (_) {
+    } catch (e, st) { debugPrint("Auth error: $e\n$st");
       await _clearRemoteState(client);
       rethrow;
     }
@@ -139,7 +140,7 @@ class SupabaseAuthRepository implements AuthRepository {
       await _remoteSessionRepository.saveSession(remoteSession);
 
       return remoteSession;
-    } catch (_) {
+    } catch (e, st) { debugPrint("Auth error: $e\n$st");
       await _clearRemoteState(client);
       rethrow;
     }
@@ -220,7 +221,7 @@ class SupabaseAuthRepository implements AuthRepository {
       await _remoteSessionRepository.saveSession(remoteSession);
 
       return remoteSession;
-    } catch (_) {
+    } catch (e, st) { debugPrint("Auth error: $e\n$st");
       await _clearRemoteState(client);
       rethrow;
     }
@@ -363,7 +364,7 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> _clearRemoteState(SupabaseClient client) async {
     try {
       await client.auth.signOut();
-    } catch (_) {
+    } catch (e, st) { debugPrint("Auth error: $e\n$st");
       // Best effort: local state is the important part here.
     }
 

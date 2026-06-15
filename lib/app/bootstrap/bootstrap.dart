@@ -71,7 +71,8 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
     try {
       final dbFile = await resolveLocalDatabaseFile();
       fileExists = dbFile.existsSync();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error checking database file: $e\n$st');
       // ignora — dados de diagnostico apenas
     }
 
@@ -79,7 +80,8 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
       final keyStore = DatabaseKeyStore();
       final key = await keyStore.readKey();
       keyExists = key != null;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error reading key store: $e\n$st');
       // ignora — dados de diagnostico apenas
     }
 

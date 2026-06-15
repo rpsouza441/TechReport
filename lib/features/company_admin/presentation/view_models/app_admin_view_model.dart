@@ -37,7 +37,8 @@ class AppAdminViewModel extends ChangeNotifier {
 
     try {
       empresas = await _listEmpresas();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error loading empresas: $e\n$st');
       errorMessage = 'Não foi possível carregar empresas.';
     }
 
@@ -56,7 +57,8 @@ class AppAdminViewModel extends ChangeNotifier {
       isSubmitting = false;
       notifyListeners();
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error: $e\n$st');
       errorMessage = 'Nao foi possivel criar a empresa.';
       isSubmitting = false;
       notifyListeners();
@@ -92,7 +94,8 @@ class AppAdminViewModel extends ChangeNotifier {
       notifyListeners();
       unawaited(load());
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error: $e\n$st');
       empresas = previous;
       errorMessage = 'Nao foi possivel atualizar a empresa.';
       isSubmitting = false;
@@ -120,7 +123,8 @@ class AppAdminViewModel extends ChangeNotifier {
       isSubmitting = false;
       notifyListeners();
       return result;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error: $e\n$st');
       errorMessage = 'Nao foi possivel criar o convite.';
       isSubmitting = false;
       notifyListeners();

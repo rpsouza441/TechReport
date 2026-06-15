@@ -400,7 +400,7 @@ class RatFormViewModel extends ChangeNotifier {
         );
         _downloadRemoteRatsAfterSync(companyEmpresaId!, remoteSession!.usuarioId);
       }
-    } catch (_) {
+    } catch (e, st) { debugPrint("Error: $e$st");
       _isSubmitting = false;
       _errorMessage = 'Não foi possível salvar o RAT.';
       notifyListeners();
@@ -525,7 +525,7 @@ class RatFormViewModel extends ChangeNotifier {
         );
         _downloadRemoteRatsAfterSync(companyEmpresaId!, remoteSession!.usuarioId);
       }
-    } catch (_) {
+    } catch (e, st) { debugPrint("Error: $e$st");
       _isSubmitting = false;
       _errorMessage = 'Não foi possível excluir o RAT.';
       notifyListeners();
@@ -554,7 +554,7 @@ class RatFormViewModel extends ChangeNotifier {
           usuarioId: usuarioId,
           papel: papel,
         );
-      } catch (_) {
+      } catch (e, st) { debugPrint("Error: $e$st");
         // RAT local ja salvo; retry pela lista de RATs.
       }
     }());
@@ -657,7 +657,7 @@ class RatFormViewModel extends ChangeNotifier {
           .eq('id', empresaId)
           .maybeSingle();
       return row?['nome'] as String?;
-    } catch (_) {
+    } catch (e, st) { debugPrint("Error: $e$st");
       return null;
     }
   }
@@ -689,7 +689,7 @@ class RatFormViewModel extends ChangeNotifier {
         _signaturePreviewBytes = await _assinaturaRepository.readBytes(
           _assinatura!.id,
         );
-      } catch (_) {
+      } catch (e, st) { debugPrint("Error: $e$st");
         _signaturePreviewBytes = null;
       }
     }
@@ -746,7 +746,7 @@ class RatFormViewModel extends ChangeNotifier {
         assinaturaPendente: isSignaturePending,
       );
       return true;
-    } catch (_) {
+    } catch (e, st) { debugPrint("Error: $e$st");
       _errorMessage = 'Não foi possível compartilhar o PDF.';
       return false;
     } finally {
@@ -792,7 +792,7 @@ class RatFormViewModel extends ChangeNotifier {
         return false;
       }
       return true;
-    } catch (_) {
+    } catch (e, st) { debugPrint("Error: $e\n$st");
       _errorMessage = 'Não foi possível salvar o PDF.';
       return false;
     } finally {

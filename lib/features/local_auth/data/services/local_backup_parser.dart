@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:techreport/features/local_auth/data/services/local_data_import_parser.dart';
 import 'package:techreport/features/local_auth/domain/entities/local_backup_manifest.dart';
 
@@ -53,9 +53,19 @@ class LocalBackupParser {
       return _validateZipIntegrity(archive);
     }
 
-    // Legacy JSON — aceita sem validação de checksum
-    _legacyParser.parse(utf8.decode(bytes as Uint8List));
-    return true;
+    // Legacy JSON — validação limitada, apenas verifica que o JSON é parseável
+    // e calcula hash do conteúdo para registro/debug.
+    // NOTE: Sem checksum externo, não detecta tampering.
+    try {
+      final content = utf8.decode(bytes as Uint8List);
+      _legacyParser.parse(content);
+      final hash = sha256.convert(bytes).toString();
+      debugPrint('Legacy backup integrity: parsed OK, SHA-256=$hash');
+      return true;
+    } catch (e, st) {
+      debugPrint('Legacy backup parse error: $e\n$st');
+      return false;
+    }
   }
 
   List<Map<String, dynamic>> parseRats(List<int> bytes) {
