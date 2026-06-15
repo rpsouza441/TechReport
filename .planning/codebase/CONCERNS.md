@@ -1,6 +1,27 @@
 # Codebase Concerns
 
 **Analysis Date:** 2025-03-11
+**Last Updated:** 2026-06-15 (v9.6 sync fixes)
+
+## Resolved in v9.6 (Sync Queue Bug Fixes)
+
+| Issue | Status | Fix Applied |
+|-------|--------|-------------|
+| Auto-retry não rodava ao iniciar | ✅ Resolved | Added `addPostFrameCallback((_) => _syncNow())` no initState |
+| Retry ignorava itens failed | ✅ Resolved | `tryMarkProcessing` agora aceita status `failed` |
+| `enqueue` sobrescrevia status failed | ✅ Resolved | Verifica antes de inserir, não sobrescreve `failed` |
+| Lista RATs não atualizava após retry | ✅ Resolved | Added `onSyncComplete` callback |
+| Fila não mostrava ID da RAT | ✅ Resolved | `getRatInfo()` extrai numero/cliente do payload JSON |
+
+**Commits:**
+- `76163c6` fix(v9.6): sync queue bug fixes
+- `87d3b7a` fix(v9.6): pass vm to _buildSection
+- `3fbc7cb` fix(v9.6): retry manual ignora nextAttemptAt
+- `2274e91` fix(v9.6): nao sobrescreve status failed
+- `5fbeda0` fix(v9.6): tryMarkProcessing aceita failed
+- `16e5dff` fix(v9.6): recarregar lista RATs apos retry
+
+---
 
 ## Tech Debt
 

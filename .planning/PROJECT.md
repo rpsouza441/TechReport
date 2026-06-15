@@ -2,20 +2,27 @@
 
 **Created:** 2026-06-15
 **Type:** Brownfield (existing codebase in production-ready development)
-**Status:** Pre-release (Sprint 9.6 in progress)
+**Status:** Pre-release (Sprint 9.6 complete, Sprint 10 next)
 
 ---
 
-## Current Milestone: v9.6 Sync Queue Bug Fixes
+## Current Milestone: v9.6 Complete
 
 **Goal:** Corrigir bugs criticos na fila de sincronizacao que impedem recovery de operacoes que falharam offline.
 
-**Target features:**
-- RAT fica pendente apos falha — itens que falharam nao sao processados apos restart do app
-- Retry nao funciona — botao "tentar novamente" nao dispara sync
-- Fila nao identifica operacao — nao indica de qual RAT ou assinatura estava sendo trabalhada
+**Status:** ✅ COMPLETO
+
+**Fixes applied:**
+- Auto-retry ao iniciar app
+- Retry manual processa itens falhados
+- Fila mostra ID da RAT
+- Lista RATs atualiza após retry
+
+**Commits:** 6 commits em 9.6
 
 ---
+
+## Next Milestone: v10.0 Release Preparation
 
 ## 1. Vision
 
