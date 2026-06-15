@@ -1,0 +1,36 @@
+{
+  "project": "TechReport",
+  "created": "2026-06-15",
+  "version": "1.0.0",
+
+  "workflow": {
+    "defaultBranch": "main",
+    "worktreeBase": "fresh",
+    "commitPrefix": "wip"
+  },
+
+  "phases": {
+    "current": 9,
+    "lastCompleted": "8.5"
+  },
+
+  "intel": {
+    "enabled": true,
+    "corpusRefreshInterval": 86400
+  },
+
+  "skills": {
+    "enabled": ["gsd-map-codebase", "gsd-plan-phase", "gsd-execute-phase", "gsd-code-review"],
+    "disabled": []
+  },
+
+  "review": {
+    "requireBeforeCommit": true,
+    "minReviewers": 1
+  },
+
+  "testing": {
+    "runOnCommit": true,
+    "minCoverage": 50
+  }
+}

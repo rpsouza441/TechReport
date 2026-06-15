@@ -1,6 +1,6 @@
 # TechReport — Roadmap
 
-**Current phase:** Sprint 9.5 (in progress)
+**Current phase:** Sprint 9.6 (in progress)
 **Last updated:** 2026-06-15
 
 ---
@@ -14,6 +14,7 @@ Sprint 6-7    → Extended RAT fields, admin features
 Sprint 8/8.5  → Team management, invites, permissions
 Sprint 9      → Hardening, UI cleanup, security
 Sprint 9.5    → Code review fixes
+Sprint 9.6    → Sync queue bug fixes
 Sprint 10     → QA, Android build, release candidate
 Sprint 11     → Residual hardening, legacy DB migration (future)
 Sprint 12     → Physical device testing (future)
@@ -54,7 +55,7 @@ Sprint 12     → Physical device testing (future)
 - Security hardening (PBKDF2, backups)
 - Theme refinements
 
-### Sprint 9.5: Code Review Fixes (Current)
+### Sprint 9.5: Code Review Fixes (Complete)
 **Source:** REVIEW.md from `/gsd-code-review`
 
 **Objectives:**
@@ -77,6 +78,19 @@ Sprint 12     → Physical device testing (future)
 - All WARNING findings resolved
 - All INFO findings addressed or explicitly deferred
 - Tests pass after changes
+
+### Sprint 9.6: Sync Queue Bug Fixes (Current)
+**Source:** Bugs discovered during offline testing
+
+**Objectives:**
+- Corrigir RAT que fica pendente apos falha offline
+- Corrigir botao retry que nao funciona
+- Adicionar identificacao da operacao na fila
+
+**Deliverables:**
+- RAT fica pendente apos falha — itens processados apos restart
+- Retry funcional — botao dispara sync corretamente
+- Fila indica operacao — mostra qual RAT/assinatura
 
 ---
 
