@@ -12,12 +12,11 @@ Sprint 1-4     → Core MVP (local mode)
 Sprint 5      → Sync MVP, PDF, signatures
 Sprint 6-7    → Extended RAT fields, admin features
 Sprint 8/8.5  → Team management, invites, permissions
-Sprint 9      → Hardening, UI cleanup, security
-Sprint 9.5    → Code review fixes
-Sprint 9.6    → Sync queue bug fixes
-Sprint 10     → QA, Android build, release candidate
-Sprint 11     → Residual hardening, legacy DB migration (future)
-Sprint 12     → Physical device testing (future)
+Sprint 9/9.5-9.7 → Hardening, UI cleanup, security, tech debt
+Sprint 9.8-9.19   → Remaining CONCERNS.md items (error handling, performance, security, etc.)
+Sprint 20         → QA, Android build, release candidate
+Sprint 21         → Residual hardening, legacy DB migration (future)
+Sprint 22         → Physical device testing (future)
 ```
 
 ---
@@ -126,14 +125,28 @@ Sprint 12     → Physical device testing (future)
 
 ## Upcoming Phases
 
-### Sprint 9.8: Error Handling
-**Status:** Planned
+### Sprint 9.8: Error Handling (Complete)
 **Source:** CONCERNS.md - Missing Error Handling
 
 **Objectives:**
-- Corrigir silent catch blocks
-- Adicionar logging de erros
-- Melhorar mensagens para o usuário
+- Corrigir silent catch blocks ✅
+- Adicionar logging de erros ✅
+- Melhorar mensagens para o usuário ✅
+
+**Deliverables:**
+- bootstrap.dart: debugPrint com stack trace ✅
+- company_shell.dart: logging de erros de sync ✅
+- app_admin_view_model.dart: debugPrint em todos os catch ✅
+- supabase_auth_repository.dart: logging com stack trace ✅
+- rat_form_view_model.dart: debugPrint com stack trace ✅
+- local_backup_parser.dart: SHA-256 hash para legacy backups ✅
+
+**Commits:**
+- `448ae16` fix(v9.8): add error logging to catch blocks
+
+---
+
+## Upcoming Phases
 
 ### Sprint 9.9: Performance
 **Status:** Planned
@@ -143,7 +156,7 @@ Sprint 12     → Physical device testing (future)
 - Corrigir AnimatedBuilder rebuilds
 - Implementar paginação na lista RATs
 
-### Sprint 10: Release Preparation
+### Sprint 20: Release Preparation
 **Target:** 2026-06 (1-2 sprints)
 
 **Objectives:**
@@ -167,7 +180,7 @@ Sprint 12     → Physical device testing (future)
 
 ---
 
-### Sprint 11: Residual Hardening (Future)
+### Sprint 21: Residual Hardening (Future)
 **Status:** Planned, not started
 
 **Objectives:**
@@ -180,7 +193,7 @@ Sprint 12     → Physical device testing (future)
 
 ---
 
-### Sprint 12: Physical Device Testing (Future)
+### Sprint 22: Physical Device Testing (Future)
 **Status:** Planned, not started
 
 **Objectives:**
@@ -195,7 +208,7 @@ Sprint 12     → Physical device testing (future)
 
 | Milestone | Target | Status |
 |----------|--------|--------|
-| Sprint 10 Release Candidate | Q2 2026 | Planned |
+| Sprint 20 Release Candidate | Q2 2026 | Planned |
 | Play Store Submission | Q2 2026 | Planned |
 | GitHub Release | Q2 2026 | Planned |
 | First Real Users | Q3 2026 | Future |
@@ -205,19 +218,19 @@ Sprint 12     → Physical device testing (future)
 ## Dependencies
 
 ```
-Sprint 10
-├── Sprint 9.5 complete
+Sprint 20
+├── All Sprint 9.x complete
 ├── All critical concerns resolved
 ├── Manual test plan executed
 └── Play Store account ready
 
-Sprint 11
-├── Sprint 10 complete
+Sprint 21
+├── Sprint 20 complete
 ├── First release feedback
 └── Remaining technical debt
 
-Sprint 12
-├── Sprint 11 complete
+Sprint 22
+├── Sprint 21 complete
 └── Physical devices available
 ```
 
