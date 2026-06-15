@@ -32,8 +32,10 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
                           tbl.status.equals(domain.SyncItemStatus.failed.name)
                     : tbl.status.equals(domain.SyncItemStatus.pending.name);
 
+                // Quando retry manual, ignora nextAttemptAt e processa todos.
+                // Quando automático, só processa se nextAttemptAt já passou.
                 final retryAtFilter = includeFailed
-                    ? const Constant(true)
+                    ? const Constant(true) // retry manual: ignora timing
                     : tbl.nextAttemptAt.isNull() |
                           tbl.nextAttemptAt.isSmallerOrEqualValue(now);
 
