@@ -7,16 +7,15 @@ import 'package:techreport/features/rat/domain/permissions/rat_permissions.dart'
 import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
+import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
+import 'package:techreport/features/signature/domain/entities/assinatura.dart';
+import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
+import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
+import 'package:techreport/features/rat/domain/entities/rat.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../../signature/data/services/local_signature_asset_store.dart';
-import '../../../signature/domain/entities/assinatura.dart';
-import '../../../signature/domain/repositories/assinatura_repository.dart';
-import '../../data/services/rat_pdf_share_service.dart';
-import '../../domain/entities/rat.dart';
-import '../../domain/repositories/rat_repository.dart';
-import '../../domain/usecases/share_rat_locally.dart';
-import 'rat_list_scope.dart';
 
 class RatFormViewModel extends ChangeNotifier {
   RatFormViewModel({
@@ -305,36 +304,18 @@ class RatFormViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> save({bool enqueueSync = true}) async {
-    if (!canEditFields) {
-      _errorMessage = isLockedUntilReopen
-          ? 'Reabra este RAT para correção antes de editar.'
-          : 'Este RAT pertence a outro técnico.';
-      notifyListeners();
-      return false;
-    }
-
-    final validationError = validate();
-    final remoteSession = _remoteSession;
-    final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
-    final companyEmpresaId = isCompanyMode ? remoteSession!.empresaId! : null;
-
-    if (validationError != null) {
-      _errorMessage = validationError;
-      notifyListeners();
-      return false;
-    }
-
-    _isSubmitting = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    final now = DateTime.now();
+  /// Constrói o objeto Rat a partir dos campos do formulário.
+  Rat _buildRatForSave({
+    required bool isCompanyMode,
+    required SessaoRemota? remoteSession,
+    required DateTime now,
+  }) {
     final auditUserId = isCompanyMode
         ? remoteSession!.usuarioId
         : ultimoAlteradorUserId;
     final auditUpdatedAt = isCompanyMode ? now : ultimaAlteracaoEm;
-    final rat = Rat(
+
+    return Rat(
       id: ratId,
       authorId:
           _initialRat?.authorId ?? remoteSession?.tecnicoId ?? 'tec-local-001',
@@ -375,6 +356,38 @@ class RatFormViewModel extends ChangeNotifier {
       motivoReabertura: motivoReabertura,
       assinaturaInvalidadaEm: assinaturaInvalidadaEm,
       assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
+    );
+  }
+
+  Future<bool> save({bool enqueueSync = true}) async {
+    if (!canEditFields) {
+      _errorMessage = isLockedUntilReopen
+          ? 'Reabra este RAT para correção antes de editar.'
+          : 'Este RAT pertence a outro técnico.';
+      notifyListeners();
+      return false;
+    }
+
+    final validationError = validate();
+    final remoteSession = _remoteSession;
+    final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
+    final companyEmpresaId = isCompanyMode ? remoteSession!.empresaId! : null;
+
+    if (validationError != null) {
+      _errorMessage = validationError;
+      notifyListeners();
+      return false;
+    }
+
+    _isSubmitting = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final now = DateTime.now();
+    final rat = _buildRatForSave(
+      isCompanyMode: isCompanyMode,
+      remoteSession: remoteSession,
+      now: now,
     );
 
     try {
