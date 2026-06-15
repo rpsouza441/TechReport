@@ -208,6 +208,8 @@ class _CompanyShellState extends State<CompanyShell> {
     if (currentSession != null) {
       _selectedArea = _initialArea(currentSession);
       _ratListViewModel = _createRatListViewModel(currentSession);
+      // Auto-retry: processa fila pendente ao iniciar
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncNow());
     } else {
       _selectedArea = CompanyArea.profile;
     }
@@ -519,6 +521,7 @@ class _CompanyShellState extends State<CompanyShell> {
           viewModel: SyncCenterViewModel(
             queueRepository: widget.scope.syncQueueRepository,
             processSyncQueue: widget.scope.processSyncQueue,
+            ratRepository: widget.scope.ratRepository,
             empresaId: empresaId,
             usuarioId: currentSession.usuarioId,
           ),

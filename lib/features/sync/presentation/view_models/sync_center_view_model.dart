@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/sync/domain/entities/sync_item.dart';
 import 'package:techreport/features/sync/domain/repositories/sync_queue_repository.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
@@ -7,15 +10,18 @@ class SyncCenterViewModel extends ChangeNotifier {
   SyncCenterViewModel({
     required SyncQueueRepository queueRepository,
     required ProcessSyncQueue processSyncQueue,
+    required RatRepository ratRepository,
     required String empresaId,
     required String usuarioId,
   }) : _queueRepository = queueRepository,
        _processSyncQueue = processSyncQueue,
+       _ratRepository = ratRepository,
        _empresaId = empresaId,
        _usuarioId = usuarioId;
 
   final SyncQueueRepository _queueRepository;
   final ProcessSyncQueue _processSyncQueue;
+  final RatRepository _ratRepository;
   final String _empresaId;
   final String _usuarioId;
 
@@ -54,6 +60,33 @@ class SyncCenterViewModel extends ChangeNotifier {
   }
 
   bool get hasActionable => pending.isNotEmpty || failed.isNotEmpty;
+
+  /// Retorna info formatada da RAT para exibir na fila.
+  /// Extrai do payload JSON para não precisar buscar no banco.
+  String getRatInfo(SyncItem item) {
+    if (item.entityType != SyncEntityType.rat) {
+      return '';
+    }
+
+    try {
+      final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+      final numero = payload['numero'] as String?;
+      final clienteNome = payload['clienteNome'] as String?;
+
+      if (numero != null && clienteNome != null) {
+        return 'RAT #$numero - $clienteNome';
+      }
+      if (numero != null) {
+        return 'RAT #$numero';
+      }
+      if (clienteNome != null) {
+        return 'RAT - $clienteNome';
+      }
+      return 'RAT #${item.entityId.substring(0, 8)}';
+    } catch (_) {
+      return 'RAT #${item.entityId.substring(0, 8)}';
+    }
+  }
 
   Future<void> load() async {
     _isLoading = true;

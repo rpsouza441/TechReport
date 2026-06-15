@@ -178,7 +178,7 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
               padding: EdgeInsets.zero,
             );
           }
-          return _SyncItemCard(item: items[index - 1]);
+          return _SyncItemCard(item: items[index - 1], getRatInfo: vm.getRatInfo);
         },
       ),
     );
@@ -186,9 +186,10 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
 }
 
 class _SyncItemCard extends StatelessWidget {
-  const _SyncItemCard({required this.item});
+  const _SyncItemCard({required this.item, required this.getRatInfo});
 
   final SyncItem item;
+  final String Function(SyncItem) getRatInfo;
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +211,7 @@ class _SyncItemCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _itemTitle(item),
+                      _itemTitle(item, getRatInfo(item)),
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: MetricSlateSpacing.xxs),
@@ -274,7 +275,11 @@ String? _operationLabel(SyncOperation op) {
   };
 }
 
-String _itemTitle(SyncItem item) {
+String _itemTitle(SyncItem item, String ratInfo) {
+  if (item.entityType == SyncEntityType.rat && ratInfo.isNotEmpty) {
+    final op = _operationLabel(item.operation);
+    return op == null ? ratInfo : '$ratInfo · $op';
+  }
   final label = _entityTypeLabel(item.entityType);
   final op = _operationLabel(item.operation);
   return op == null ? label : '$label · $op';
