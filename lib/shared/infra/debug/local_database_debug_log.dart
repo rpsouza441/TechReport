@@ -25,4 +25,15 @@ class LocalDatabaseDebugLog {
     debugPrint('$_name: $line');
     developer.log(line, name: _name, error: error, stackTrace: stackTrace);
   }
+
+  /// Log estruturado de auditoria ativo tambem em release.
+  /// Nao exponha dados sensíveis (chave, caminho completo, stack trace).
+  static void audit(
+    String message, {
+    Object? data,
+  }) {
+    final line = data == null ? message : '$message | $data';
+    debugPrint('$_name: $line');
+    developer.log(line, name: _name);
+  }
 }

@@ -149,7 +149,9 @@ class _TechReportAppState extends State<TechReportApp> {
           title: 'Tech Report',
           theme: lightTheme,
           darkTheme: darkTheme,
-          themeMode: ThemeMode.system,
+          themeMode: themeViewModel.loaded
+              ? themeViewModel.themeMode
+              : ThemeMode.system,
           home: AppShell(
             bootstrapViewModel: bootstrapViewModel,
             scope: widget.scope,

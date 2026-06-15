@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/di/app_scope.dart';
+import 'package:techreport/app/theme/app_theme_mode.dart';
 import 'package:techreport/app/theme/app_theme_variant.dart';
 import 'package:techreport/app/theme/app_theme_view_model.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
@@ -403,11 +404,10 @@ class _CompanyHomeScreenBodyState extends State<_CompanyHomeScreenBody> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _CompanyThemeScreen(
+          currentMode: widget.themeViewModel.currentMode,
           currentVariant: widget.themeViewModel.currentVariant,
-          onSelected: (variant) {
-            widget.themeViewModel.setVariant(variant);
-            Navigator.of(context).pop();
-          },
+          onModeSelected: widget.themeViewModel.setMode,
+          onVariantSelected: widget.themeViewModel.setVariant,
         ),
       ),
     );
@@ -442,25 +442,72 @@ class _CompanyHomeScreenBodyState extends State<_CompanyHomeScreenBody> {
 
 class _CompanyThemeScreen extends StatelessWidget {
   const _CompanyThemeScreen({
+    required this.currentMode,
     required this.currentVariant,
-    required this.onSelected,
+    required this.onModeSelected,
+    required this.onVariantSelected,
   });
 
+  final AppThemeModePreference currentMode;
   final AppThemeVariant currentVariant;
-  final ValueChanged<AppThemeVariant> onSelected;
+  final ValueChanged<AppThemeModePreference> onModeSelected;
+  final ValueChanged<AppThemeVariant> onVariantSelected;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Selecionar tema')),
+      appBar: AppBar(title: const Text('Aparência')),
       body: ListView(
         children: [
+          // ── Modo de aparência ─────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              MetricSlateSpacing.md,
+              MetricSlateSpacing.md,
+              MetricSlateSpacing.md,
+              MetricSlateSpacing.xs,
+            ),
+            child: Text(
+              'Modo',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          for (final mode in AppThemeModePreference.values)
+            RadioListTile<AppThemeModePreference>(
+              value: mode,
+              groupValue: currentMode,
+              onChanged: (v) {
+                if (v != null) onModeSelected(v);
+              },
+              title: Text(mode.label),
+              secondary: Icon(_modeIcon(mode)),
+            ),
+
+          const Divider(height: MetricSlateSpacing.lg),
+
+          // ── Paleta de cores ───────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              MetricSlateSpacing.md,
+              MetricSlateSpacing.xs,
+              MetricSlateSpacing.md,
+              MetricSlateSpacing.xs,
+            ),
+            child: Text(
+              'Cores',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
           for (final variant in AppThemeVariant.values)
             RadioListTile<AppThemeVariant>(
               value: variant,
               groupValue: currentVariant,
               onChanged: (v) {
-                if (v != null) onSelected(v);
+                if (v != null) onVariantSelected(v);
               },
               title: Text(variant.displayName),
               subtitle: Text(variant.description),
@@ -469,6 +516,14 @@ class _CompanyThemeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _modeIcon(AppThemeModePreference mode) {
+    return switch (mode) {
+      AppThemeModePreference.system => Icons.settings_brightness_outlined,
+      AppThemeModePreference.light => Icons.light_mode_outlined,
+      AppThemeModePreference.dark => Icons.dark_mode_outlined,
+    };
   }
 
   IconData _variantIcon(AppThemeVariant variant) {

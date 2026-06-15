@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:techreport/app/theme/app_theme_mode.dart';
 import 'package:techreport/app/theme/app_theme_variant.dart';
 import 'package:techreport/app/theme/app_theme_view_model.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
@@ -12,8 +13,9 @@ import 'package:techreport/features/local_auth/domain/usecases/apply_local_backu
 import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_backup.dart';
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_data_import.dart';
+import 'package:techreport/features/local_auth/presentation/widgets/local_info_card.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 
 class LocalSettingsScreen extends StatelessWidget {
   const LocalSettingsScreen({
@@ -55,41 +57,53 @@ class LocalSettingsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: MetricSlateSpacing.lg),
-            _SectionHeader(title: 'Dados locais'),
+            const TechReportSectionHeader(
+              title: 'Dados locais',
+              padding: EdgeInsets.zero,
+            ),
             const SizedBox(height: MetricSlateSpacing.sm),
-            _SettingsCard(
+            LocalInfoCard(
               icon: Icons.file_upload_outlined,
               title: 'Exportar dados',
-              subtitle: 'Salve um backup local dos RATs.',
+              body: 'Salve um backup local dos RATs.',
+              showChevron: true,
               onTap: () => _openExport(context),
             ),
             const SizedBox(height: MetricSlateSpacing.sm),
-            _SettingsCard(
+            LocalInfoCard(
               icon: Icons.file_download_outlined,
               title: 'Importar dados',
-              subtitle: 'Restaure RATs de um backup.',
+              body: 'Restaure RATs de um backup.',
+              showChevron: true,
               onTap: () => _openImport(context),
             ),
             const SizedBox(height: MetricSlateSpacing.lg),
-            _SectionHeader(title: 'Segurança'),
+            const TechReportSectionHeader(
+              title: 'Segurança',
+              padding: EdgeInsets.zero,
+            ),
             const SizedBox(height: MetricSlateSpacing.sm),
-            _SettingsCard(
+            LocalInfoCard(
               icon: Icons.pin_outlined,
               title: appSessionViewModel.pinConfigured
                   ? 'Trocar PIN'
                   : 'Criar PIN',
-              subtitle: appSessionViewModel.pinConfigured
+              body: appSessionViewModel.pinConfigured
                   ? 'Altere ou remova o PIN de bloqueio.'
                   : 'Proteja o modo local com um PIN.',
+              showChevron: true,
               onTap: () => _openChangePin(context),
             ),
             const SizedBox(height: MetricSlateSpacing.lg),
-            _SectionHeader(title: 'Aparência'),
+            const TechReportSectionHeader(
+              title: 'Aparência',
+              padding: EdgeInsets.zero,
+            ),
             const SizedBox(height: MetricSlateSpacing.sm),
-            _SettingsCard(
+            LocalInfoCard(
               icon: Icons.palette_outlined,
               title: 'Tema do app',
-              subtitle: 'Escolha a paleta de cores do TechReport.',
+              body: 'Escolha a paleta de cores do TechReport.',
               trailing: Text(
                 themeViewModel.currentVariant.displayName,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -99,12 +113,16 @@ class LocalSettingsScreen extends StatelessWidget {
               onTap: () => _openThemeSelector(context),
             ),
             const SizedBox(height: MetricSlateSpacing.lg),
-            _SectionHeader(title: 'Modo de operação'),
+            const TechReportSectionHeader(
+              title: 'Modo de operação',
+              padding: EdgeInsets.zero,
+            ),
             const SizedBox(height: MetricSlateSpacing.sm),
-            _SettingsCard(
+            LocalInfoCard(
               icon: Icons.cloud_outlined,
               title: 'Trocar para modo empresa',
-              subtitle: 'Conecte-se ao servidor da empresa.',
+              body: 'Conecte-se ao servidor da empresa.',
+              showChevron: true,
               onTap: () => _confirmSwitchMode(context),
             ),
           ],
@@ -124,12 +142,12 @@ class LocalSettingsScreen extends StatelessWidget {
   void _openThemeSelector(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => _ThemeSelectorSheet(
+        currentMode: themeViewModel.currentMode,
         currentVariant: themeViewModel.currentVariant,
-        onSelected: (variant) {
-          themeViewModel.setVariant(variant);
-          Navigator.of(ctx).pop();
-        },
+        onModeSelected: (mode) => themeViewModel.setMode(mode),
+        onVariantSelected: (variant) => themeViewModel.setVariant(variant),
       ),
     );
   }
@@ -193,61 +211,6 @@ class LocalSettingsScreen extends StatelessWidget {
             applyLocalDataImport: applyLocalDataImport,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(title, style: Theme.of(context).textTheme.titleMedium);
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.trailing,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Widget? trailing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TechReportCard(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: MetricSlateSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 2),
-                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: MetricSlateSpacing.sm),
-            trailing!,
-          ] else
-            const Icon(Icons.chevron_right),
-        ],
       ),
     );
   }
@@ -377,45 +340,105 @@ class _ChangePinScreenState extends State<_ChangePinScreen> {
 
 class _ThemeSelectorSheet extends StatelessWidget {
   const _ThemeSelectorSheet({
+    required this.currentMode,
     required this.currentVariant,
-    required this.onSelected,
+    required this.onModeSelected,
+    required this.onVariantSelected,
   });
 
+  final AppThemeModePreference currentMode;
   final AppThemeVariant currentVariant;
-  final ValueChanged<AppThemeVariant> onSelected;
+  final ValueChanged<AppThemeModePreference> onModeSelected;
+  final ValueChanged<AppThemeVariant> onVariantSelected;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(MetricSlateSpacing.lg),
-            child: Text(
-              'Escolha o tema',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          const Divider(height: 1),
-          ...[
-            for (final variant in AppThemeVariant.values)
-              RadioListTile<AppThemeVariant>(
-                value: variant,
-                groupValue: currentVariant,
-                onChanged: (value) {
-                  if (value != null) onSelected(value);
-                },
-                title: Text(variant.displayName),
-                subtitle: Text(variant.description),
-                secondary: Icon(_variantIcon(variant)),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: MetricSlateSpacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(MetricSlateSpacing.lg),
+              child: Text(
+                'Aparência',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
+            ),
+            const Divider(height: 1),
+
+            // ── Modo de aparência ─────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                MetricSlateSpacing.lg,
+                MetricSlateSpacing.md,
+                MetricSlateSpacing.lg,
+                MetricSlateSpacing.xs,
+              ),
+              child: Text(
+                'Modo',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            ...[
+              for (final mode in AppThemeModePreference.values)
+                RadioListTile<AppThemeModePreference>(
+                  value: mode,
+                  groupValue: currentMode,
+                  onChanged: (value) {
+                    if (value != null) onModeSelected(value);
+                  },
+                  title: Text(mode.label),
+                  secondary: Icon(_modeIcon(mode)),
+                ),
+            ],
+
+            const Divider(height: MetricSlateSpacing.lg),
+
+            // ── Paleta de cores ───────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                MetricSlateSpacing.lg,
+                MetricSlateSpacing.xs,
+                MetricSlateSpacing.lg,
+                MetricSlateSpacing.xs,
+              ),
+              child: Text(
+                'Cores',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            ...[
+              for (final variant in AppThemeVariant.values)
+                RadioListTile<AppThemeVariant>(
+                  value: variant,
+                  groupValue: currentVariant,
+                  onChanged: (value) {
+                    if (value != null) onVariantSelected(value);
+                  },
+                  title: Text(variant.displayName),
+                  subtitle: Text(variant.description),
+                  secondary: Icon(_variantIcon(variant)),
+                ),
+            ],
           ],
-          const SizedBox(height: MetricSlateSpacing.md),
-        ],
+        ),
       ),
     );
+  }
+
+  IconData _modeIcon(AppThemeModePreference mode) {
+    return switch (mode) {
+      AppThemeModePreference.system => Icons.settings_brightness_outlined,
+      AppThemeModePreference.light => Icons.light_mode_outlined,
+      AppThemeModePreference.dark => Icons.dark_mode_outlined,
+    };
   }
 
   IconData _variantIcon(AppThemeVariant variant) {

@@ -8,6 +8,8 @@ import '../navigation/tech_report_app.dart';
 import '../theme/metric_slate_theme.dart';
 import '../../shared/infra/debug/app_error_log.dart';
 import '../../shared/infra/debug/local_database_debug_log.dart';
+import '../../shared/infra/database/open_encrypted_database.dart';
+import '../../shared/infra/security/database_key_store.dart';
 
 void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,8 +54,43 @@ class _TechReportBootstrapAppState extends State<_TechReportBootstrapApp> {
         error: error,
         stackTrace: stackTrace,
       );
+
+      // Log de auditoria em release: nao expõe dados sensíveis (chave, stack trace).
+      _logBootstrapScopeAuditFailure(error);
+
       rethrow;
     }
+  }
+
+  /// Log estruturado de auditoria para falhas em [_createScope].
+  /// Coleta dados booleanos sem expor informacoes sensiveis.
+  static Future<void> _logBootstrapScopeAuditFailure(Object error) async {
+    bool? fileExists;
+    bool? keyExists;
+
+    try {
+      final dbFile = await resolveLocalDatabaseFile();
+      fileExists = dbFile.existsSync();
+    } catch (_) {
+      // ignora — dados de diagnostico apenas
+    }
+
+    try {
+      final keyStore = DatabaseKeyStore();
+      final key = await keyStore.readKey();
+      keyExists = key != null;
+    } catch (_) {
+      // ignora — dados de diagnostico apenas
+    }
+
+    LocalDatabaseDebugLog.audit(
+      'bootstrap.scope.audit',
+      data: {
+        'exceptionType': error.runtimeType.toString(),
+        'fileExists': fileExists,
+        'keyExists': keyExists,
+      },
+    );
   }
 
   @override

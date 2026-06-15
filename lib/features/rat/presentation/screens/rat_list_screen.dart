@@ -4,6 +4,7 @@ import 'package:techreport/features/company_auth/data/services/supabase_client_f
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
+import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
@@ -242,9 +243,8 @@ class _RatListScreenState extends State<RatListScreen> {
             ratRepository: widget.ratRepository,
             shareRatLocally: widget.shareRatLocally,
             remoteSession: widget.remoteSession,
-            enqueueRatSync: widget.enqueueRatSync,
             enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
-            processSyncQueue: widget.processSyncQueue,
+            syncCoordinator: _syncCoordinator(),
             downloadRemoteRats: widget.downloadRemoteRats,
             supabaseClientFactory: widget.supabaseClientFactory,
           ),
@@ -269,9 +269,8 @@ class _RatListScreenState extends State<RatListScreen> {
             shareRatLocally: widget.shareRatLocally,
             initialRat: rat,
             remoteSession: widget.remoteSession,
-            enqueueRatSync: widget.enqueueRatSync,
             enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
-            processSyncQueue: widget.processSyncQueue,
+            syncCoordinator: _syncCoordinator(),
             downloadRemoteRats: widget.downloadRemoteRats,
             supabaseClientFactory: widget.supabaseClientFactory,
           ),
@@ -293,9 +292,8 @@ class _RatListScreenState extends State<RatListScreen> {
       shareRatLocally: widget.shareRatLocally,
       initialRat: rat,
       remoteSession: widget.remoteSession,
-      enqueueRatSync: widget.enqueueRatSync,
       enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
-      processSyncQueue: widget.processSyncQueue,
+      syncCoordinator: _syncCoordinator(),
       downloadRemoteRats: widget.downloadRemoteRats,
       supabaseClientFactory: widget.supabaseClientFactory,
     );
@@ -377,5 +375,23 @@ class _RatListScreenState extends State<RatListScreen> {
       papel: papel,
     );
     await widget.viewModel.load();
+  }
+
+  RatSyncCoordinator? _syncCoordinator() {
+    final enqueueRatSync = widget.enqueueRatSync;
+    final enqueueAssinaturaSync = widget.enqueueAssinaturaSync;
+    final processSyncQueue = widget.processSyncQueue;
+
+    if (enqueueRatSync == null ||
+        enqueueAssinaturaSync == null ||
+        processSyncQueue == null) {
+      return null;
+    }
+
+    return RatSyncCoordinator(
+      enqueueRatSync: enqueueRatSync,
+      enqueueAssinaturaSync: enqueueAssinaturaSync,
+      processSyncQueue: processSyncQueue,
+    );
   }
 }

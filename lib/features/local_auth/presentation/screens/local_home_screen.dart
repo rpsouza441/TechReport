@@ -254,7 +254,10 @@ class _RatsTab extends StatelessWidget {
         title: const TechReportModeTitle(modeLabel: 'Modo Local'),
         actions: [
           if (viewModel.pinConfigured)
-            TextButton(onPressed: () => _lockLocal(context), child: const Text('Bloquear')),
+            TextButton(
+              onPressed: () => _lockLocal(context),
+              child: const Text('Bloquear'),
+            ),
           IconButton(
             onPressed: onNavigateToSettings,
             icon: const Icon(Icons.settings_outlined),
@@ -285,11 +288,25 @@ class _RatsTab extends StatelessWidget {
     }
 
     if (ratListViewModel.errorMessage != null) {
-      return Center(child: Text(ratListViewModel.errorMessage!));
+      return TechReportStateView.error(
+        message: ratListViewModel.errorMessage!,
+        primaryAction: FilledButton(
+          onPressed: ratListViewModel.load,
+          child: const Text('Tentar novamente'),
+        ),
+      );
     }
 
     if (ratListViewModel.isEmpty) {
-      return _EmptyRatState(onCreate: () => _openCreate(context));
+      return TechReportStateView.empty(
+        title: 'Nenhum RAT cadastrado',
+        message: 'Comece criando seu primeiro relatório de atendimento.',
+        primaryAction: FilledButton.icon(
+          onPressed: () => _openCreate(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Novo RAT'),
+        ),
+      );
     }
 
     final rats = ratListViewModel.filteredRats;
@@ -458,47 +475,6 @@ class _RatsTab extends StatelessWidget {
           onShare: () => ratPdfShareService.share(shareResult),
           onSave: () => ratPdfShareService.exportToDevice(shareResult),
         ),
-      ),
-    );
-  }
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-class _EmptyRatState extends StatelessWidget {
-  const _EmptyRatState({required this.onCreate});
-
-  final VoidCallback onCreate;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.description_outlined,
-            size: 64,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(height: MetricSlateSpacing.md),
-          Text(
-            'Nenhum RAT cadastrado',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: MetricSlateSpacing.xs),
-          Text(
-            'Comece criando seu primeiro relatório de atendimento.',
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: MetricSlateSpacing.lg),
-          FilledButton.icon(
-            onPressed: onCreate,
-            icon: const Icon(Icons.add),
-            label: const Text('Novo RAT'),
-          ),
-        ],
       ),
     );
   }

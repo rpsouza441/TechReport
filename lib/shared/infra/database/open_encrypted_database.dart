@@ -120,6 +120,15 @@ void _prepareDatabaseEncryptionIfNeeded(File file, String escapedKey) {
 
     db.execute("PRAGMA rekey = 'raw:$escapedKey';");
 
+    final rekeyCipherCheck = db.select('PRAGMA cipher;');
+    final cipherValue = _readFirstPragmaValue(rekeyCipherCheck);
+    if (cipherValue.isEmpty) {
+      db.close();
+      throw StateError(
+        'Rekey falhou: banco pode estar corrompido apos aplicacao de chave.',
+      );
+    }
+
     LocalDatabaseDebugLog.info(
       'database.preEncryption.rekey.done',
       data: {'keyFormat': 'raw-hex', 'sizeAfterRekeyBytes': file.lengthSync()},
@@ -166,6 +175,15 @@ void _rekeyLegacyPassphraseDatabaseIfNeeded(
     }
 
     db.execute("PRAGMA rekey = 'raw:$escapedKey';");
+
+    final rekeyCipherCheck = db.select('PRAGMA cipher;');
+    final cipherValue = _readFirstPragmaValue(rekeyCipherCheck);
+    if (cipherValue.isEmpty) {
+      db.close();
+      throw StateError(
+        'Rekey falhou: banco pode estar corrompido apos aplicacao de chave.',
+      );
+    }
 
     LocalDatabaseDebugLog.info(
       'database.preEncryption.legacyPassphrase.rekey.done',
