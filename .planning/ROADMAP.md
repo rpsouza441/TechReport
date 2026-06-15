@@ -1,6 +1,6 @@
 # TechReport — Roadmap
 
-**Current phase:** Sprint 9.6 (in progress)
+**Current phase:** Sprint 9.8 (planned)
 **Last updated:** 2026-06-15
 
 ---
@@ -100,9 +100,48 @@ Sprint 12     → Physical device testing (future)
 - `5fbeda0` fix(v9.6): tryMarkProcessing aceita status failed para retry
 - `16e5dff` fix(v9.6): recarregar lista RATs apos retry de sync
 
+### Sprint 9.7: Tech Debt Cleanup (Complete)
+**Source:** CONCERNS.md - Tech Debt section
+
+**Objectives:**
+- Remover generated Drift file do source tree ✅
+- Extrair constantes de magic numbers ✅
+- Refatorar metodos grandes ✅
+- Extrair widgets compostos ✅
+
+**Deliverables:**
+- `.g.dart` removido do git tracking ✅
+- `_buildRatForSave()` extraído do `save()` ✅
+- `ConviteCard` extraído para arquivo separado ✅
+- admin_empresa_area.dart: 833 → 672 linhas ✅
+- rat_form_view_model.dart: 956 → 912 linhas ✅
+
+**Commits:**
+- `b627c37` docs(v9.7): create plan for Tech Debt cleanup
+- `5030dd6` test(v9.7): add edge case tests for save()
+- `4852c85` refactor(v9.7): extract _buildRatForSave method
+- `79e8df5` refactor(v9.7): extract ConviteCard widgets
+
 ---
 
 ## Upcoming Phases
+
+### Sprint 9.8: Error Handling
+**Status:** Planned
+**Source:** CONCERNS.md - Missing Error Handling
+
+**Objectives:**
+- Corrigir silent catch blocks
+- Adicionar logging de erros
+- Melhorar mensagens para o usuário
+
+### Sprint 9.9: Performance
+**Status:** Planned
+**Source:** CONCERNS.md - Performance Concerns
+
+**Objectives:**
+- Corrigir AnimatedBuilder rebuilds
+- Implementar paginação na lista RATs
 
 ### Sprint 10: Release Preparation
 **Target:** 2026-06 (1-2 sprints)
