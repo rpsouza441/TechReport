@@ -649,7 +649,7 @@ void main() {
       final result = await sut.saveSignature(exactly1MB);
 
       // exatamente 1 MB deve ser aceito (não é maior que 1 MB)
-      expect(result, isFalse); // save() fails because there's no valid RAT data
+      expect(result, isTrue); // 1 MB exactly should be accepted
     });
 
     test(
@@ -674,9 +674,9 @@ void main() {
       },
     );
   });
-}
 
   // ─── save() edge cases ────────────────────────────────────────────────────────
+
 
   group('save() edge cases', () {
     test('save() com enqueueSync=false nao enfila para sync', () async {
@@ -690,8 +690,8 @@ void main() {
 
       final result = await sut.save(enqueueSync: false);
 
+
       expect(result, isTrue);
-      // Sem remoteSession, syncStatus deve ser localOnly
       expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.localOnly);
     });
 
@@ -742,9 +742,12 @@ void main() {
 
       final result = await sut.save();
 
+
       expect(result, isTrue);
       expect(ratRepo.savedRat!.responsavelDocumento, 'Documento');
       expect(ratRepo.savedRat!.equipamentoMovimentoTipo,
           EquipamentoMovimentoTipo.retiradaParaReparo);
     });
   });
+
+}
