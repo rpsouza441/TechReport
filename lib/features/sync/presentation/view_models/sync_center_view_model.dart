@@ -13,6 +13,7 @@ class SyncCenterViewModel extends ChangeNotifier {
     required RatRepository ratRepository,
     required String empresaId,
     required String usuarioId,
+    this.onSyncComplete,
   }) : _queueRepository = queueRepository,
        _processSyncQueue = processSyncQueue,
        _ratRepository = ratRepository,
@@ -24,6 +25,10 @@ class SyncCenterViewModel extends ChangeNotifier {
   final RatRepository _ratRepository;
   final String _empresaId;
   final String _usuarioId;
+
+  /// Callback chamado quando o sync termina (sucesso ou falha).
+  /// Usado para notificar o CompanyShell recarregar a lista de RATs.
+  final VoidCallback? onSyncComplete;
 
   List<SyncItem> _items = [];
   bool _isLoading = false;
@@ -120,5 +125,8 @@ class SyncCenterViewModel extends ChangeNotifier {
     await load();
     _isRetrying = false;
     notifyListeners();
+
+    // Notificar que o sync terminou para recarregar lista de RATs
+    onSyncComplete?.call();
   }
 }

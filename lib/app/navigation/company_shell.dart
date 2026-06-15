@@ -524,6 +524,7 @@ class _CompanyShellState extends State<CompanyShell> {
             ratRepository: widget.scope.ratRepository,
             empresaId: empresaId,
             usuarioId: currentSession.usuarioId,
+            onSyncComplete: () => _ratListViewModel?.load(),
           ),
         ),
       ),
