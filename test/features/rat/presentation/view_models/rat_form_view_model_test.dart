@@ -675,3 +675,76 @@ void main() {
     );
   });
 }
+
+  // ─── save() edge cases ────────────────────────────────────────────────────────
+
+  group('save() edge cases', () {
+    test('save() com enqueueSync=false nao enfila para sync', () async {
+      final sut = buildVm();
+      sut.setClienteNome('Cliente Válido');
+      sut.setResponsavelRecebimento('Responsável');
+      sut.setDataVisita(DateTime.now());
+      sut.setHorarioInicioAtendimento('0800');
+      sut.setHorarioTerminoAtendimento('1000');
+      sut.setDescricao('Descrição válida');
+
+      final result = await sut.save(enqueueSync: false);
+
+      expect(result, isTrue);
+      // Sem remoteSession, syncStatus deve ser localOnly
+      expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.localOnly);
+    });
+
+    test('save() atualiza RAT existente com novo conteudo', () async {
+      final existingRat = _makeValidRat(id: 'rat-existing');
+      final sut = buildVm(initialRat: existingRat);
+
+      sut.setClienteNome('Cliente Atualizado');
+      sut.setResponsavelRecebimento('Responsável');
+      sut.setDataVisita(DateTime.now());
+      sut.setHorarioInicioAtendimento('0900');
+      sut.setHorarioTerminoAtendimento('1100');
+      sut.setDescricao('Descrição atualizada');
+
+      final result = await sut.save();
+
+      expect(result, isTrue);
+      expect(ratRepo.savedRat!.id, 'rat-existing');
+      expect(ratRepo.savedRat!.clienteNome, 'Cliente Atualizado');
+    });
+
+    test('save() define numero correto quando criando RAT', () async {
+      final sut = buildVm();
+      sut.setClienteNome('Cliente Válido');
+      sut.setResponsavelRecebimento('Responsável');
+      sut.setDataVisita(DateTime.now());
+      sut.setHorarioInicioAtendimento('0800');
+      sut.setHorarioTerminoAtendimento('1000');
+      sut.setDescricao('Descrição válida');
+
+      await sut.save();
+
+      expect(ratRepo.savedRat!.numero, isNotEmpty);
+    });
+
+    test('save() com todos os campos opcionais preenchidos', () async {
+      final sut = buildVm();
+      sut.setClienteNome('Cliente Válido');
+      sut.setResponsavelRecebimento('Responsável');
+      sut.setResponsavelDocumento('Documento');
+      sut.setDataVisita(DateTime.now());
+      sut.setHorarioInicioAtendimento('0800');
+      sut.setHorarioTerminoAtendimento('1000');
+      sut.setDescricao('Descrição válida');
+      sut.setEquipamentoMovimentoTipo(EquipamentoMovimentoTipo.retiradaParaReparo);
+      sut.setEquipamentoDescricao('Equipamento X');
+      sut.setEquipamentoObservacao('Observação do equipamento');
+
+      final result = await sut.save();
+
+      expect(result, isTrue);
+      expect(ratRepo.savedRat!.responsavelDocumento, 'Documento');
+      expect(ratRepo.savedRat!.equipamentoMovimentoTipo,
+          EquipamentoMovimentoTipo.retiradaParaReparo);
+    });
+  });
