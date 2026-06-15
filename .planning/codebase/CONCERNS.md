@@ -1,9 +1,11 @@
 # Codebase Concerns
 
 **Analysis Date:** 2025-03-11
-**Last Updated:** 2026-06-15 (v9.6 sync fixes)
+**Last Updated:** 2026-06-15
 
-## Resolved in v9.6 (Sync Queue Bug Fixes)
+---
+
+## Sync Queue Issues — Resolved in v9.6
 
 | Issue | Status | Fix Applied |
 |-------|--------|-------------|
@@ -13,17 +15,9 @@
 | Lista RATs não atualizava após retry | ✅ Resolved | Added `onSyncComplete` callback |
 | Fila não mostrava ID da RAT | ✅ Resolved | `getRatInfo()` extrai numero/cliente do payload JSON |
 
-**Commits:**
-- `76163c6` fix(v9.6): sync queue bug fixes
-- `87d3b7a` fix(v9.6): pass vm to _buildSection
-- `3fbc7cb` fix(v9.6): retry manual ignora nextAttemptAt
-- `2274e91` fix(v9.6): nao sobrescreve status failed
-- `5fbeda0` fix(v9.6): tryMarkProcessing aceita failed
-- `16e5dff` fix(v9.6): recarregar lista RATs apos retry
-
 ---
 
-## Tech Debt
+## Tech Debt — PENDING
 
 **Large ViewModel with excessive state management:**
 - File: `lib/features/rat/presentation/view_models/rat_form_view_model.dart` (879 lines)
