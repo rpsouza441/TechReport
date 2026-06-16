@@ -39,38 +39,45 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: widget.viewModel,
-      builder: (context, _) {
-        return Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: widget.viewModel.load,
-              child: _buildBody(context),
-            ),
-            if (widget.viewModel.isSubmitting || widget.viewModel.isLoading)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
-            Positioned(
-              right: MetricSlateSpacing.lg,
-              bottom: MetricSlateSpacing.lg,
-              child: widget.viewModel.canInviteMembers
-                  ? FloatingActionButton.extended(
-                      onPressed: widget.viewModel.isSubmitting
-                          ? null
-                          : _openInviteScreen,
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: widget.viewModel.load,
+          child: _buildBody(context),
+        ),
+        ListenableBuilder(
+          listenable: widget.viewModel,
+          builder: (context, _) {
+            final isLoading = widget.viewModel.isSubmitting || widget.viewModel.isLoading;
+            return isLoading
+                ? const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  )
+                : const SizedBox.shrink();
+          },
+        ),
+        ListenableBuilder(
+          listenable: widget.viewModel,
+          builder: (context, _) {
+            final canInvite = widget.viewModel.canInviteMembers;
+            final isSubmitting = widget.viewModel.isSubmitting;
+            return canInvite
+                ? Positioned(
+                    right: MetricSlateSpacing.lg,
+                    bottom: MetricSlateSpacing.lg,
+                    child: FloatingActionButton.extended(
+                      onPressed: isSubmitting ? null : _openInviteScreen,
                       icon: const Icon(Icons.person_add_outlined),
                       label: const Text('Convidar'),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        );
-      },
+                    ),
+                  )
+                : const SizedBox.shrink();
+          },
+        ),
+      ],
     );
   }
 

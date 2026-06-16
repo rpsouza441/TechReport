@@ -842,7 +842,10 @@ String _newRatId() {
 }
 
 String _newRatNumber() {
-  return '${DateTime.now().microsecondsSinceEpoch}';
+  // Use timestamp + short UUID to ensure uniqueness while keeping readable format
+  final uuid = const Uuid().v4().substring(0, 8);
+  final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(5);
+  return '$timestamp-$uuid';
 }
 
 String? _optionalText(String value) {

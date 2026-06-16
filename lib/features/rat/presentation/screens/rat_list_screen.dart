@@ -87,8 +87,8 @@ class _RatListScreenState extends State<RatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: widget.viewModel,
+    return ListenableBuilder(
+      listenable: widget.viewModel,
       builder: (context, _) {
         final body = _buildBody(context);
 
