@@ -11,6 +11,7 @@ import 'package:techreport/features/rat/presentation/screens/rat_reopen_reason_s
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_discard_dialog.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 
@@ -36,6 +37,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
   late final TextEditingController _equipamentoController;
   late final TextEditingController _equipamentoObservacaoController;
   bool _allowPop = false;
+  bool _hasUnsavedChanges = false;
 
   @override
   void initState() {
@@ -64,7 +66,28 @@ class _RatFormScreenState extends State<RatFormScreen> {
     _equipamentoObservacaoController = TextEditingController(
       text: widget.viewModel.equipamentoObservacao,
     );
+
+    // Track unsaved changes
+    for (final controller in [
+      _clienteController,
+      _descricaoController,
+      _responsavelController,
+      _responsavelDocumentoController,
+      _inicioController,
+      _terminoController,
+      _equipamentoController,
+      _equipamentoObservacaoController,
+    ]) {
+      controller.addListener(_onFormChanged);
+    }
+
     widget.viewModel.loadSignatureStatus();
+  }
+
+  void _onFormChanged() {
+    if (!_hasUnsavedChanges) {
+      setState(() => _hasUnsavedChanges = true);
+    }
   }
 
   @override
@@ -391,6 +414,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
     }
 
     if (widget.viewModel.errorMessage == null) {
+      setState(() => _hasUnsavedChanges = false);
       _closeForm(result: true);
     }
   }
@@ -566,15 +590,23 @@ class _RatFormScreenState extends State<RatFormScreen> {
     return result ?? false;
   }
 
-  void _closeForm({bool? result}) {
+  void _closeForm({bool? result}) async {
     if (!mounted) {
       return;
+    }
+
+    // If there are unsaved changes, ask for confirmation
+    if (_hasUnsavedChanges) {
+      final discard = await showTechReportDiscardDialog(context);
+      if (!discard) return; // User cancelled, stay on screen
     }
 
     setState(() {
       _allowPop = true;
     });
-    Navigator.of(context).pop(result ?? widget.viewModel.shouldReloadOnClose);
+    if (mounted) {
+      Navigator.of(context).pop(result ?? widget.viewModel.shouldReloadOnClose);
+    }
   }
 
   Future<void> _pickDataVisita() async {
