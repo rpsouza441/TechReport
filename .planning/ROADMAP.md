@@ -1,6 +1,6 @@
 # TechReport — Roadmap
 
-**Current phase:** Sprint 9.12 (planned)
+**Current phase:** Sprint 20 (planned)
 **Last updated:** 2026-06-16
 
 ---
@@ -215,34 +215,32 @@ Sprint 22         → Physical device testing (future)
 - `afb5d31` refactor(v9.11): migrate app_admin_company_detail_screen.dart to use shared widgets
 - `5a310f5` refactor(v9.11): extract _renderRatPdfBytes for PDF service
 
-### Sprint 9.12: Remaining CONCERNS.md Items
-**Status:** Planned
+### Sprint 9.12: Remaining CONCERNS.md Items (Complete)
+**Status:** Complete ✅
 **Source:** CONCERNS.md - Pending items
+**Completed:** 2026-06-16
 
 **Objectives:**
-- Implementar paginação na lista RATs (cursor-based, page size 20)
-- ViewModel splitting (RatFormViewModel 916 lines)
-- Adicionar integration tests (backup/restore, sync, auth)
-- Adicionar notificação de convite expirado (1 dia antes)
+- Implementar paginação na lista RATs (cursor-based, page size 20) ✅
+- ViewModel splitting (RatFormViewModel 916 lines) ✅
+- Adicionar integration tests (backup/restore, sync, auth) ✅
+- Adicionar notificação de convite expirado (1 dia antes) ✅
 
 **Plans:** 4 plans in 4 waves
 
-**Plan list:**
-- [ ] 09.12-01-PLAN.md — Cursor-based pagination (page size 20)
-- [ ] 09.12-02-PLAN.md — RatFormViewModel splitting (4 specialized classes)
-- [ ] 09.12-03-PLAN.md — Integration tests (backup/restore, sync, auth)
-- [ ] 09.12-04-PLAN.md — Invite expiry notification UI
-
-**Wave structure:**
-| Wave | Plans | Focus | Files |
-|------|-------|-------|-------|
-| 1 | 09.12-01 | Pagination | rat_list_view_model.dart, rat_repository.dart |
-| 2 | 09.12-02 | ViewModel splitting | rat_form_view_model.dart, new specialized classes |
-| 3 | 09.12-03 | Integration tests | test/integration/*.dart (new files) |
-| 4 | 09.12-04 | Invite expiry warning | secure_token_store.dart, company_home_screen.dart |
-
-**Commits (pending):**
-- TBD — execute each plan for commits
+**Commits:**
+- `3617d2f` feat(v9.12): implement cursor-based pagination with page size 20
+- `e8d1280` feat(09.12-02): extract RatFormState for form fields and validation
+- `2193622` feat(09.12-02): extract RatSignatureManager for signature lifecycle
+- `a3fcd82` feat(09.12-02): extract RatPdfGenerator for PDF data preparation
+- `e5e97e4` feat(09.12-02): extract RatSyncHandler for sync coordination
+- `3420af0` refactor(09.12-02): refactor RatFormViewModel as facade
+- `af6ac16` test(09.12-03): add backup/restore integration tests
+- `df91fcd` test(09.12-03): add sync flow integration tests
+- `0c4f578` test(09.12-03): add auth flow integration tests
+- `aed73c3` feat(09.12-04): add expiry warning helpers to PendingCompanyInvite
+- `bb78102` feat(09.12-04): add ConviteExpiryWarning widget
+- `0bd82b4` feat(09.12-04): add pending invite expiry check to CompanyShell
 
 ### Sprint 20: Release Preparation
 **Target:** 2026-06 (1-2 sprints)

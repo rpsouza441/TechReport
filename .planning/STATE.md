@@ -1,12 +1,12 @@
 ---
 milestone: v9.12
-name: CONCERNS.md Remaining Items
-status: in_progress
+name: Remaining CONCERNS.md Items
+status: complete
 progress:
   phases_completed: 1
   phases_total: 1
-  plans_completed: 1
-  plans_total: 2
+  plans_completed: 4
+  plans_total: 4
 last_activity: 2026-06-16
 ---
 
@@ -14,25 +14,28 @@ last_activity: 2026-06-16
 
 ## Current Position
 
-Phase: 09.12
-Plan: 09.12-02-PLAN.md
-Status: Completed - RatFormViewModel split into 4 specialized classes
-Last activity: 2026-06-16 — Plan 09.12-02 completed
+Phase: COMPLETE
+Plan: 09.12-04-PLAN.md
+Status: Sprint 9.12 finished
+Last activity: 2026-06-16 — Sprint 9.12 Remaining CONCERNS.md Items completed
 
 ## Milestone Context
 
-**v9.12: CONCERNS.md Remaining Items** — IN PROGRESS
+**v9.12: Remaining CONCERNS.md Items** — ✅ COMPLETO
 
-Plans completed:
-- [x] 09.12-01: Cursor-based pagination (100+ commits)
-- [x] 09.12-02: RatFormViewModel splitting (6 commits)
-
-Plans remaining:
-- [ ] 09.12-03: (to be planned)
+Melhorias implementadas:
+- Cursor-based pagination (page size 20) ✅
+- RatFormViewModel splitting (4 classes) ✅
+- Integration tests (backup/restore, sync, auth) ✅
+- Invite expiry warning UI ✅
 
 ## Next Milestone
 
-**v9.13: Sprint 9.13** (to be planned)
+**v20: Release Preparation**
+- QA e testes manuais
+- Android build verification
+- Play Store assets preparation
+- Beta testing com usuarios reais
 
 ## Blockers
 
@@ -40,9 +43,11 @@ Plans remaining:
 
 ## Todos
 
-- [x] Implementar cursor-based pagination (09.12-01)
-- [x] Split RatFormViewModel into specialized classes (09.12-02)
-- [ ] Identificar proximo item do CONCERNS.md
+- [x] Implementar cursor-based pagination
+- [x] Split RatFormViewModel
+- [x] Adicionar integration tests
+- [x] Adicionar invite expiry warning
+- [ ] Iniciar Sprint 20
 
 ---
 
