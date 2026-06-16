@@ -79,33 +79,13 @@ class RatPdfShareService {
     String? tecnicoNome,
     bool assinaturaPendente = false,
   }) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        footer: (context) => _buildFooter(context),
-        build: (context) {
-          return [
-            _buildHeader(empresaNome: empresaNome, tecnicoNome: tecnicoNome),
-            pw.SizedBox(height: 24),
-            _buildIdentificationSection(rat),
-            pw.SizedBox(height: 18),
-            _buildDescriptionSection(rat),
-            pw.SizedBox(height: 18),
-            _buildEquipamentoSection(rat),
-            pw.SizedBox(height: 24),
-            _buildAssinaturaSection(
-              assinaturaBytes,
-              assinaturaPendente: assinaturaPendente,
-            ),
-          ];
-        },
-      ),
+    return _renderRatPdfBytes(
+      rat: rat,
+      assinaturaBytes: assinaturaBytes,
+      empresaNome: empresaNome,
+      tecnicoNome: tecnicoNome,
+      assinaturaPendente: assinaturaPendente,
     );
-
-    return pdf.save();
   }
 
   Future<Uint8List> _buildPdf(
@@ -122,6 +102,26 @@ class RatPdfShareService {
       throw StateError('RAT ausente para gerar PDF.');
     }
 
+    return _renderRatPdfBytes(
+      rat: rat,
+      assinaturaBytes: assinaturaBytes,
+      empresaNome: empresaNome,
+      tecnicoNome: tecnicoNome,
+      assinaturaPendente: assinaturaPendente,
+    );
+  }
+
+  /// Metodo privado para renderizar PDF do RAT.
+  ///
+  /// Extraido para eliminar duplicacao entre buildPreviewBytes e _buildPdf.
+  /// O conteudo visual do PDF nao deve mudar nesta refatoracao (CODE-01 FR-004).
+  Future<Uint8List> _renderRatPdfBytes({
+    required Rat rat,
+    Uint8List? assinaturaBytes,
+    String? empresaNome,
+    String? tecnicoNome,
+    bool assinaturaPendente = false,
+  }) async {
     final pdf = pw.Document();
 
     pdf.addPage(
