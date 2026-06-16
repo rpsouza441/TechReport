@@ -168,7 +168,29 @@ Sprint 22         → Physical device testing (future)
 
 ## Upcoming Phases
 
-### Sprint 9.10: Security
+### Sprint 9.10: Security (Complete)
+**Source:** CONCERNS.md - Security Considerations
+
+**Objectives:**
+- Migrar para PKCE ✅
+- Aumentar PBKDF2 iterações ✅
+- Configurar secure storage ✅
+- Adicionar criptografia de backup ⚠️ (deferido)
+
+**Deliverables:**
+- supabase_client_factory.dart: PKCE auth flow ✅
+- local_pin_secret_store.dart: 100k iterações + migração automática ✅
+- flutter_secure_token_store.dart: storageNamespace configurado ✅
+- CONCERNS.md: backup encryption marcado como deferido ⚠️
+
+**Commits:**
+- `72545af` fix(v9.10): security improvements
+
+---
+
+## Upcoming Phases
+
+### Sprint 9.11: UI Duplication
 **Status:** Planned
 **Source:** CONCERNS.md - Performance Concerns
 
