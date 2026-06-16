@@ -1,12 +1,12 @@
 ---
-milestone: v9.11
-name: UI Duplication
-status: complete
+milestone: v9.12
+name: CONCERNS.md Remaining Items
+status: in_progress
 progress:
   phases_completed: 1
   phases_total: 1
-  plans_completed: 4
-  plans_total: 4
+  plans_completed: 1
+  plans_total: 2
 last_activity: 2026-06-16
 ---
 
@@ -14,26 +14,25 @@ last_activity: 2026-06-16
 
 ## Current Position
 
-Phase: COMPLETE
-Plan: 09.11-04-PLAN.md
-Status: Sprint 9.11 finished
-Last activity: 2026-06-16 — Sprint 9.11 UI Duplication completed
+Phase: 09.12
+Plan: 09.12-02-PLAN.md
+Status: Completed - RatFormViewModel split into 4 specialized classes
+Last activity: 2026-06-16 — Plan 09.12-02 completed
 
 ## Milestone Context
 
-**v9.11: UI Duplication** — ✅ COMPLETO
+**v9.12: CONCERNS.md Remaining Items** — IN PROGRESS
 
-Melhorias implementadas:
-- Shared discard dialog helper ✅
-- Shared confirmation dialog helper ✅
-- AdminUserActionChips widget ✅
-- PDF service refactoring (_renderRatPdfBytes) ✅
-- 4 telas migradas para shared helpers ✅
+Plans completed:
+- [x] 09.12-01: Cursor-based pagination (100+ commits)
+- [x] 09.12-02: RatFormViewModel splitting (6 commits)
+
+Plans remaining:
+- [ ] 09.12-03: (to be planned)
 
 ## Next Milestone
 
-**v9.12: Sprint 9.12** (planejado)
-- Continuar itens restantes do CONCERNS.md
+**v9.13: Sprint 9.13** (to be planned)
 
 ## Blockers
 
@@ -41,16 +40,9 @@ Melhorias implementadas:
 
 ## Todos
 
-- [x] Criar shared dialog helpers
-- [x] Migrar CompanyEditProfileScreen
-- [x] Migrar RatFormScreen
-- [x] Migrar LocalSettingsScreen
-- [x] Migrar LocalDataImportScreen
-- [x] Criar AdminUserActionChips
-- [x] Migrar admin_empresa_area.dart
-- [x] Migrar app_admin_company_detail_screen.dart
-- [x] Extrair _renderRatPdfBytes
-- [ ] Iniciar Sprint 10
+- [x] Implementar cursor-based pagination (09.12-01)
+- [x] Split RatFormViewModel into specialized classes (09.12-02)
+- [ ] Identificar proximo item do CONCERNS.md
 
 ---
 
