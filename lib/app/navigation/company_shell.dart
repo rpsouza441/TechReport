@@ -3,8 +3,11 @@ import 'package:techreport/app/di/app_scope.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/presentation/screens/admin_empresa_area.dart';
 import 'package:techreport/features/company_admin/presentation/screens/app_admin_area.dart';
+import 'package:techreport/features/company_admin/presentation/screens/company_invite_member_screen.dart';
+import 'package:techreport/features/company_admin/presentation/widgets/convite_card.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/admin_empresa_view_model.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_view_model.dart';
+import 'package:techreport/features/company_auth/data/services/secure_token_store.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/company_auth/presentation/screens/company_home_screen.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_list_screen.dart';
@@ -70,6 +73,43 @@ class _CompanyShellState extends State<CompanyShell> {
   AppAdminViewModel? _appAdminViewModel;
   bool _isSyncing = false;
   bool _isSigningOut = false;
+
+  // Pending invite warning state
+  PendingCompanyInvite? _pendingInvite;
+  bool _showInviteWarning = false;
+  bool _inviteWarningDismissed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPendingInviteExpiry();
+  }
+
+  Future<void> _checkPendingInviteExpiry() async {
+    final pending = await widget.scope.secureTokenStore.readPendingInvite();
+    if (pending != null) {
+      if (pending.isExpired) {
+        // Clear expired invite silently
+        await widget.scope.secureTokenStore.clearPendingInvite();
+        _pendingInvite = null;
+        _showInviteWarning = false;
+      } else {
+        _pendingInvite = pending;
+        _showInviteWarning = pending.isExpiringSoon;
+      }
+    } else {
+      _pendingInvite = null;
+      _showInviteWarning = false;
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _dismissInviteWarning() {
+    setState(() {
+      _inviteWarningDismissed = true;
+      _showInviteWarning = false;
+    });
+  }
 
   Future<void> _signOut() async {
     final currentSession = session;
@@ -352,12 +392,25 @@ class _CompanyShellState extends State<CompanyShell> {
       case CompanyArea.rats:
         return _buildRatsArea(currentSession);
       case CompanyArea.profile:
-        return CompanyHomeScreen(
-          sessionNotifier: widget.sessionNotifier,
-          scope: widget.scope,
-          changePassword: widget.scope.changeCompanyPassword,
-          onPasswordChanged: widget.onSignOut,
-          themeViewModel: widget.scope.appThemeViewModel,
+        return Column(
+          children: [
+            if (_showInviteWarning &&
+                !_inviteWarningDismissed &&
+                _pendingInvite != null)
+              ConviteExpiryWarning(
+                invite: _pendingInvite!,
+                onDismiss: _dismissInviteWarning,
+              ),
+            Expanded(
+              child: CompanyHomeScreen(
+                sessionNotifier: widget.sessionNotifier,
+                scope: widget.scope,
+                changePassword: widget.scope.changeCompanyPassword,
+                onPasswordChanged: widget.onSignOut,
+                themeViewModel: widget.scope.appThemeViewModel,
+              ),
+            ),
+          ],
         );
       case CompanyArea.adminEmpresa:
         final empresaId = currentSession.empresaId!;
