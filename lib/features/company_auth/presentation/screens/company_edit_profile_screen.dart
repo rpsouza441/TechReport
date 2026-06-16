@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_discard_dialog.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
 
 /// Tela de edição do nome exibido no perfil do usuário.
@@ -84,29 +85,6 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
     }
   }
 
-  Future<bool> _showDiscardDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Descartar alterações?'),
-        content: const Text(
-          'Suas alterações não foram salvas. Deseja descartá-las?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Descartar'),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -114,7 +92,7 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final navigator = Navigator.of(context);
-        final discard = await _showDiscardDialog();
+        final discard = await showTechReportDiscardDialog(context);
         if (discard && mounted) {
           navigator.pop();
         }
