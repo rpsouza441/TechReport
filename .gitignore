@@ -39,6 +39,9 @@ desktop.ini
 /build/
 /coverage/
 
+# Generated Drift files
+*.g.dart
+
 # Symbolication related
 app.*.symbols
 
