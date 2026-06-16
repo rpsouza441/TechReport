@@ -120,6 +120,7 @@ static const _defaultIterations = 10000;
 - Issue: Backup file contains plaintext RAT data and signatures (base64 encoded in JSON).
 - Impact: If backup file is shared or stolen, all data is readable without any encryption.
 - Fix approach: Add optional password-protected ZIP encryption using `archive` package or encrypt the entire archive with AES-256.
+- **Status:** DEFERRED — requires dedicated feature with UI for password input and backward compatibility testing.
 
 **Secret keys stored with FlutterSecureStorage defaults:**
 - `lib/features/company_auth/data/services/flutter_secure_token_store.dart:6`:

@@ -60,7 +60,7 @@ class SupabaseClientFactory {
     return SupabaseClient(
       endpoint.supabaseUrl,
       publicKey,
-      authOptions: const AuthClientOptions(authFlowType: AuthFlowType.implicit),
+      authOptions: const AuthClientOptions(authFlowType: AuthFlowType.pkce),
     );
   }
 }

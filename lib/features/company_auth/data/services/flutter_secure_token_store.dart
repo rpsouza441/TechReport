@@ -2,8 +2,18 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:techreport/features/company_auth/data/services/secure_token_store.dart';
 
 class FlutterSecureTokenStore implements SecureTokenStore {
-  FlutterSecureTokenStore([FlutterSecureStorage? storage])
-    : _storage = storage ?? const FlutterSecureStorage();
+  FlutterSecureTokenStore({FlutterSecureStorage? storage})
+      : _storage = storage ??
+            const FlutterSecureStorage(
+              // Android: Use storageNamespace for full isolation
+              aOptions: AndroidOptions(
+                storageNamespace: 'TechReportSecure',
+              ),
+              // iOS: Store only when device is unlocked, this device only
+              iOptions: IOSOptions(
+                accessibility: KeychainAccessibility.first_unlock_this_device,
+              ),
+            );
 
   final FlutterSecureStorage _storage;
 

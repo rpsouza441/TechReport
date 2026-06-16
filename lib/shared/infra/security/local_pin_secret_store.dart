@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:techreport/features/local_auth/domain/repositories/pin_secret_repository.dart';
 
@@ -11,7 +11,9 @@ class LocalPinSecretStore implements PinSecretRepository {
     : _storage = storage ?? const FlutterSecureStorage();
 
   static const _pinKey = 'local_pin';
-  static const _defaultIterations = 10000;
+  // OWASP 2023 recommends 120,000+ iterations for PBKDF2-HMAC-SHA256.
+  // Using 100,000 as minimum to ensure adequate security against brute-force.
+  static const _defaultIterations = 100000;
 
   final FlutterSecureStorage _storage;
 
@@ -36,7 +38,15 @@ class LocalPinSecretStore implements PinSecretRepository {
     if (parsed == null) return false;
 
     final hash = _pbkdf2Sha256(pin, parsed.salt, parsed.iterations);
-    return _constantTimeCompare(hash, parsed.hash);
+    final isValid = _constantTimeCompare(hash, parsed.hash);
+
+    // Migrate to new iteration count if verified and using old count
+    if (isValid && parsed.iterations < _defaultIterations) {
+      debugPrint('Migrating PIN from ${parsed.iterations} to $_defaultIterations iterations');
+      await savePin(pin);
+    }
+
+    return isValid;
   }
 
   @override
