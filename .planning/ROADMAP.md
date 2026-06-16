@@ -1,6 +1,6 @@
 # TechReport — Roadmap
 
-**Current phase:** Sprint 9.8 (planned)
+**Current phase:** Sprint 9.12 (planned)
 **Last updated:** 2026-06-15
 
 ---
@@ -190,23 +190,30 @@ Sprint 22         → Physical device testing (future)
 
 ## Upcoming Phases
 
-### Sprint 9.11: UI Duplication
-**Status:** Planned
+### Sprint 9.11: UI Duplication (Complete)
+**Status:** Complete ✅
 **Source:** CONCERNS.md - UI Duplication + Sprint 9.4 specs
+**Completed:** 2026-06-16
 
 **Objectives:**
-- Create shared dialog helpers for discard and confirmation dialogs
-- Migrate screens to use shared dialog helpers
-- Extract and share admin widgets (ConviteCard, AdminUserActionChips)
-- Eliminate duplicate PDF rendering blocks
+- Create shared dialog helpers for discard and confirmation dialogs ✅
+- Migrate screens to use shared dialog helpers ✅
+- Extract and share admin widgets (ConviteCard, AdminUserActionChips) ✅
+- Eliminate duplicate PDF rendering blocks ✅
 
 **Plans:** 4 plans in 4 waves
 
-Plans:
-- [ ] 09.11-01-PLAN.md — Create shared dialog helpers
-- [ ] 09.11-02-PLAN.md — Migrate CompanyEditProfileScreen and RatFormScreen to discard dialog, migrate confirmation dialogs
-- [ ] 09.11-03-PLAN.md — Extract AdminUserActionChips, migrate admin screens to shared widgets
-- [ ] 09.11-04-PLAN.md — Extract shared PDF rendering method
+**Commits:**
+- `52f7a64` feat(v9.11): create shared discard dialog helper
+- `06b2f1a` feat(v9.11): create shared confirmation dialog helper
+- `e4fd17d` refactor(v9.11): migrate company_edit_profile_screen to use shared discard dialog
+- `29688ae` refactor(v9.11): migrate rat_form_screen to use shared discard dialog (UI-07 SC-002)
+- `7c2e232` refactor(v9.11): migrate local_settings_screen to use shared confirmation dialog
+- `7591fb3` refactor(v9.11): migrate local_data_import_screen to use shared confirmation dialog
+- `c8272c9` feat(v9.11): extract AdminUserActionChips widget for user management actions
+- `b30b77c` refactor(v9.11): migrate admin_empresa_area.dart to use AdminUserActionChips
+- `afb5d31` refactor(v9.11): migrate app_admin_company_detail_screen.dart to use shared widgets
+- `5a310f5` refactor(v9.11): extract _renderRatPdfBytes for PDF service
 
 ### Sprint 20: Release Preparation
 **Target:** 2026-06 (1-2 sprints)

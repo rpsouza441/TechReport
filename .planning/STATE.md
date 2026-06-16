@@ -1,13 +1,13 @@
 ---
-milestone: v9.6
-name: Sync Queue Bug Fixes
+milestone: v9.11
+name: UI Duplication
 status: complete
 progress:
   phases_completed: 1
   phases_total: 1
-  plans_completed: 1
-  plans_total: 1
-last_activity: 2026-06-15
+  plans_completed: 4
+  plans_total: 4
+last_activity: 2026-06-16
 ---
 
 # State
@@ -15,27 +15,25 @@ last_activity: 2026-06-15
 ## Current Position
 
 Phase: COMPLETE
-Plan: 09.6-01-PLAN.md
-Status: Milestone v9.6 finished
-Last activity: 2026-06-15 — Milestone v9.6 completed
+Plan: 09.11-04-PLAN.md
+Status: Sprint 9.11 finished
+Last activity: 2026-06-16 — Sprint 9.11 UI Duplication completed
 
 ## Milestone Context
 
-**v9.6: Sync Queue Bug Fixes** — ✅ COMPLETO
+**v9.11: UI Duplication** — ✅ COMPLETO
 
-Bugs corrigidos:
-- Auto-retry ao iniciar app ✅
-- Retry manual processa itens falhados ✅
-- Fila mostra ID da RAT ✅
-- Lista RATs atualiza após retry ✅
+Melhorias implementadas:
+- Shared discard dialog helper ✅
+- Shared confirmation dialog helper ✅
+- AdminUserActionChips widget ✅
+- PDF service refactoring (_renderRatPdfBytes) ✅
+- 4 telas migradas para shared helpers ✅
 
 ## Next Milestone
 
-**v10.0: Release Preparation**
-- QA e testes manuais
-- Android build verification
-- Play Store assets preparation
-- Beta testing com usuarios reais
+**v9.12: Sprint 9.12** (planejado)
+- Continuar itens restantes do CONCERNS.md
 
 ## Blockers
 
@@ -43,11 +41,15 @@ Bugs corrigidos:
 
 ## Todos
 
-- [x] Investigar codigo de sync queue
-- [x] Corrigir processamento apos restart
-- [x] Corrigir botao retry
-- [x] Adicionar identificacao na fila
-- [x] Testar cenarios offline/online
+- [x] Criar shared dialog helpers
+- [x] Migrar CompanyEditProfileScreen
+- [x] Migrar RatFormScreen
+- [x] Migrar LocalSettingsScreen
+- [x] Migrar LocalDataImportScreen
+- [x] Criar AdminUserActionChips
+- [x] Migrar admin_empresa_area.dart
+- [x] Migrar app_admin_company_detail_screen.dart
+- [x] Extrair _renderRatPdfBytes
 - [ ] Iniciar Sprint 10
 
 ---
