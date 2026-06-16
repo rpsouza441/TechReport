@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/domain/usecases/update_admin_empresa.dart';
 import 'package:techreport/features/company_admin/presentation/screens/app_admin_company_form_screen.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_company_detail_view_model.dart';
+import 'package:techreport/features/company_admin/presentation/widgets/admin_user_action_chips.dart';
+import 'package:techreport/features/company_admin/presentation/widgets/convite_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
@@ -335,10 +336,11 @@ class _AppAdminCompanyDetailScreenState
           )
         else
           for (final convite in convites) ...[
-            _ConviteCard(
+            ConviteCard(
               convite: convite,
-              isSubmitting: widget.viewModel.isSubmitting,
-              onCancel: () => widget.viewModel.cancelConvite(convite.id),
+              onCancel: widget.viewModel.isSubmitting
+                  ? null
+                  : () => widget.viewModel.cancelConvite(convite.id),
             ),
             const SizedBox(height: MetricSlateSpacing.sm),
           ],
@@ -391,44 +393,12 @@ class _AdminCard extends StatelessWidget {
                 const SizedBox(height: MetricSlateSpacing.xxs),
                 Text(admin.email, style: theme.textTheme.bodySmall),
                 const SizedBox(height: MetricSlateSpacing.xxs),
-                Wrap(
-                  spacing: MetricSlateSpacing.xxs,
-                  runSpacing: MetricSlateSpacing.xxs,
-                  children: [
-                    ActionChip(
-                      label: Text(admin.ativo ? 'Ativo' : 'Inativo'),
-                      avatar: Icon(
-                        admin.ativo
-                            ? Icons.check_circle
-                            : Icons.cancel_outlined,
-                        size: 16,
-                        color: admin.ativo
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline,
-                      ),
-                      onPressed: isSubmitting
-                          ? null
-                          : () => onToggleAtivo(!admin.ativo),
-                    ),
-                    ActionChip(
-                      label: const Text('Trocar senha'),
-                      avatar: Icon(
-                        Icons.key_outlined,
-                        size: 16,
-                        color: admin.mustChangePassword
-                            ? theme.colorScheme.onErrorContainer
-                            : theme.colorScheme.outline,
-                      ),
-                      backgroundColor: admin.mustChangePassword
-                          ? theme.colorScheme.errorContainer
-                          : null,
-                      onPressed: isSubmitting
-                          ? null
-                          : () => onToggleMustChangePassword(
-                              !admin.mustChangePassword,
-                            ),
-                    ),
-                  ],
+                AdminUserActionChips(
+                  ativo: admin.ativo,
+                  canManage: !isSubmitting,
+                  mustChangePassword: admin.mustChangePassword,
+                  onToggleAtivo: onToggleAtivo,
+                  onToggleMustChangePassword: onToggleMustChangePassword,
                 ),
               ],
             ),
@@ -439,157 +409,8 @@ class _AdminCard extends StatelessWidget {
   }
 }
 
-class _ConviteCard extends StatefulWidget {
-  const _ConviteCard({
-    required this.convite,
-    required this.isSubmitting,
-    required this.onCancel,
-  });
-
-  final AdminConviteResumo convite;
-  final bool isSubmitting;
-  final VoidCallback onCancel;
-
-  @override
-  State<_ConviteCard> createState() => _ConviteCardState();
-}
-
-class _ConviteCardState extends State<_ConviteCard> {
-  void _share() {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => _ConviteShareSheet(convite: widget.convite),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return TechReportCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.mark_email_unread_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: MetricSlateSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.convite.nome, style: theme.textTheme.titleSmall),
-                const SizedBox(height: MetricSlateSpacing.xxs),
-                Text(widget.convite.email, style: theme.textTheme.bodySmall),
-                const SizedBox(height: MetricSlateSpacing.xxs),
-                TechReportStatusChip(
-                  label: widget.convite.isExpired ? 'Expirado' : 'Pendente',
-                  tone: widget.convite.isExpired
-                      ? TechReportStatusTone.error
-                      : TechReportStatusTone.info,
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: _share,
-            icon: const Icon(Icons.share_outlined),
-            tooltip: 'Compartilhar convite',
-          ),
-          if (!widget.convite.isExpired)
-            IconButton(
-              onPressed: widget.isSubmitting ? null : widget.onCancel,
-              icon: widget.isSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.close_outlined),
-              tooltip: 'Cancelar convite',
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ConviteShareSheet extends StatelessWidget {
-  const _ConviteShareSheet({required this.convite});
-
-  final AdminConviteResumo convite;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.only(
-        left: MetricSlateSpacing.lg,
-        right: MetricSlateSpacing.lg,
-        top: MetricSlateSpacing.lg,
-        bottom:
-            MetricSlateSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.mail_outline, color: theme.colorScheme.primary),
-              const SizedBox(width: MetricSlateSpacing.sm),
-              Text('Compartilhar convite', style: theme.textTheme.titleMedium),
-            ],
-          ),
-          const SizedBox(height: MetricSlateSpacing.md),
-          Text('Nome: ${convite.nome}', style: theme.textTheme.bodyMedium),
-          Text('E-mail: ${convite.email}', style: theme.textTheme.bodyMedium),
-          Text(
-            'Expira em: ${_formatDateTime(convite.expiresAt)}',
-            style: theme.textTheme.bodySmall,
-          ),
-          const SizedBox(height: MetricSlateSpacing.sm),
-          Text(
-            'O código do convite foi exibido na tela após a criação. '
-            'Se não copiou, gere um novo convite.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
-            ),
-          ),
-          const SizedBox(height: MetricSlateSpacing.lg),
-          FilledButton.icon(
-            onPressed: () {
-              SharePlus.instance.share(
-                ShareParams(
-                  subject: 'Convite TechReport',
-                  text:
-                      'Convite TechReport\n\n'
-                      'Nome: ${convite.nome}\n'
-                      'E-mail: ${convite.email}\n\n'
-                      'O código foi exibido após a criação do convite. '
-                      'Se não copiou, gere um novo convite no app.',
-                ),
-              );
-              Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.share_outlined),
-            label: const Text('Compartilhar'),
-          ),
-          const SizedBox(height: MetricSlateSpacing.sm),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fechar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDateTime(DateTime value) {
-    return '${value.day.toString().padLeft(2, '0')}/'
-        '${value.month.toString().padLeft(2, '0')}/'
-        '${value.year}';
-  }
+String _formatDateTime(DateTime value) {
+  return '${value.day.toString().padLeft(2, '0')}/'
+      '${value.month.toString().padLeft(2, '0')}/'
+      '${value.year}';
 }
