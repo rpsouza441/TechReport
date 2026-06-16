@@ -82,6 +82,17 @@ class _CompanyShellState extends State<CompanyShell> {
   @override
   void initState() {
     super.initState();
+    widget.sessionNotifier.addListener(_onSessionChanged);
+    final currentSession = session;
+    if (currentSession != null) {
+      _selectedArea = _initialArea(currentSession);
+      _ratListViewModel = _createRatListViewModel(currentSession);
+      // Auto-retry: processa fila pendente ao iniciar
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncNow());
+    } else {
+      _selectedArea = CompanyArea.profile;
+    }
+    // Check pending invite expiry
     _checkPendingInviteExpiry();
   }
 
@@ -238,21 +249,6 @@ class _CompanyShellState extends State<CompanyShell> {
         );
       },
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    widget.sessionNotifier.addListener(_onSessionChanged);
-    final currentSession = session;
-    if (currentSession != null) {
-      _selectedArea = _initialArea(currentSession);
-      _ratListViewModel = _createRatListViewModel(currentSession);
-      // Auto-retry: processa fila pendente ao iniciar
-      WidgetsBinding.instance.addPostFrameCallback((_) => _syncNow());
-    } else {
-      _selectedArea = CompanyArea.profile;
-    }
   }
 
   @override

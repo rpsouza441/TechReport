@@ -546,7 +546,7 @@ class RatFormViewModel extends ChangeNotifier {
     // Ensure signature is loaded
     await loadSignatureStatus();
 
-    final rat = _initialRat ?? await _ratRepository.findById(ratId);
+    final rat = _initialRat ?? await _ratRepository.getById(ratId);
     if (rat == null) {
       return null;
     }

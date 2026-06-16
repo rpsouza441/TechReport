@@ -187,7 +187,7 @@ class DriftRatRepository implements RatRepository {
       ..limit(limit);
 
     if (lastId != null) {
-      query = query..where((tbl) => tbl.id.isNotEqualTo(lastId));
+      query = query..where((tbl) => tbl.id.equals(lastId).not());
     }
 
     final rows = await query.get();
@@ -213,7 +213,7 @@ class DriftRatRepository implements RatRepository {
       ..limit(limit);
 
     if (lastId != null) {
-      query = query..where((tbl) => tbl.id.isNotEqualTo(lastId));
+      query = query..where((tbl) => tbl.id.equals(lastId).not());
     }
 
     final rows = await query.get();
@@ -237,7 +237,7 @@ class DriftRatRepository implements RatRepository {
       ..limit(limit);
 
     if (lastId != null) {
-      query = query..where((tbl) => tbl.id.isNotEqualTo(lastId));
+      query = query..where((tbl) => tbl.id.equals(lastId).not());
     }
 
     final rows = await query.get();
