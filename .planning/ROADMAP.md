@@ -215,6 +215,18 @@ Sprint 22         → Physical device testing (future)
 - `afb5d31` refactor(v9.11): migrate app_admin_company_detail_screen.dart to use shared widgets
 - `5a310f5` refactor(v9.11): extract _renderRatPdfBytes for PDF service
 
+### Sprint 9.12: Remaining CONCERNS.md Items
+**Status:** Planned
+**Source:** CONCERNS.md - Pending items
+
+**Objectives:**
+- Implementar paginação na lista RATs
+- ViewModel splitting (RatFormViewModel)
+- Adicionar integration tests
+- Adicionar notificação de convite expirado
+
+**Plans:** TBD (research phase)
+
 ### Sprint 20: Release Preparation
 **Target:** 2026-06 (1-2 sprints)
 
