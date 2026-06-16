@@ -35,4 +35,34 @@ class PendingCompanyInvite {
   final String email;
   final String codigoConvite;
   final DateTime createdAt;
+
+  /// Duration after which invite expires (7 days).
+  static const expiryDuration = Duration(days: 7);
+
+  /// Duration before expiry when warning should be shown (1 day).
+  static const warningThreshold = Duration(days: 1);
+
+  /// When this invite expires.
+  DateTime get expiresAt => createdAt.add(expiryDuration);
+
+  /// True if invite has already expired.
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+
+  /// True if invite is within warning window (less than 1 day remaining).
+  bool get isExpiringSoon {
+    final remaining = expiresAt.difference(DateTime.now());
+    return remaining.inHours > 0 && remaining <= warningThreshold;
+  }
+
+  /// Human-readable remaining time.
+  String get remainingTime {
+    final remaining = expiresAt.difference(DateTime.now());
+    if (remaining.inDays > 0) {
+      return '${remaining.inDays} dia${remaining.inDays > 1 ? 's' : ''}';
+    }
+    if (remaining.inHours > 0) {
+      return '${remaining.inHours} hora${remaining.inHours > 1 ? 's' : ''}';
+    }
+    return '${remaining.inMinutes} minuto${remaining.inMinutes > 1 ? 's' : ''}';
+  }
 }
