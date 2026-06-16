@@ -173,6 +173,78 @@ class DriftRatRepository implements RatRepository {
   }
 
   @override
+  Future<List<domain.Rat>> listLocalCursor({
+    required int limit,
+    String? lastId,
+  }) async {
+    var query = _database.select(_database.rats)
+      ..where(
+        (tbl) =>
+            tbl.deletedAt.isNull() &
+            tbl.ownerType.equals(RatOwnerType.localTecnico.name),
+      )
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+      ..limit(limit);
+
+    if (lastId != null) {
+      query = query..where((tbl) => tbl.id.isNotEqualTo(lastId));
+    }
+
+    final rows = await query.get();
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
+  Future<List<domain.Rat>> listCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    String? lastId,
+  }) async {
+    var query = _database.select(_database.rats)
+      ..where(
+        (tbl) =>
+            tbl.deletedAt.isNull() &
+            tbl.ownerType.equals(RatOwnerType.companyTecnico.name) &
+            tbl.empresaId.equals(empresaId) &
+            tbl.tecnicoId.equals(tecnicoId),
+      )
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+      ..limit(limit);
+
+    if (lastId != null) {
+      query = query..where((tbl) => tbl.id.isNotEqualTo(lastId));
+    }
+
+    final rows = await query.get();
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
+  Future<List<domain.Rat>> listCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    String? lastId,
+  }) async {
+    var query = _database.select(_database.rats)
+      ..where(
+        (tbl) =>
+            tbl.deletedAt.isNull() &
+            tbl.ownerType.equals(RatOwnerType.companyTecnico.name) &
+            tbl.empresaId.equals(empresaId),
+      )
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+      ..limit(limit);
+
+    if (lastId != null) {
+      query = query..where((tbl) => tbl.id.isNotEqualTo(lastId));
+    }
+
+    final rows = await query.get();
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
   Future<void> save(domain.Rat rat) async {
     await _database
         .into(_database.rats)

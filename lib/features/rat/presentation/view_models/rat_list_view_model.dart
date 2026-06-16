@@ -24,8 +24,8 @@ class RatListViewModel extends ChangeNotifier {
   String? _errorMessage;
 
   // Paginação
-  static const int _pageSize = 30;
-  int _offset = 0;
+  static const int _pageSize = 20;
+  String? _lastId;
   bool _hasMorePages = true;
   bool _isLoadingMore = false;
 
@@ -131,15 +131,16 @@ class RatListViewModel extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    _offset = 0;
+    _lastId = null;
     _hasMorePages = true;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final page = await _fetchPage(_pageSize, 0);
+      final page = await _fetchPageCursor(_pageSize, null);
       _rats = page;
+      _lastId = page.isNotEmpty ? page.last.id : null;
       _hasMorePages = page.length == _pageSize;
 
       _signedRatIds = await _loadSignedRatIds(_rats);
@@ -157,11 +158,10 @@ class RatListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final nextOffset = _offset + _pageSize;
-      final page = await _fetchPage(_pageSize, nextOffset);
+      final page = await _fetchPageCursor(_pageSize, _lastId);
 
       _rats = [..._rats, ...page];
-      _offset = nextOffset;
+      _lastId = page.isNotEmpty ? page.last.id : null;
       _hasMorePages = page.length == _pageSize;
 
       final moreIds = await _loadSignedRatIds(page);
@@ -174,27 +174,27 @@ class RatListViewModel extends ChangeNotifier {
   }
 
   void _resetPagination() {
-    _offset = 0;
+    _lastId = null;
     _hasMorePages = true;
     _rats = [];
   }
 
-  Future<List<Rat>> _fetchPage(int limit, int offset) async {
+  Future<List<Rat>> _fetchPageCursor(int limit, String? lastId) async {
     switch (_scope.type) {
       case RatListScopeType.local:
-        return _ratRepository.listLocalPage(limit: limit, offset: offset);
+        return _ratRepository.listLocalCursor(limit: limit, lastId: lastId);
       case RatListScopeType.companyTechnician:
-        return _ratRepository.listCompanyForTechnicianPage(
+        return _ratRepository.listCompanyForTechnicianCursor(
           empresaId: _scope.empresaId!,
           tecnicoId: _scope.tecnicoId!,
           limit: limit,
-          offset: offset,
+          lastId: lastId,
         );
       case RatListScopeType.companyManager:
-        return _ratRepository.listCompanyForManagerPage(
+        return _ratRepository.listCompanyForManagerCursor(
           empresaId: _scope.empresaId!,
           limit: limit,
-          offset: offset,
+          lastId: lastId,
         );
     }
   }

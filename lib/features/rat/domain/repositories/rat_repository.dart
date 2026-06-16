@@ -30,6 +30,22 @@ abstract class RatRepository {
     required int offset,
   });
 
+  // Cursor-based pagination methods
+  Future<List<Rat>> listLocalCursor({required int limit, String? lastId});
+
+  Future<List<Rat>> listCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    String? lastId,
+  });
+
+  Future<List<Rat>> listCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    String? lastId,
+  });
+
   Future<void> save(Rat rat);
 
   Future<void> update(Rat rat);
