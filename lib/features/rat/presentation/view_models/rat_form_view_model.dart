@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
@@ -14,9 +15,22 @@ import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_form_state.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_signature_manager.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_pdf_generator.dart';
+import 'package:techreport/features/rat/presentation/view_models/rat_sync_handler.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:uuid/uuid.dart';
 
+/// ViewModel for the RAT form screen.
+///
+/// Facade that orchestrates specialized classes:
+/// - [RatFormState]: form fields and validation
+/// - [RatSignatureManager]: signature lifecycle
+/// - [RatPdfGenerator]: PDF preparation
+/// - [RatSyncHandler]: sync coordination
+///
+/// Public API unchanged from original monolithic implementation.
 class RatFormViewModel extends ChangeNotifier {
   RatFormViewModel({
     required AssinaturaRepository assinaturaRepository,
@@ -30,42 +44,45 @@ class RatFormViewModel extends ChangeNotifier {
     RatSyncCoordinator? syncCoordinator,
     DownloadRemoteRats? downloadRemoteRats,
     SupabaseClientFactory? supabaseClientFactory,
-  }) : _ratRepository = ratRepository,
-       _assinaturaRepository = assinaturaRepository,
-       _localSignatureAssetStore = localSignatureAssetStore,
-       _ratPdfShareService = ratPdfShareService,
-       _shareRatLocally = shareRatLocally,
-       _initialRat = initialRat,
-       ratId = initialRat?.id ?? _newRatId(),
-       numero = initialRat?.numero ?? _newRatNumber(),
-       clienteNome = initialRat?.clienteNome ?? '',
-       responsavelRecebimento = initialRat?.responsavelRecebimento ?? '',
-       responsavelDocumento = initialRat?.responsavelDocumento ?? '',
-       dataVisita = initialRat?.dataVisita,
-       horarioInicioAtendimento = initialRat?.horarioInicioAtendimento ?? '',
-       horarioTerminoAtendimento = initialRat?.horarioTerminoAtendimento ?? '',
-       descricao = initialRat?.descricao ?? '',
-       equipamentoMovimentoTipo =
-           initialRat?.equipamentoMovimentoTipo ??
-           EquipamentoMovimentoTipo.nenhum,
-       equipamentoDescricao = initialRat?.equipamentoDescricao ?? '',
-       equipamentoObservacao = initialRat?.equipamentoObservacao ?? '',
-       status = initialRat?.status ?? RatStatus.draft,
-       ultimoAlteradorUserId = initialRat?.ultimoAlteradorUserId,
-       ultimaAlteracaoEm = initialRat?.ultimaAlteracaoEm,
-       reabertaParaCorrecaoEm = initialRat?.reabertaParaCorrecaoEm,
-       reabertaParaCorrecaoPorUserId =
-           initialRat?.reabertaParaCorrecaoPorUserId,
-       motivoReabertura = initialRat?.motivoReabertura,
-       assinaturaInvalidadaEm = initialRat?.assinaturaInvalidadaEm,
-       assinaturaInvalidadaPorUserId =
-           initialRat?.assinaturaInvalidadaPorUserId,
-       _remoteSession = remoteSession,
-       _enqueueAssinaturaSync = enqueueAssinaturaSync,
-       _syncCoordinator = syncCoordinator,
-       _downloadRemoteRats = downloadRemoteRats,
-       _supabaseClientFactory = supabaseClientFactory,
-       _isSaved = initialRat != null;
+  })  : _ratRepository = ratRepository,
+        _assinaturaRepository = assinaturaRepository,
+        _localSignatureAssetStore = localSignatureAssetStore,
+        _ratPdfShareService = ratPdfShareService,
+        _shareRatLocally = shareRatLocally,
+        _initialRat = initialRat,
+        ratId = initialRat?.id ?? _newRatId(),
+        numero = initialRat?.numero ?? _newRatNumber(),
+        _remoteSession = remoteSession,
+        _enqueueAssinaturaSync = enqueueAssinaturaSync,
+        _syncCoordinator = syncCoordinator,
+        _downloadRemoteRats = downloadRemoteRats,
+        _supabaseClientFactory = supabaseClientFactory,
+        _isSaved = initialRat != null,
+        _formState = RatFormState(initialRat: initialRat),
+        _signatureManager = RatSignatureManager(
+          assinaturaRepository: assinaturaRepository,
+          localSignatureAssetStore: localSignatureAssetStore,
+          ratId: initialRat?.id ?? _newRatId(),
+          onError: (msg) {},
+          enqueueAssinaturaSync: enqueueAssinaturaSync,
+        ),
+        _pdfGenerator = RatPdfGenerator(
+          ratPdfShareService: ratPdfShareService,
+          shareRatLocally: shareRatLocally,
+          ratId: initialRat?.id ?? _newRatId(),
+          supabaseClientFactory: supabaseClientFactory,
+        ),
+        _syncHandler = RatSyncHandler(
+          syncCoordinator: syncCoordinator,
+          downloadRemoteRats: downloadRemoteRats,
+          empresaId: remoteSession?.empresaId,
+          usuarioId: remoteSession?.usuarioId,
+          papel: remoteSession?.papelEmpresa?.name ??
+              remoteSession?.papelGlobal?.name,
+        ) {
+    // Forward signature manager notifications
+    _signatureManager.addListener(_onSignatureManagerChanged);
+  }
 
   static const _permissions = RatPermissions();
   /// 1 MB maximum signature size.
@@ -84,50 +101,74 @@ class RatFormViewModel extends ChangeNotifier {
   final SupabaseClientFactory? _supabaseClientFactory;
   final String ratId;
   final String numero;
-  String clienteNome;
-  String responsavelRecebimento;
-  String responsavelDocumento;
-  DateTime? dataVisita;
-  String horarioInicioAtendimento;
-  String horarioTerminoAtendimento;
-  String descricao;
-  EquipamentoMovimentoTipo equipamentoMovimentoTipo;
-  String equipamentoDescricao;
-  String equipamentoObservacao;
-  RatStatus status;
-  String? ultimoAlteradorUserId;
-  DateTime? ultimaAlteracaoEm;
-  DateTime? reabertaParaCorrecaoEm;
-  String? reabertaParaCorrecaoPorUserId;
-  String? motivoReabertura;
-  DateTime? assinaturaInvalidadaEm;
-  String? assinaturaInvalidadaPorUserId;
+
+  // Specialized classes
+  final RatFormState _formState;
+  late final RatSignatureManager _signatureManager;
+  late final RatPdfGenerator _pdfGenerator;
+  late final RatSyncHandler _syncHandler;
 
   bool _isSubmitting = false;
   bool _isSharing = false;
   bool _isSaved;
   String? _errorMessage;
-  Assinatura? _assinatura;
-  Uint8List? _signaturePreviewBytes;
-  bool _isLoadingSignature = false;
+
+  // Audit fields (managed directly for simplicity)
+  String? _ultimoAlteradorUserId;
+  DateTime? _ultimaAlteracaoEm;
+  DateTime? _reabertaParaCorrecaoEm;
+  String? _reabertaParaCorrecaoPorUserId;
+  String? _motivoReabertura;
+  DateTime? _assinaturaInvalidadaEm;
+  String? _assinaturaInvalidadaPorUserId;
+
+  void _onSignatureManagerChanged() {
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _signatureManager.removeListener(_onSignatureManagerChanged);
+    super.dispose();
+  }
+
+  // Forwarded form state getters
+  String get clienteNome => _formState.clienteNome;
+  String get responsavelRecebimento => _formState.responsavelRecebimento;
+  String get responsavelDocumento => _formState.responsavelDocumento;
+  DateTime? get dataVisita => _formState.dataVisita;
+  String get horarioInicioAtendimento =>
+      _formState.horarioInicioAtendimento;
+  String get horarioTerminoAtendimento =>
+      _formState.horarioTerminoAtendimento;
+  String get descricao => _formState.descricao;
+  EquipamentoMovimentoTipo get equipamentoMovimentoTipo =>
+      _formState.equipamentoMovimentoTipo;
+  String get equipamentoDescricao => _formState.equipamentoDescricao;
+  String get equipamentoObservacao => _formState.equipamentoObservacao;
+  RatStatus get status => _formState.status;
 
   bool get isSubmitting => _isSubmitting;
   bool get isSharing => _isSharing;
   bool get isSaved => _isSaved;
-  bool get hasSignature => _assinatura != null;
-  bool get hasValidSignature => _assinatura != null && !isSignaturePending;
-  bool get isLoadingSignature => _isLoadingSignature;
+  bool get hasSignature => _signatureManager.hasSignature;
+  bool get hasValidSignature =>
+      _signatureManager.hasSignature && !isSignaturePending;
+  bool get isLoadingSignature => _signatureManager.isLoadingSignature;
+  bool get isSavingSignature => _signatureManager.isSavingSignature;
   String? get errorMessage => _errorMessage;
   bool get isEditing => _initialRat != null;
   bool get shouldReloadOnClose => _isSaved;
-  Uint8List? get signaturePreviewBytes => _signaturePreviewBytes;
+  Uint8List? get signaturePreviewBytes =>
+      _signatureManager.signaturePreviewBytes;
+
   bool get isSignaturePending {
-    final invalidatedAt = assinaturaInvalidadaEm;
+    final invalidatedAt = _assinaturaInvalidadaEm;
     if (invalidatedAt == null) {
       return false;
     }
 
-    final assinatura = _assinatura;
+    final assinatura = _signatureManager.assinatura;
     return assinatura == null || !assinatura.updatedAt.isAfter(invalidatedAt);
   }
 
@@ -141,12 +182,13 @@ class RatFormViewModel extends ChangeNotifier {
 
   bool get canEditFields => canEdit && !isLockedUntilReopen;
 
-  bool get canPreviewPdf => _initialRat != null || _isSaved || canEditFields;
+  bool get canPreviewPdf =>
+      _initialRat != null || _isSaved || canEditFields;
 
-  /// True quando o formulário deve ser exibido em modo somente leitura.
+  /// True quando o formulario deve ser exibido em modo somente leitura.
   ///
-  /// Técnico não-dono (que não é gerente/admin) abre RAT de outro em modo
-  /// somente leitura — campos desabilitados, sem botão salvar.
+  /// Tecnico nao-dono (que nao e gerente/admin) abre RAT de outro em modo
+  /// somente leitura — campos desabilitados, sem botao salvar.
   bool get isReadOnly {
     final initialRat = _initialRat;
     if (initialRat == null) return false;
@@ -177,132 +219,33 @@ class RatFormViewModel extends ChangeNotifier {
     );
   }
 
-  void setClienteNome(String value) {
-    clienteNome = value;
-    notifyListeners();
-  }
-
-  void setResponsavelRecebimento(String value) {
-    responsavelRecebimento = value;
-    notifyListeners();
-  }
-
-  void setResponsavelDocumento(String value) {
-    responsavelDocumento = value;
-    notifyListeners();
-  }
-
-  void setDataVisita(DateTime? value) {
-    dataVisita = value;
-    notifyListeners();
-  }
-
-  void setHorarioInicioAtendimento(String value) {
-    horarioInicioAtendimento = value;
-    notifyListeners();
-  }
-
-  void setHorarioTerminoAtendimento(String value) {
-    horarioTerminoAtendimento = value;
-    notifyListeners();
-  }
-
-  void setDescricao(String value) {
-    descricao = value;
-    notifyListeners();
-  }
-
-  void setEquipamentoMovimentoTipo(EquipamentoMovimentoTipo value) {
-    equipamentoMovimentoTipo = value;
-    notifyListeners();
-  }
-
-  void setEquipamentoDescricao(String value) {
-    equipamentoDescricao = value;
-    notifyListeners();
-  }
-
-  void setEquipamentoObservacao(String value) {
-    equipamentoObservacao = value;
-    notifyListeners();
-  }
-
-  void setStatus(RatStatus value) {
-    status = value;
-    notifyListeners();
-  }
+  void setClienteNome(String value) => _formState.setClienteNome(value);
+  void setResponsavelRecebimento(String value) =>
+      _formState.setResponsavelRecebimento(value);
+  void setResponsavelDocumento(String value) =>
+      _formState.setResponsavelDocumento(value);
+  void setDataVisita(DateTime? value) => _formState.setDataVisita(value);
+  void setHorarioInicioAtendimento(String value) =>
+      _formState.setHorarioInicioAtendimento(value);
+  void setHorarioTerminoAtendimento(String value) =>
+      _formState.setHorarioTerminoAtendimento(value);
+  void setDescricao(String value) => _formState.setDescricao(value);
+  void setEquipamentoMovimentoTipo(EquipamentoMovimentoTipo value) =>
+      _formState.setEquipamentoMovimentoTipo(value);
+  void setEquipamentoDescricao(String value) =>
+      _formState.setEquipamentoDescricao(value);
+  void setEquipamentoObservacao(String value) =>
+      _formState.setEquipamentoObservacao(value);
+  void setStatus(RatStatus value) => _formState.setStatus(value);
 
   String? empresaNome;
 
   String? get tecnicoNome => _remoteSession?.nome;
 
-  String? validate() {
-    if (clienteNome.trim().isEmpty) {
-      return 'Informe o cliente.';
-    }
+  String? validate() => _formState.validate();
 
-    if (responsavelRecebimento.trim().isEmpty) {
-      return 'Informe o responsável pelo recebimento.';
-    }
-
-    if (dataVisita == null) {
-      return 'Informe a data da visita.';
-    }
-
-    final normalizedStart = _normalizeHour(horarioInicioAtendimento);
-    if (normalizedStart == null) {
-      return 'Informe o horário de início no formato HH:mm.';
-    }
-
-    if (!_isHourInRange(horarioInicioAtendimento)) {
-      return 'Horário de início inválido. Use 00:00 até 23:59.';
-    }
-
-    final normalizedEnd = _normalizeHour(horarioTerminoAtendimento);
-    if (normalizedEnd == null) {
-      return 'Informe o horário de término no formato HH:mm.';
-    }
-
-    if (!_isHourInRange(horarioTerminoAtendimento)) {
-      return 'Horário de término inválido. Use 00:00 até 23:59.';
-    }
-
-    if (!_isEndAfterStart(normalizedStart, normalizedEnd)) {
-      return 'Horário de término precisa ser depois do início.';
-    }
-
-    if (descricao.trim().isEmpty) {
-      return 'Informe a descrição.';
-    }
-
-    return null;
-  }
-
-  Future<void> loadSignatureStatus() async {
-    _isLoadingSignature = true;
-    notifyListeners();
-
-    final signatures = await _assinaturaRepository.listByRatId(ratId);
-    signatures.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-
-    _assinatura = signatures.isEmpty ? null : signatures.first;
-    _signaturePreviewBytes = null;
-
-    if (_assinatura case final assinatura?) {
-      if (assinatura.storageMode == StorageMode.inlineBinary) {
-        _signaturePreviewBytes = await _assinaturaRepository.readBytes(
-          assinatura.id,
-        );
-      } else if (assinatura.storageMode == StorageMode.localFile) {
-        _signaturePreviewBytes = await _localSignatureAssetStore.read(
-          assinatura.assetRef,
-        );
-      }
-    }
-
-    _isLoadingSignature = false;
-    notifyListeners();
-  }
+  Future<void> loadSignatureStatus() =>
+      _signatureManager.loadSignatureStatus();
 
   /// Constrói o objeto Rat a partir dos campos do formulário.
   Rat _buildRatForSave({
@@ -310,10 +253,9 @@ class RatFormViewModel extends ChangeNotifier {
     required SessaoRemota? remoteSession,
     required DateTime now,
   }) {
-    final auditUserId = isCompanyMode
-        ? remoteSession!.usuarioId
-        : ultimoAlteradorUserId;
-    final auditUpdatedAt = isCompanyMode ? now : ultimaAlteracaoEm;
+    final auditUserId =
+        isCompanyMode ? _remoteSession!.usuarioId : _ultimoAlteradorUserId;
+    final auditUpdatedAt = isCompanyMode ? now : _ultimaAlteracaoEm;
 
     return Rat(
       id: ratId,
@@ -322,48 +264,46 @@ class RatFormViewModel extends ChangeNotifier {
       empresaId: _initialRat?.empresaId ?? remoteSession?.empresaId,
       usuarioId: _initialRat?.usuarioId ?? remoteSession?.usuarioId,
       tecnicoId: _initialRat?.tecnicoId ?? remoteSession?.tecnicoId,
-      ownerType:
-          _initialRat?.ownerType ??
-          (isCompanyMode
-              ? RatOwnerType.companyTecnico
-              : RatOwnerType.localTecnico),
+      ownerType: _initialRat?.ownerType ??
+          (isCompanyMode ? RatOwnerType.companyTecnico : RatOwnerType.localTecnico),
       numero: numero,
-      clienteNome: clienteNome.trim(),
-      responsavelRecebimento: responsavelRecebimento.trim(),
-      responsavelDocumento: _optionalText(responsavelDocumento),
-      dataVisita: dataVisita,
-      horarioInicioAtendimento: _normalizeHour(horarioInicioAtendimento)!,
-      horarioTerminoAtendimento: _normalizeHour(horarioTerminoAtendimento)!,
-      descricao: descricao.trim(),
-      equipamentoMovimentoTipo: equipamentoMovimentoTipo,
-      equipamentoDescricao: equipamentoDescricao.trim().isEmpty
+      clienteNome: _formState.clienteNome.trim(),
+      responsavelRecebimento: _formState.responsavelRecebimento.trim(),
+      responsavelDocumento: _optionalText(_formState.responsavelDocumento),
+      dataVisita: _formState.dataVisita,
+      horarioInicioAtendimento:
+          _normalizeHour(_formState.horarioInicioAtendimento)!,
+      horarioTerminoAtendimento:
+          _normalizeHour(_formState.horarioTerminoAtendimento)!,
+      descricao: _formState.descricao.trim(),
+      equipamentoMovimentoTipo: _formState.equipamentoMovimentoTipo,
+      equipamentoDescricao: _formState.equipamentoDescricao.trim().isEmpty
           ? null
-          : equipamentoDescricao.trim(),
-      equipamentoObservacao: equipamentoObservacao.trim().isEmpty
-          ? null
-          : equipamentoObservacao.trim(),
-      status: status,
-      syncStatus: isCompanyMode
-          ? RatSyncStatus.pendingSync
-          : RatSyncStatus.localOnly,
+          : _formState.equipamentoDescricao.trim(),
+      equipamentoObservacao:
+          _formState.equipamentoObservacao.trim().isEmpty
+              ? null
+              : _formState.equipamentoObservacao.trim(),
+      status: _formState.status,
+      syncStatus: isCompanyMode ? RatSyncStatus.pendingSync : RatSyncStatus.localOnly,
       createdAt: _initialRat?.createdAt ?? now,
       updatedAt: now,
       deletedAt: _initialRat?.deletedAt,
       ultimoAlteradorUserId: auditUserId,
       ultimaAlteracaoEm: auditUpdatedAt,
-      reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
-      reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId,
-      motivoReabertura: motivoReabertura,
-      assinaturaInvalidadaEm: assinaturaInvalidadaEm,
-      assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
+      reabertaParaCorrecaoEm: _reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: _reabertaParaCorrecaoPorUserId,
+      motivoReabertura: _motivoReabertura,
+      assinaturaInvalidadaEm: _assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: _assinaturaInvalidadaPorUserId,
     );
   }
 
   Future<bool> save({bool enqueueSync = true}) async {
     if (!canEditFields) {
       _errorMessage = isLockedUntilReopen
-          ? 'Reabra este RAT para correção antes de editar.'
-          : 'Este RAT pertence a outro técnico.';
+          ? 'Reabra este RAT para correcao antes de editar.'
+          : 'Este RAT pertence a outro tecnico.';
       notifyListeners();
       return false;
     }
@@ -371,7 +311,6 @@ class RatFormViewModel extends ChangeNotifier {
     final validationError = validate();
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
-    final companyEmpresaId = isCompanyMode ? remoteSession!.empresaId! : null;
 
     if (validationError != null) {
       _errorMessage = validationError;
@@ -393,24 +332,21 @@ class RatFormViewModel extends ChangeNotifier {
     try {
       await _ratRepository.save(rat);
       if (enqueueSync && isCompanyMode) {
-        await _syncCoordinator?.syncAfterSave(
-          rat: rat,
-          empresaId: companyEmpresaId!,
-          usuarioId: remoteSession!.usuarioId,
-        );
-        _downloadRemoteRatsAfterSync(companyEmpresaId!, remoteSession!.usuarioId);
+        await _syncHandler.syncAfterSave(rat);
       }
-    } catch (e, st) { debugPrint("Error: $e$st");
+    } catch (e, st) {
+      debugPrint("Error: $e$st");
       _isSubmitting = false;
-      _errorMessage = 'Não foi possível salvar o RAT.';
+      _errorMessage = 'Nao foi possivel salvar o RAT.';
       notifyListeners();
       return false;
     }
 
     _isSubmitting = false;
     _isSaved = true;
-    ultimoAlteradorUserId = rat.ultimoAlteradorUserId;
-    ultimaAlteracaoEm = rat.ultimaAlteracaoEm;
+    _ultimoAlteradorUserId = rat.ultimoAlteradorUserId;
+    _ultimaAlteracaoEm = rat.ultimaAlteracaoEm;
+    _formState.markClean();
     notifyListeners();
     return true;
   }
@@ -422,7 +358,7 @@ class RatFormViewModel extends ChangeNotifier {
   Future<bool> reopenForCorrection(String motivo) async {
     final trimmed = motivo.trim();
     if (!canReopenForCorrection) {
-      _errorMessage = 'Este RAT não pode ser reaberto para correção.';
+      _errorMessage = 'Este RAT nao pode ser reaberto para correcao.';
       notifyListeners();
       return false;
     }
@@ -435,62 +371,90 @@ class RatFormViewModel extends ChangeNotifier {
 
     final remoteSession = _remoteSession;
     if (remoteSession == null || !remoteSession.hasCompanyContext) {
-      _errorMessage = 'Sessão remota não restaurada.';
+      _errorMessage = 'Sessao remota nao restaurada.';
       notifyListeners();
       return false;
     }
 
-    final previousStatus = status;
-    final previousUltimoAlteradorUserId = ultimoAlteradorUserId;
-    final previousUltimaAlteracaoEm = ultimaAlteracaoEm;
-    final previousReabertaParaCorrecaoEm = reabertaParaCorrecaoEm;
-    final previousReabertaParaCorrecaoPorUserId = reabertaParaCorrecaoPorUserId;
-    final previousMotivoReabertura = motivoReabertura;
-    final previousAssinaturaInvalidadaEm = assinaturaInvalidadaEm;
-    final previousAssinaturaInvalidadaPorUserId = assinaturaInvalidadaPorUserId;
+    // Save current state for rollback
+    final previousStatus = _formState.status;
+    final previousUltimoAlteradorUserId = _ultimoAlteradorUserId;
+    final previousUltimaAlteracaoEm = _ultimaAlteracaoEm;
+    final previousReabertaParaCorrecaoEm = _reabertaParaCorrecaoEm;
+    final previousReabertaParaCorrecaoPorUserId = _reabertaParaCorrecaoPorUserId;
+    final previousMotivoReabertura = _motivoReabertura;
+    final previousAssinaturaInvalidadaEm = _assinaturaInvalidadaEm;
+    final previousAssinaturaInvalidadaPorUserId = _assinaturaInvalidadaPorUserId;
     final now = DateTime.now();
 
-    status = RatStatus.draft;
-    ultimoAlteradorUserId = remoteSession.usuarioId;
-    ultimaAlteracaoEm = now;
-    reabertaParaCorrecaoEm = now;
-    reabertaParaCorrecaoPorUserId = remoteSession.usuarioId;
-    motivoReabertura = trimmed;
-    assinaturaInvalidadaEm = now;
-    assinaturaInvalidadaPorUserId = remoteSession.usuarioId;
+    // Apply new state
+    _formState.status = RatStatus.draft;
+    _ultimoAlteradorUserId = remoteSession.usuarioId;
+    _ultimaAlteracaoEm = now;
+    _reabertaParaCorrecaoEm = now;
+    _reabertaParaCorrecaoPorUserId = remoteSession.usuarioId;
+    _motivoReabertura = trimmed;
+    _assinaturaInvalidadaEm = now;
+    _assinaturaInvalidadaPorUserId = remoteSession.usuarioId;
 
     try {
       final saved = await save();
       if (!saved) {
-        status = previousStatus;
-        ultimoAlteradorUserId = previousUltimoAlteradorUserId;
-        ultimaAlteracaoEm = previousUltimaAlteracaoEm;
-        reabertaParaCorrecaoEm = previousReabertaParaCorrecaoEm;
-        reabertaParaCorrecaoPorUserId = previousReabertaParaCorrecaoPorUserId;
-        motivoReabertura = previousMotivoReabertura;
-        assinaturaInvalidadaEm = previousAssinaturaInvalidadaEm;
-        assinaturaInvalidadaPorUserId = previousAssinaturaInvalidadaPorUserId;
-        notifyListeners();
+        _rollbackReopenState(
+          previousStatus: previousStatus,
+          previousUltimoAlteradorUserId: previousUltimoAlteradorUserId,
+          previousUltimaAlteracaoEm: previousUltimaAlteracaoEm,
+          previousReabertaParaCorrecaoEm: previousReabertaParaCorrecaoEm,
+          previousReabertaParaCorrecaoPorUserId:
+              previousReabertaParaCorrecaoPorUserId,
+          previousMotivoReabertura: previousMotivoReabertura,
+          previousAssinaturaInvalidadaEm: previousAssinaturaInvalidadaEm,
+          previousAssinaturaInvalidadaPorUserId:
+              previousAssinaturaInvalidadaPorUserId,
+        );
         return false;
       }
     } catch (error) {
-      // Rollback on exception to maintain consistent state
-      status = previousStatus;
-      ultimoAlteradorUserId = previousUltimoAlteradorUserId;
-      ultimaAlteracaoEm = previousUltimaAlteracaoEm;
-      reabertaParaCorrecaoEm = previousReabertaParaCorrecaoEm;
-      reabertaParaCorrecaoPorUserId = previousReabertaParaCorrecaoPorUserId;
-      motivoReabertura = previousMotivoReabertura;
-      assinaturaInvalidadaEm = previousAssinaturaInvalidadaEm;
-      assinaturaInvalidadaPorUserId = previousAssinaturaInvalidadaPorUserId;
-      _errorMessage = 'Erro ao reabrir RAT para correção.';
+      _rollbackReopenState(
+        previousStatus: previousStatus,
+        previousUltimoAlteradorUserId: previousUltimoAlteradorUserId,
+        previousUltimaAlteracaoEm: previousUltimaAlteracaoEm,
+        previousReabertaParaCorrecaoEm: previousReabertaParaCorrecaoEm,
+        previousReabertaParaCorrecaoPorUserId: previousReabertaParaCorrecaoPorUserId,
+        previousMotivoReabertura: previousMotivoReabertura,
+        previousAssinaturaInvalidadaEm: previousAssinaturaInvalidadaEm,
+        previousAssinaturaInvalidadaPorUserId:
+            previousAssinaturaInvalidadaPorUserId,
+      );
+      _errorMessage = 'Erro ao reabrir RAT para correcao.';
       notifyListeners();
       return false;
     }
 
-    _signaturePreviewBytes = null;
+    _signatureManager.clearPreview();
     notifyListeners();
     return true;
+  }
+
+  void _rollbackReopenState({
+    required RatStatus previousStatus,
+    required String? previousUltimoAlteradorUserId,
+    required DateTime? previousUltimaAlteracaoEm,
+    required DateTime? previousReabertaParaCorrecaoEm,
+    required String? previousReabertaParaCorrecaoPorUserId,
+    required String? previousMotivoReabertura,
+    required DateTime? previousAssinaturaInvalidadaEm,
+    required String? previousAssinaturaInvalidadaPorUserId,
+  }) {
+    _formState.status = previousStatus;
+    _ultimoAlteradorUserId = previousUltimoAlteradorUserId;
+    _ultimaAlteracaoEm = previousUltimaAlteracaoEm;
+    _reabertaParaCorrecaoEm = previousReabertaParaCorrecaoEm;
+    _reabertaParaCorrecaoPorUserId = previousReabertaParaCorrecaoPorUserId;
+    _motivoReabertura = previousMotivoReabertura;
+    _assinaturaInvalidadaEm = previousAssinaturaInvalidadaEm;
+    _assinaturaInvalidadaPorUserId = previousAssinaturaInvalidadaPorUserId;
+    notifyListeners();
   }
 
   Future<bool> deleteRat() async {
@@ -506,11 +470,9 @@ class RatFormViewModel extends ChangeNotifier {
     final now = DateTime.now();
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
-    final companyEmpresaId = isCompanyMode ? remoteSession!.empresaId! : null;
     final deletedRat = initialRat.copyWith(
-      syncStatus: isCompanyMode
-          ? RatSyncStatus.pendingSync
-          : RatSyncStatus.localOnly,
+      syncStatus:
+          isCompanyMode ? RatSyncStatus.pendingSync : RatSyncStatus.localOnly,
       updatedAt: now,
       deletedAt: now,
     );
@@ -518,16 +480,12 @@ class RatFormViewModel extends ChangeNotifier {
     try {
       await _ratRepository.save(deletedRat);
       if (isCompanyMode) {
-        await _syncCoordinator?.syncAfterDelete(
-          rat: deletedRat,
-          empresaId: companyEmpresaId!,
-          usuarioId: remoteSession!.usuarioId,
-        );
-        _downloadRemoteRatsAfterSync(companyEmpresaId!, remoteSession!.usuarioId);
+        await _syncHandler.syncAfterDelete(deletedRat);
       }
-    } catch (e, st) { debugPrint("Error: $e$st");
+    } catch (e, st) {
+      debugPrint("Error: $e$st");
       _isSubmitting = false;
-      _errorMessage = 'Não foi possível excluir o RAT.';
+      _errorMessage = 'Nao foi possivel excluir o RAT.';
       notifyListeners();
       return false;
     }
@@ -538,137 +496,39 @@ class RatFormViewModel extends ChangeNotifier {
     return true;
   }
 
-  void _downloadRemoteRatsAfterSync(String empresaId, String usuarioId) {
-    final downloadRemoteRats = _downloadRemoteRats;
-    if (downloadRemoteRats == null) return;
-
-    final papel =
-        _remoteSession?.papelEmpresa?.name ??
-        _remoteSession?.papelGlobal?.name ??
-        'unknown';
-
-    unawaited(() async {
-      try {
-        await downloadRemoteRats.call(
-          empresaId: empresaId,
-          usuarioId: usuarioId,
-          papel: papel,
-        );
-      } catch (e, st) { debugPrint("Error: $e$st");
-        // RAT local ja salvo; retry pela lista de RATs.
-      }
-    }());
-  }
-
   Future<bool> saveSignature(Uint8List bytes) async {
-    if (bytes.length > maxSignatureBytes) {
-      _errorMessage = 'Assinatura muito grande. Use um canvas menor.';
-      notifyListeners();
-      return false;
-    }
-
-    final saved = await save(enqueueSync: false);
-    if (!saved) {
-      return false;
-    }
-
-    final currentSignatures = await _assinaturaRepository.listByRatId(ratId);
-    for (final assinatura in currentSignatures) {
-      // Enfileira delete remoto antes de remover localmente.
-      // Se a assinatura já syncou, o Storage/tabela remota fica órfã
-      // sem este step.
-      final remoteSession = _remoteSession;
-      if (remoteSession != null && remoteSession.hasCompanyContext) {
-        // Fire-and-forget: local delete proceeds even if remote sync fails.
-        unawaited(_enqueueAssinaturaSync?.delete(
-          assinatura,
-          empresaId: remoteSession.empresaId!,
-          usuarioId: remoteSession.usuarioId,
-          ratId: ratId,
-        ));
-      }
-
-      if (assinatura.storageMode == StorageMode.localFile) {
-        await _localSignatureAssetStore.delete(assinatura.assetRef);
-      }
-      await _assinaturaRepository.delete(assinatura.id);
-    }
-
-    final now = DateTime.now();
-    // Using microsecondsSinceEpoch for signature IDs.
-    // Rationale: Single-user app, microsecond precision is sufficient.
-    // UUID would add dependency; risk of collision is negligible.
-    final assinaturaId = 'assinatura-${now.microsecondsSinceEpoch}';
-
-    await _assinaturaRepository.saveBytes(
-      assinaturaId: assinaturaId,
-      bytes: bytes,
-      assetRef: 'signatures/$assinaturaId.png',
-      ratId: ratId,
-    );
-
-    final assinatura = Assinatura(
-      id: assinaturaId,
-      ratId: ratId,
-      storageMode: StorageMode.inlineBinary,
-      assetRef: 'signatures/$assinaturaId.png',
-      data: bytes,
-      sizeBytes: bytes.length,
-      sha256: null,
-      mimeType: 'image/png',
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    _assinatura = assinatura;
-    _signaturePreviewBytes = bytes;
-    notifyListeners();
-
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
 
-    if (isCompanyMode) {
-      final empresaId = remoteSession!.empresaId!;
-      final usuarioId = remoteSession.usuarioId;
-      await _syncCoordinator?.syncAfterSignature(
-        assinatura: assinatura,
-        empresaId: empresaId,
-        usuarioId: usuarioId,
-        ratId: ratId,
-      );
-      _downloadRemoteRatsAfterSync(empresaId, usuarioId);
-    }
-
-    return true;
+    return _signatureManager.saveSignature(
+      bytes,
+      empresaId: remoteSession?.empresaId ?? '',
+      usuarioId: remoteSession?.usuarioId ?? '',
+      hasCompanyContext: isCompanyMode,
+      saveRat: ({required bool enqueueSync}) => save(enqueueSync: enqueueSync),
+      syncAfterSignature: (empresaId, usuarioId) async {
+        final assinatura = _signatureManager.assinatura;
+        if (assinatura != null) {
+          await _syncHandler.syncAfterSignature(assinatura);
+        }
+      },
+      downloadRemoteRatsAfterSync: (empresaId, usuarioId) async {
+        // Triggered by syncAfterSignature in sync handler
+      },
+    );
   }
 
   Future<String?> _resolveEmpresaNome() async {
-    final empresaId = _remoteSession?.empresaId;
-    if (empresaId == null || _supabaseClientFactory == null) return null;
-    try {
-      final client = await _supabaseClientFactory
-          .tryCreateAuthenticatedClient();
-      if (client == null) {
-        return null;
-      }
-      final row = await client
-          .from('empresas')
-          .select('nome')
-          .eq('id', empresaId)
-          .maybeSingle();
-      return row?['nome'] as String?;
-    } catch (e, st) { debugPrint("Error: $e$st");
-      return null;
-    }
+    return _pdfGenerator.resolveEmpresaNome(_remoteSession?.empresaId);
   }
 
-  /// Retorna os dados necessários para a tela de preview do PDF.
+  /// Retorna os dados necessarios para a tela de preview do PDF.
   ///
-  /// [persist] controla se a RAT é salva antes de gerar a prévia:
-  /// - `true` (padrão, usado na edição): salva primeiro para não perder
-  ///   alterações em andamento;
-  /// - `false` (usado na lista): só abre a prévia da RAT já persistida, sem
-  ///   salvar — útil inclusive para RAT de outro técnico (somente leitura).
+  /// [persist] controla se a RAT e salva antes de gerar a previa:
+  /// - `true` (padrao, usado na edicao): salva primeiro para nao perder
+  ///   alteracoes em andamento;
+  /// - `false` (usado na lista): só abre a previa da RAT ja persistida, sem
+  ///   salvar — util inclusive para RAT de outro tecnico (somente leitura).
   /// Nunca enfileira sync.
   Future<PdfPreviewData?> prepareForPdfPreview({bool persist = true}) async {
     empresaNome ??= await _resolveEmpresaNome();
@@ -678,36 +538,23 @@ class RatFormViewModel extends ChangeNotifier {
         return null;
       }
     } else if (_initialRat == null && !_isSaved) {
-      _errorMessage = 'Salve o RAT antes de gerar a prévia.';
+      _errorMessage = 'Salve o RAT antes de gerar a previa.';
       notifyListeners();
       return null;
     }
 
-    // Garante que a assinatura está carregada.
-    if (_assinatura != null && _signaturePreviewBytes == null) {
-      try {
-        _signaturePreviewBytes = await _assinaturaRepository.readBytes(
-          _assinatura!.id,
-        );
-      } catch (e, st) { debugPrint("Error: $e$st");
-        _signaturePreviewBytes = null;
-      }
-    }
+    // Ensure signature is loaded
+    await loadSignatureStatus();
 
-    final shareData = await _shareRatLocally(
-      ratId: ratId,
-      scope: _shareScope(),
-    );
-
-    if (!shareData.success || shareData.rat == null) {
+    final rat = _initialRat ?? await _ratRepository.findById(ratId);
+    if (rat == null) {
       return null;
     }
 
-    return PdfPreviewData(
-      rat: shareData.rat!,
-      signatureBytes: isSignaturePending ? null : _signaturePreviewBytes,
+    return _pdfGenerator.prepareForPreview(
+      rat: rat,
+      signatureBytes: isSignaturePending ? null : signaturePreviewBytes,
       assinaturaPendente: isSignaturePending,
-      empresaNome: empresaNome,
       tecnicoNome: tecnicoNome,
     );
   }
@@ -746,8 +593,9 @@ class RatFormViewModel extends ChangeNotifier {
         assinaturaPendente: isSignaturePending,
       );
       return true;
-    } catch (e, st) { debugPrint("Error: $e$st");
-      _errorMessage = 'Não foi possível compartilhar o PDF.';
+    } catch (e, st) {
+      debugPrint("Error: $e$st");
+      _errorMessage = 'Nao foi possivel compartilhar o PDF.';
       return false;
     } finally {
       _isSharing = false;
@@ -792,8 +640,9 @@ class RatFormViewModel extends ChangeNotifier {
         return false;
       }
       return true;
-    } catch (e, st) { debugPrint("Error: $e\n$st");
-      _errorMessage = 'Não foi possível salvar o PDF.';
+    } catch (e, st) {
+      debugPrint("Error: $e\n$st");
+      _errorMessage = 'Nao foi possivel salvar o PDF.';
       return false;
     } finally {
       _isSharing = false;
@@ -825,14 +674,14 @@ class RatFormViewModel extends ChangeNotifier {
 
   Rat _ratWithCurrentAudit(Rat rat) {
     return rat.copyWith(
-      status: status,
-      ultimoAlteradorUserId: ultimoAlteradorUserId,
-      ultimaAlteracaoEm: ultimaAlteracaoEm,
-      reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
-      reabertaParaCorrecaoPorUserId: reabertaParaCorrecaoPorUserId,
-      motivoReabertura: motivoReabertura,
-      assinaturaInvalidadaEm: assinaturaInvalidadaEm,
-      assinaturaInvalidadaPorUserId: assinaturaInvalidadaPorUserId,
+      status: _formState.status,
+      ultimoAlteradorUserId: _ultimoAlteradorUserId,
+      ultimaAlteracaoEm: _ultimaAlteracaoEm,
+      reabertaParaCorrecaoEm: _reabertaParaCorrecaoEm,
+      reabertaParaCorrecaoPorUserId: _reabertaParaCorrecaoPorUserId,
+      motivoReabertura: _motivoReabertura,
+      assinaturaInvalidadaEm: _assinaturaInvalidadaEm,
+      assinaturaInvalidadaPorUserId: _assinaturaInvalidadaPorUserId,
     );
   }
 }
@@ -842,9 +691,9 @@ String _newRatId() {
 }
 
 String _newRatNumber() {
-  // Use timestamp + short UUID to ensure uniqueness while keeping readable format
   final uuid = const Uuid().v4().substring(0, 8);
-  final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(5);
+  final timestamp =
+      DateTime.now().millisecondsSinceEpoch.toString().substring(5);
   return '$timestamp-$uuid';
 }
 
@@ -868,34 +717,6 @@ String? _normalizeHour(String value) {
 
   return '${hour.toString().padLeft(2, '0')}:'
       '${minute.toString().padLeft(2, '0')}';
-}
-
-bool _isHourInRange(String value) {
-  final digits = value.replaceAll(RegExp(r'\D'), '');
-  if (digits.length != 4) {
-    return false;
-  }
-
-  final hour = int.tryParse(digits.substring(0, 2));
-  final minute = int.tryParse(digits.substring(2, 4));
-
-  if (hour == null || minute == null) {
-    return false;
-  }
-
-  return hour <= 23 && minute <= 59;
-}
-
-bool _isEndAfterStart(String start, String end) {
-  return _minutesSinceMidnight(end) > _minutesSinceMidnight(start);
-}
-
-int _minutesSinceMidnight(String value) {
-  final parts = value.split(':');
-  final hour = int.parse(parts[0]);
-  final minute = int.parse(parts[1]);
-
-  return hour * 60 + minute;
 }
 
 class PdfPreviewData {
