@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_convite_resumo.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
+import 'package:techreport/features/company_auth/data/services/secure_token_store.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 
 /// Card que exibe um convite pendente com ações de compartilhar e cancelar.
@@ -168,6 +169,70 @@ class ConviteShareSheet extends StatelessWidget {
             child: const Text('Fechar'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Banner warning that a pending invite is about to expire.
+class ConviteExpiryWarning extends StatelessWidget {
+  const ConviteExpiryWarning({
+    super.key,
+    required this.invite,
+    this.onDismiss,
+  });
+
+  final PendingCompanyInvite invite;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(MetricSlateSpacing.md),
+        child: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: theme.colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: MetricSlateSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Convite prestes a expirar',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Seu convite expira em ${invite.remainingTime}. '
+                    'Aguarde o e-mail de confirmação.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onDismiss != null)
+              IconButton(
+                onPressed: onDismiss,
+                icon: Icon(
+                  Icons.close,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+                tooltip: 'Dispensar',
+              ),
+          ],
+        ),
       ),
     );
   }
