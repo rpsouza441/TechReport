@@ -1,7 +1,7 @@
 # TechReport — Roadmap
 
 **Current phase:** Sprint 9.12 (planned)
-**Last updated:** 2026-06-15
+**Last updated:** 2026-06-16
 
 ---
 
@@ -220,12 +220,29 @@ Sprint 22         → Physical device testing (future)
 **Source:** CONCERNS.md - Pending items
 
 **Objectives:**
-- Implementar paginação na lista RATs
-- ViewModel splitting (RatFormViewModel)
-- Adicionar integration tests
-- Adicionar notificação de convite expirado
+- Implementar paginação na lista RATs (cursor-based, page size 20)
+- ViewModel splitting (RatFormViewModel 916 lines)
+- Adicionar integration tests (backup/restore, sync, auth)
+- Adicionar notificação de convite expirado (1 dia antes)
 
-**Plans:** TBD (research phase)
+**Plans:** 4 plans in 4 waves
+
+**Plan list:**
+- [ ] 09.12-01-PLAN.md — Cursor-based pagination (page size 20)
+- [ ] 09.12-02-PLAN.md — RatFormViewModel splitting (4 specialized classes)
+- [ ] 09.12-03-PLAN.md — Integration tests (backup/restore, sync, auth)
+- [ ] 09.12-04-PLAN.md — Invite expiry notification UI
+
+**Wave structure:**
+| Wave | Plans | Focus | Files |
+|------|-------|-------|-------|
+| 1 | 09.12-01 | Pagination | rat_list_view_model.dart, rat_repository.dart |
+| 2 | 09.12-02 | ViewModel splitting | rat_form_view_model.dart, new specialized classes |
+| 3 | 09.12-03 | Integration tests | test/integration/*.dart (new files) |
+| 4 | 09.12-04 | Invite expiry warning | secure_token_store.dart, company_home_screen.dart |
+
+**Commits (pending):**
+- TBD — execute each plan for commits
 
 ### Sprint 20: Release Preparation
 **Target:** 2026-06 (1-2 sprints)
