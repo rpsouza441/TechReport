@@ -15,6 +15,7 @@ import 'package:techreport/features/local_auth/domain/usecases/preview_local_bac
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_data_import.dart';
 import 'package:techreport/features/local_auth/presentation/widgets/local_info_card.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_confirmation_dialog.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 
 class LocalSettingsScreen extends StatelessWidget {
@@ -172,25 +173,15 @@ class LocalSettingsScreen extends StatelessWidget {
   Future<void> _confirmSwitchMode(BuildContext context) async {
     final navigator = Navigator.of(context);
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showTechReportConfirmationDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Trocar para modo empresa?'),
-        content: const Text('Seus RATs locais permanecem neste dispositivo.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Trocar'),
-          ),
-        ],
-      ),
+      title: 'Trocar para modo empresa?',
+      message: 'Seus RATs locais permanecem neste dispositivo.',
+      confirmLabel: 'Trocar',
+      cancelLabel: 'Cancelar',
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       navigator.pop();
       await onSwitchMode();
     }
