@@ -192,11 +192,21 @@ Sprint 22         → Physical device testing (future)
 
 ### Sprint 9.11: UI Duplication
 **Status:** Planned
-**Source:** CONCERNS.md - Performance Concerns
+**Source:** CONCERNS.md - UI Duplication + Sprint 9.4 specs
 
 **Objectives:**
-- Corrigir AnimatedBuilder rebuilds
-- Implementar paginação na lista RATs
+- Create shared dialog helpers for discard and confirmation dialogs
+- Migrate screens to use shared dialog helpers
+- Extract and share admin widgets (ConviteCard, AdminUserActionChips)
+- Eliminate duplicate PDF rendering blocks
+
+**Plans:** 4 plans in 4 waves
+
+Plans:
+- [ ] 09.11-01-PLAN.md — Create shared dialog helpers
+- [ ] 09.11-02-PLAN.md — Migrate CompanyEditProfileScreen and RatFormScreen to discard dialog, migrate confirmation dialogs
+- [ ] 09.11-03-PLAN.md — Extract AdminUserActionChips, migrate admin screens to shared widgets
+- [ ] 09.11-04-PLAN.md — Extract shared PDF rendering method
 
 ### Sprint 20: Release Preparation
 **Target:** 2026-06 (1-2 sprints)
