@@ -4,6 +4,7 @@ import 'package:techreport/features/company_admin/domain/entities/admin_convite_
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/admin_empresa_view_model.dart';
 import 'package:techreport/features/company_admin/presentation/screens/company_invite_member_screen.dart';
+import 'package:techreport/features/company_admin/presentation/widgets/admin_user_action_chips.dart';
 import 'package:techreport/features/company_admin/presentation/widgets/convite_card.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
@@ -595,7 +596,7 @@ class _TecnicoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: MetricSlateSpacing.sm),
-          _TecnicoActions(
+          AdminUserActionChips(
             ativo: tecnico.ativo,
             canManage: canManage,
             mustChangePassword: tecnico.mustChangePassword,
@@ -613,67 +614,5 @@ class _TecnicoCard extends StatelessWidget {
       AdminTecnicoPapel.gerente => 'Gerente',
       AdminTecnicoPapel.tecnico => 'Técnico',
     };
-  }
-}
-
-class _TecnicoActions extends StatelessWidget {
-  const _TecnicoActions({
-    required this.ativo,
-    required this.canManage,
-    required this.mustChangePassword,
-    required this.onToggleAtivo,
-    required this.onToggleMustChangePassword,
-  });
-
-  final bool ativo;
-  final bool canManage;
-  final bool mustChangePassword;
-  final ValueChanged<bool> onToggleAtivo;
-  final ValueChanged<bool> onToggleMustChangePassword;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Wrap(
-      spacing: MetricSlateSpacing.xxs,
-      runSpacing: MetricSlateSpacing.xxs,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        TechReportStatusChip(
-          label: ativo ? 'Ativo' : 'Inativo',
-          tone: ativo
-              ? TechReportStatusTone.success
-              : TechReportStatusTone.neutral,
-        ),
-        if (canManage) ...[
-          ActionChip(
-            label: Text(ativo ? 'Inativar' : 'Ativar'),
-            avatar: Icon(
-              ativo ? Icons.cancel_outlined : Icons.check_circle,
-              size: 16,
-              color: ativo
-                  ? theme.colorScheme.error
-                  : theme.colorScheme.primary,
-            ),
-            onPressed: () => onToggleAtivo(!ativo),
-          ),
-          ActionChip(
-            label: Text(mustChangePassword ? 'Senha OK' : 'Trocar senha'),
-            avatar: Icon(
-              Icons.key_outlined,
-              size: 16,
-              color: mustChangePassword
-                  ? theme.colorScheme.onErrorContainer
-                  : theme.colorScheme.outline,
-            ),
-            backgroundColor: mustChangePassword
-                ? theme.colorScheme.errorContainer
-                : null,
-            onPressed: () => onToggleMustChangePassword(!mustChangePassword),
-          ),
-        ],
-      ],
-    );
   }
 }
