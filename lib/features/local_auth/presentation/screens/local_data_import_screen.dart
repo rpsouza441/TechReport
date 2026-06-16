@@ -9,6 +9,7 @@ import 'package:techreport/features/local_auth/domain/entities/local_import_resu
 import 'package:techreport/features/local_auth/domain/usecases/apply_local_data_import.dart';
 import 'package:techreport/features/local_auth/presentation/view_models/local_data_import_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_confirmation_dialog.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_info_row.dart';
@@ -143,29 +144,15 @@ class LocalDataImportScreen extends StatelessWidget {
   }
 
   Future<void> _confirmOverwriteConflicts(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showTechReportConfirmationDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Substituir conflitos?'),
-          content: const Text(
-            'RATs com o mesmo ID e conteúdo diferente serão substituídas pelos dados do backup.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Substituir'),
-            ),
-          ],
-        );
-      },
+      title: 'Substituir conflitos?',
+      message: 'RATs com o mesmo ID e conteúdo diferente serão substituídas pelos dados do backup.',
+      confirmLabel: 'Substituir',
+      cancelLabel: 'Cancelar',
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       await viewModel.apply(
         conflictPolicy: LocalImportConflictPolicy.overwrite,
       );
