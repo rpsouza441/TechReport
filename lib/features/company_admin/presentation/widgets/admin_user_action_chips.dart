@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/theme/metric_slate_spacing.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 /// Widget de acoes visuais para gerenciamento de usuarios admin.
 ///
@@ -31,12 +30,6 @@ class AdminUserActionChips extends StatelessWidget {
       runSpacing: MetricSlateSpacing.xxs,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        TechReportStatusChip(
-          label: ativo ? 'Ativo' : 'Inativo',
-          tone: ativo
-              ? TechReportStatusTone.success
-              : TechReportStatusTone.neutral,
-        ),
         if (canManage) ...[
           ActionChip(
             label: Text(ativo ? 'Inativar' : 'Ativar'),
@@ -47,6 +40,9 @@ class AdminUserActionChips extends StatelessWidget {
                   ? theme.colorScheme.error
                   : theme.colorScheme.primary,
             ),
+            backgroundColor: ativo
+                ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
+                : theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
             onPressed: () => onToggleAtivo(!ativo),
           ),
           ActionChip(
