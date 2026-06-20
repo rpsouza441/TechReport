@@ -531,24 +531,49 @@ class _CompanyShellState extends State<CompanyShell> {
         'unknown';
 
     try {
+      debugPrint('_syncNow: Starting sync for empresaId=$empresaId');
       await widget.scope.processSyncQueue.call(
         empresaId: empresaId,
         usuarioId: currentSession.usuarioId,
         retryFailed: true,
       );
+      debugPrint('_syncNow: processSyncQueue completed');
       await widget.scope.downloadRemoteRats.call(
         empresaId: empresaId,
         usuarioId: currentSession.usuarioId,
         papel: papel,
       );
+      debugPrint('_syncNow: downloadRemoteRats completed');
       await _ratListViewModel?.load();
+      debugPrint('_syncNow: sync completed successfully');
     } catch (e, st) {
       debugPrint('Error syncing: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível sincronizar.')),
-        );
+
+      if (!mounted) return;
+
+      final errorMsg = e.toString().toLowerCase();
+      String message;
+
+      if (errorMsg.contains('connection') ||
+          errorMsg.contains('socket') ||
+          errorMsg.contains('timeout') ||
+          errorMsg.contains('network')) {
+        message = 'Verifique sua conexão com a internet.';
+      } else if (errorMsg.contains('401') ||
+          errorMsg.contains('unauthorized') ||
+          errorMsg.contains('auth')) {
+        message = 'Sessão expirada. Entre novamente.';
+      } else if (errorMsg.contains('500') ||
+          errorMsg.contains('server error') ||
+          errorMsg.contains('internal')) {
+        message = 'Servidor indisponível. Tente mais tarde.';
+      } else {
+        message = 'Não foi possível sincronizar. Tente novamente.';
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     } finally {
       if (mounted) {
         setState(() {
