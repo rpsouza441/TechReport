@@ -500,7 +500,7 @@ class RatFormViewModel extends ChangeNotifier {
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
 
-    return _signatureManager.saveSignature(
+    final result = await _signatureManager.saveSignature(
       bytes,
       empresaId: remoteSession?.empresaId ?? '',
       usuarioId: remoteSession?.usuarioId ?? '',
@@ -516,6 +516,13 @@ class RatFormViewModel extends ChangeNotifier {
         // Triggered by syncAfterSignature in sync handler
       },
     );
+
+    // Auto-update status to finalizado after successful signature
+    if (result && _formState.status == RatStatus.draft) {
+      _formState.setStatus(RatStatus.finalizado);
+    }
+
+    return result;
   }
 
   Future<String?> _resolveEmpresaNome() async {
