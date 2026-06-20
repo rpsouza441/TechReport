@@ -35,6 +35,8 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     } on AuthApiException catch (e) {
       throw mapAuthException(e);
+    } on AuthException catch (e) {
+      throw _mapAuthException(e);
     }
 
     final session = response.session;
@@ -93,6 +95,8 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     } on AuthApiException catch (e) {
       throw mapAuthException(e);
+    } on AuthException catch (e) {
+      throw _mapAuthException(e);
     }
 
     final session = response.session;
@@ -171,6 +175,8 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     } on AuthApiException catch (e) {
       throw mapAuthException(e);
+    } on AuthException catch (e) {
+      throw _mapAuthException(e);
     }
 
     final session = response.session;
@@ -429,12 +435,61 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   RemoteAuthException mapAuthException(AuthApiException exception) {
-    if (exception.code == 'invalid_credentials') {
-      return const RemoteAuthException('E-mail ou senha inválidos.');
+    final code = exception.code ?? '';
+    final message = exception.message.toLowerCase();
+
+    if (code == 'invalid_credentials' || message.contains('invalid login')) {
+      return const RemoteAuthException('E-mail ou senha incorretos.');
+    }
+
+    if (code == 'user_not_found' || message.contains('user not found')) {
+      return const RemoteAuthException('Usuário não encontrado.');
+    }
+
+    if (message.contains('email not confirmed') ||
+        code == 'email_not_confirmed') {
+      return const RemoteAuthException(
+        'E-mail não confirmado. Verifique sua caixa de entrada.',
+      );
+    }
+
+    if (message.contains('connection') ||
+        message.contains('timeout') ||
+        message.contains('network') ||
+        message.contains('fetch') ||
+        message.contains('reset by peer')) {
+      return const RemoteAuthException(
+        'Não foi possível conectar ao servidor. Verifique sua conexão.',
+      );
     }
 
     return const RemoteAuthException(
-      'Não foi possível entrar. Confira os dados e tente novamente.',
+      'Não foi possível entrar. Verifique sua conexão e tente novamente.',
+    );
+  }
+
+  /// Maps AuthException (base class including AuthRetryableFetchException)
+  /// to user-friendly RemoteAuthException.
+  RemoteAuthException _mapAuthException(AuthException exception) {
+    final message = exception.message.toLowerCase();
+
+    if (message.contains('connection') ||
+        message.contains('timeout') ||
+        message.contains('network') ||
+        message.contains('fetch') ||
+        message.contains('reset by peer') ||
+        message.contains('connection reset')) {
+      return const RemoteAuthException(
+        'Não foi possível conectar ao servidor. Verifique sua conexão.',
+      );
+    }
+
+    if (message.contains('invalid') || message.contains('credentials')) {
+      return const RemoteAuthException('E-mail ou senha incorretos.');
+    }
+
+    return const RemoteAuthException(
+      'Não foi possível entrar. Verifique sua conexão e tente novamente.',
     );
   }
 
