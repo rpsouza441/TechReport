@@ -138,6 +138,27 @@ class _StubRatRepository implements RatRepository {
   }) async => [];
 
   @override
+  Future<List<Rat>> listLocalCursor({
+    required int limit,
+    String? lastId,
+  }) async => [];
+
+  @override
+  Future<List<Rat>> listCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    String? lastId,
+  }) async => [];
+
+  @override
+  Future<List<Rat>> listCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    String? lastId,
+  }) async => [];
+
+  @override
   Future<void> save(Rat rat) async {
     if (shouldThrowOnSave) {
       throw Exception('Save failed');
@@ -557,6 +578,19 @@ void main() {
       sut.setDataVisita(DateTime.now());
 
       expect(notified, isTrue);
+    });
+
+    test('setDataVisita nao notifica novamente para a mesma data', () {
+      final sut = buildVm();
+      final date = DateTime(2026, 6, 22);
+      var notifications = 0;
+      sut.addListener(() => notifications++);
+
+      sut.setDataVisita(date);
+      sut.setDataVisita(date);
+
+      expect(sut.dataVisita, date);
+      expect(notifications, 1);
     });
 
     test('setHorarioInicioAtendimento dispara notifyListeners', () {

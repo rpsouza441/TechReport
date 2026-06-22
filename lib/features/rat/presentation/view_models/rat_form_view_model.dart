@@ -80,6 +80,7 @@ class RatFormViewModel extends ChangeNotifier {
           papel: remoteSession?.papelEmpresa?.name ??
               remoteSession?.papelGlobal?.name,
         ) {
+    _formState.addListener(_onFormStateChanged);
     // Forward signature manager notifications
     _signatureManager.addListener(_onSignatureManagerChanged);
   }
@@ -122,13 +123,19 @@ class RatFormViewModel extends ChangeNotifier {
   DateTime? _assinaturaInvalidadaEm;
   String? _assinaturaInvalidadaPorUserId;
 
+  void _onFormStateChanged() {
+    notifyListeners();
+  }
+
   void _onSignatureManagerChanged() {
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _formState.removeListener(_onFormStateChanged);
     _signatureManager.removeListener(_onSignatureManagerChanged);
+    _formState.dispose();
     super.dispose();
   }
 
