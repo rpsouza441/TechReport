@@ -105,10 +105,17 @@ class RatPermissions {
 
   /// Retorna true se a sessao atual pode reabrir uma RAT para correcao.
   ///
-  /// Apenas gerente/admin empresa da mesma empresa podem reabrir RATs
-  /// finalizadas ou enviadas. RAT arquivada e RAT ja reaberta nao reabrem.
+  /// Gerente/admin empresa ou o tecnico proprietario, sempre na mesma empresa,
+  /// podem reabrir RATs finalizadas ou enviadas. RAT arquivada e RAT ja
+  /// reaberta nao reabrem.
   bool canReopenForCorrection(Rat rat, SessaoRemota? session) {
-    if (!isManagerOrAdmin(rat, session)) {
+    final isOwnerTechnician = session != null &&
+        session.hasCompanyContext &&
+        session.isTecnico &&
+        rat.empresaId == session.empresaId &&
+        rat.tecnicoId == session.tecnicoId;
+
+    if (!isManagerOrAdmin(rat, session) && !isOwnerTechnician) {
       return false;
     }
     if (rat.isArquivado || rat.isDraft || rat.isReabertaParaCorrecao) {

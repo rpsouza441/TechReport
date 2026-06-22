@@ -14,6 +14,7 @@ import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart
 
 class _StubAssinaturaRepository implements AssinaturaRepository {
   final List<Assinatura> assinaturas = [];
+  String? savedBytesRatId;
 
   @override
   Future<List<Assinatura>> listByRatId(String ratId) async => assinaturas;
@@ -32,7 +33,23 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
     required Uint8List bytes,
     required String assetRef,
     required String ratId,
-  }) async {}
+  }) async {
+    savedBytesRatId = ratId;
+    final now = DateTime.now();
+    assinaturas.add(
+      Assinatura(
+        id: assinaturaId,
+        ratId: ratId,
+        storageMode: StorageMode.inlineBinary,
+        assetRef: assetRef,
+        data: bytes,
+        sizeBytes: bytes.length,
+        mimeType: 'image/png',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
 
   @override
   Future<Assinatura?> getById(String id) async => null;
@@ -209,20 +226,24 @@ SessaoRemota _makeRemoteSession({
 
 Rat _makeValidRat({
   String id = 'rat-1',
+  String empresaId = 'emp-1',
+  String tecnicoId = 'tec-1',
   String clienteNome = 'Cliente Teste',
   String responsavelRecebimento = 'Responsavel',
   DateTime? dataVisita,
   String horarioInicio = '0800',
   String horarioTermino = '1000',
   String descricao = 'Descricao do atendimento',
+  RatStatus status = RatStatus.draft,
+  DateTime? reabertaParaCorrecaoEm,
 }) {
   final now = DateTime.now();
   return Rat(
     id: id,
     authorId: 'author-1',
-    empresaId: 'emp-1',
+    empresaId: empresaId,
     usuarioId: 'user-1',
-    tecnicoId: 'tec-1',
+    tecnicoId: tecnicoId,
     ownerType: RatOwnerType.companyTecnico,
     numero: '0001',
     clienteNome: clienteNome,
@@ -231,10 +252,11 @@ Rat _makeValidRat({
     horarioInicioAtendimento: horarioInicio,
     horarioTerminoAtendimento: horarioTermino,
     descricao: descricao,
-    status: RatStatus.draft,
+    status: status,
     syncStatus: RatSyncStatus.localOnly,
     createdAt: now,
     updatedAt: now,
+    reabertaParaCorrecaoEm: reabertaParaCorrecaoEm,
   );
 }
 
@@ -262,6 +284,23 @@ void main() {
       shareRatLocally: shareRatLocally,
       initialRat: initialRat,
       remoteSession: remoteSession,
+    );
+  }
+
+  void addSignature(Rat rat) {
+    final now = DateTime.now();
+    assinaturaRepo.assinaturas.add(
+      Assinatura(
+        id: 'assinatura-${rat.id}',
+        ratId: rat.id,
+        storageMode: StorageMode.inlineBinary,
+        assetRef: 'signatures/assinatura-${rat.id}.png',
+        data: Uint8List.fromList([1, 2, 3]),
+        sizeBytes: 3,
+        mimeType: 'image/png',
+        createdAt: now,
+        updatedAt: now,
+      ),
     );
   }
 
@@ -521,11 +560,13 @@ void main() {
 
   group('reopenForCorrection()', () {
     test('retorna false quando motivo tem menos de 5 caracteres', () async {
-      final initialRat = _makeValidRat();
+      final initialRat = _makeValidRat(status: RatStatus.finalizado);
       final remoteSession = _makeRemoteSession(
         papel: SessaoRemotaPapelEmpresa.tecnico,
       );
       final sut = buildVm(initialRat: initialRat, remoteSession: remoteSession);
+      addSignature(initialRat);
+      await sut.loadSignatureStatus();
 
       final result = await sut.reopenForCorrection('curt');
 
@@ -533,9 +574,95 @@ void main() {
       expect(sut.errorMessage, isNotNull);
     });
 
+    test('tecnico proprietario fica bloqueado com assinatura valida', () async {
+      final initialRat = _makeValidRat(status: RatStatus.finalizado);
+      final remoteSession = _makeRemoteSession();
+      addSignature(initialRat);
+      final sut = buildVm(initialRat: initialRat, remoteSession: remoteSession);
+
+      await sut.loadSignatureStatus();
+
+      expect(sut.canReopenForCorrection, isTrue);
+      expect(sut.isLockedUntilReopen, isTrue);
+      expect(sut.canEditFields, isFalse);
+    });
+
+    test('tecnico proprietario reabre e salva auditoria', () async {
+      final initialRat = _makeValidRat(status: RatStatus.finalizado);
+      final remoteSession = _makeRemoteSession();
+      addSignature(initialRat);
+      final sut = buildVm(initialRat: initialRat, remoteSession: remoteSession);
+      await sut.loadSignatureStatus();
+
+      final result = await sut.reopenForCorrection('  Corrigir valores  ');
+
+      expect(result, isTrue);
+      expect(sut.status, RatStatus.draft);
+      expect(ratRepo.savedRat?.status, RatStatus.draft);
+      expect(ratRepo.savedRat?.motivoReabertura, 'Corrigir valores');
+      expect(ratRepo.savedRat?.reabertaParaCorrecaoPorUserId, 'user-1');
+      expect(ratRepo.savedRat?.assinaturaInvalidadaPorUserId, 'user-1');
+      expect(ratRepo.savedRat?.reabertaParaCorrecaoEm, isNotNull);
+      expect(ratRepo.savedRat?.assinaturaInvalidadaEm, isNotNull);
+    });
+
+    test('outro tecnico nao reabre nem salva a RAT', () async {
+      final initialRat = _makeValidRat(
+        status: RatStatus.finalizado,
+        tecnicoId: 'outro-tecnico',
+      );
+      final sut = buildVm(
+        initialRat: initialRat,
+        remoteSession: _makeRemoteSession(),
+      );
+      addSignature(initialRat);
+      await sut.loadSignatureStatus();
+
+      final result = await sut.reopenForCorrection('Corrigir valores');
+
+      expect(result, isFalse);
+      expect(ratRepo.savedRat, isNull);
+      expect(sut.status, RatStatus.finalizado);
+    });
+
+    test('RAT ja reaberta permanece inelegivel ao carregar ViewModel', () async {
+      final initialRat = _makeValidRat(
+        status: RatStatus.finalizado,
+        reabertaParaCorrecaoEm: DateTime(2026, 6, 20),
+      );
+      final sut = buildVm(
+        initialRat: initialRat,
+        remoteSession: _makeRemoteSession(),
+      );
+      addSignature(initialRat);
+      await sut.loadSignatureStatus();
+
+      expect(sut.canReopenForCorrection, isFalse);
+    });
+
+    test('falha ao salvar restaura status observavel', () async {
+      final initialRat = _makeValidRat(status: RatStatus.finalizado);
+      final sut = buildVm(
+        initialRat: initialRat,
+        remoteSession: _makeRemoteSession(),
+      );
+      addSignature(initialRat);
+      await sut.loadSignatureStatus();
+      ratRepo.shouldThrowOnSave = true;
+
+      final result = await sut.reopenForCorrection('Corrigir valores');
+
+      expect(result, isFalse);
+      expect(sut.status, RatStatus.finalizado);
+      expect(sut.canReopenForCorrection, isTrue);
+      expect(sut.errorMessage, isNotNull);
+    });
+
     test('retorna false quando não há remoteSession', () async {
-      final initialRat = _makeValidRat();
+      final initialRat = _makeValidRat(status: RatStatus.finalizado);
       final sut = buildVm(initialRat: initialRat, remoteSession: null);
+      addSignature(initialRat);
+      await sut.loadSignatureStatus();
 
       final result = await sut.reopenForCorrection(
         'Motivo válido para correção',
@@ -649,6 +776,46 @@ void main() {
   // ─── saveSignature() ────────────────────────────────────────────────────────
 
   group('saveSignature()', () {
+    test('falha de assinatura restaura status rascunho', () async {
+      final sut = buildVm();
+
+      final result = await sut.saveSignature(
+        Uint8List(1 * 1024 * 1024 + 1),
+      );
+
+      expect(result, isFalse);
+      expect(sut.status, RatStatus.draft);
+      expect(ratRepo.savedRat, isNull);
+    });
+
+    test('RAT nova, assinatura e reabertura usam a mesma identidade', () async {
+      final remoteSession = _makeRemoteSession();
+      final sut = buildVm(remoteSession: remoteSession);
+      sut.setClienteNome('Cliente Valido');
+      sut.setResponsavelRecebimento('Responsavel');
+      sut.setDataVisita(DateTime(2026, 6, 22));
+      sut.setHorarioInicioAtendimento('0800');
+      sut.setHorarioTerminoAtendimento('1000');
+      sut.setDescricao('Descricao valida');
+
+      final result = await sut.saveSignature(Uint8List.fromList([1, 2, 3]));
+
+      expect(result, isTrue);
+      expect(ratRepo.savedRat?.id, sut.ratId);
+      expect(assinaturaRepo.savedBytesRatId, sut.ratId);
+      expect(ratRepo.savedRat?.status, RatStatus.finalizado);
+
+      final reopened = buildVm(
+        initialRat: ratRepo.savedRat,
+        remoteSession: remoteSession,
+      );
+      await reopened.loadSignatureStatus();
+
+      expect(reopened.hasValidSignature, isTrue);
+      expect(reopened.canReopenForCorrection, isTrue);
+      expect(reopened.isLockedUntilReopen, isTrue);
+    });
+
     test('rejeita assinatura maior que 1 MB com mensagem de erro', () async {
       final sut = buildVm();
       sut.setClienteNome('Cliente Válido');

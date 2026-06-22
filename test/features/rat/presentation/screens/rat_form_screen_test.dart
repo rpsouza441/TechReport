@@ -17,9 +17,10 @@ void main() {
   RatFormViewModel buildViewModel({
     Rat? initialRat,
     SessaoRemota? remoteSession,
+    List<Assinatura> signatures = const [],
   }) {
     return RatFormViewModel(
-      assinaturaRepository: _StubAssinaturaRepository(),
+      assinaturaRepository: _StubAssinaturaRepository(signatures),
       localSignatureAssetStore: _StubLocalSignatureAssetStore(),
       ratPdfShareService: _StubRatPdfShareService(),
       ratRepository: _StubRatRepository(),
@@ -106,9 +107,80 @@ void main() {
     expect(find.byType(DatePickerDialog), findsNothing);
     expect(viewModel.dataVisita, initialDate);
   });
+
+  testWidgets('mostra reabertura para tecnico proprietario apos assinatura', (
+    tester,
+  ) async {
+    final rat = _rat(
+      dataVisita: DateTime(2026, 6, 20),
+      status: RatStatus.finalizado,
+    );
+    final viewModel = buildViewModel(
+      initialRat: rat,
+      remoteSession: _session(tecnicoId: 'tecnico-atual'),
+      signatures: [_signature(rat.id)],
+    );
+    addTearDown(viewModel.dispose);
+    await pumpForm(tester, viewModel);
+
+    expect(find.text('Correção'), findsOneWidget);
+    expect(find.text('Reabrir para correção'), findsOneWidget);
+  });
+
+  testWidgets('nao mostra reabertura antes da assinatura', (tester) async {
+    final viewModel = buildViewModel(
+      initialRat: _rat(
+        dataVisita: DateTime(2026, 6, 20),
+        status: RatStatus.finalizado,
+      ),
+      remoteSession: _session(tecnicoId: 'tecnico-atual'),
+    );
+    addTearDown(viewModel.dispose);
+    await pumpForm(tester, viewModel);
+
+    expect(find.text('Correção'), findsNothing);
+    expect(find.text('Reabrir para correção'), findsNothing);
+  });
+
+  testWidgets('nao mostra reabertura para outro tecnico', (tester) async {
+    final rat = _rat(
+      dataVisita: DateTime(2026, 6, 20),
+      tecnicoId: 'outro-tecnico',
+      status: RatStatus.finalizado,
+    );
+    final viewModel = buildViewModel(
+      initialRat: rat,
+      remoteSession: _session(tecnicoId: 'tecnico-atual'),
+      signatures: [_signature(rat.id)],
+    );
+    addTearDown(viewModel.dispose);
+    await pumpForm(tester, viewModel);
+
+    expect(find.text('Correção'), findsNothing);
+    expect(find.text('Reabrir para correção'), findsNothing);
+  });
 }
 
-Rat _rat({required DateTime dataVisita, String tecnicoId = 'tecnico-atual'}) {
+Assinatura _signature(String ratId) {
+  final now = DateTime(2026, 6, 20);
+  return Assinatura(
+    id: 'assinatura-$ratId',
+    ratId: ratId,
+    storageMode: StorageMode.inlineBinary,
+    assetRef: 'signatures/assinatura-$ratId.png',
+    data: Uint8List.fromList([1, 2, 3]),
+    sizeBytes: 3,
+    mimeType: 'image/png',
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+Rat _rat({
+  required DateTime dataVisita,
+  String tecnicoId = 'tecnico-atual',
+  RatStatus status = RatStatus.draft,
+}) {
   return Rat(
     id: 'rat-1',
     authorId: 'author-1',
@@ -123,7 +195,7 @@ Rat _rat({required DateTime dataVisita, String tecnicoId = 'tecnico-atual'}) {
     horarioInicioAtendimento: '0800',
     horarioTerminoAtendimento: '1000',
     descricao: 'Descricao',
-    status: RatStatus.draft,
+    status: status,
     syncStatus: RatSyncStatus.localOnly,
     createdAt: DateTime(2026, 6, 20),
     updatedAt: DateTime(2026, 6, 20),
@@ -154,8 +226,13 @@ SessaoRemota _session({required String tecnicoId}) {
 }
 
 class _StubAssinaturaRepository implements AssinaturaRepository {
+  _StubAssinaturaRepository(this.signatures);
+
+  final List<Assinatura> signatures;
+
   @override
-  Future<List<Assinatura>> listByRatId(String ratId) async => [];
+  Future<List<Assinatura>> listByRatId(String ratId) async =>
+      signatures.where((signature) => signature.ratId == ratId).toList();
 
   @override
   Future<Uint8List?> readBytes(String id) async => null;

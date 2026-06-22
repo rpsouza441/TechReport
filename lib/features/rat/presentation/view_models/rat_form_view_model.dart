@@ -58,20 +58,16 @@ class RatFormViewModel extends ChangeNotifier {
         _downloadRemoteRats = downloadRemoteRats,
         _supabaseClientFactory = supabaseClientFactory,
         _isSaved = initialRat != null,
+        _ultimoAlteradorUserId = initialRat?.ultimoAlteradorUserId,
+        _ultimaAlteracaoEm = initialRat?.ultimaAlteracaoEm,
+        _reabertaParaCorrecaoEm = initialRat?.reabertaParaCorrecaoEm,
+        _reabertaParaCorrecaoPorUserId =
+            initialRat?.reabertaParaCorrecaoPorUserId,
+        _motivoReabertura = initialRat?.motivoReabertura,
+        _assinaturaInvalidadaEm = initialRat?.assinaturaInvalidadaEm,
+        _assinaturaInvalidadaPorUserId =
+            initialRat?.assinaturaInvalidadaPorUserId,
         _formState = RatFormState(initialRat: initialRat),
-        _signatureManager = RatSignatureManager(
-          assinaturaRepository: assinaturaRepository,
-          localSignatureAssetStore: localSignatureAssetStore,
-          ratId: initialRat?.id ?? _newRatId(),
-          onError: (msg) {},
-          enqueueAssinaturaSync: enqueueAssinaturaSync,
-        ),
-        _pdfGenerator = RatPdfGenerator(
-          ratPdfShareService: ratPdfShareService,
-          shareRatLocally: shareRatLocally,
-          ratId: initialRat?.id ?? _newRatId(),
-          supabaseClientFactory: supabaseClientFactory,
-        ),
         _syncHandler = RatSyncHandler(
           syncCoordinator: syncCoordinator,
           downloadRemoteRats: downloadRemoteRats,
@@ -80,6 +76,19 @@ class RatFormViewModel extends ChangeNotifier {
           papel: remoteSession?.papelEmpresa?.name ??
               remoteSession?.papelGlobal?.name,
         ) {
+    _signatureManager = RatSignatureManager(
+      assinaturaRepository: assinaturaRepository,
+      localSignatureAssetStore: localSignatureAssetStore,
+      ratId: ratId,
+      onError: (msg) {},
+      enqueueAssinaturaSync: enqueueAssinaturaSync,
+    );
+    _pdfGenerator = RatPdfGenerator(
+      ratPdfShareService: ratPdfShareService,
+      shareRatLocally: shareRatLocally,
+      ratId: ratId,
+      supabaseClientFactory: supabaseClientFactory,
+    );
     _formState.addListener(_onFormStateChanged);
     // Forward signature manager notifications
     _signatureManager.addListener(_onSignatureManagerChanged);
@@ -216,7 +225,7 @@ class RatFormViewModel extends ChangeNotifier {
 
   bool get canReopenForCorrection {
     final initialRat = _initialRat;
-    if (initialRat == null) {
+    if (initialRat == null || !hasValidSignature) {
       return false;
     }
 
@@ -506,6 +515,12 @@ class RatFormViewModel extends ChangeNotifier {
   Future<bool> saveSignature(Uint8List bytes) async {
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
+    final previousStatus = _formState.status;
+    final shouldFinalize = previousStatus == RatStatus.draft;
+
+    if (shouldFinalize) {
+      _formState.setStatus(RatStatus.finalizado);
+    }
 
     final result = await _signatureManager.saveSignature(
       bytes,
@@ -524,9 +539,8 @@ class RatFormViewModel extends ChangeNotifier {
       },
     );
 
-    // Auto-update status to finalizado after successful signature
-    if (result && _formState.status == RatStatus.draft) {
-      _formState.setStatus(RatStatus.finalizado);
+    if (!result && shouldFinalize) {
+      _formState.setStatus(previousStatus);
     }
 
     return result;
