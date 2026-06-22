@@ -86,10 +86,10 @@ class AdminEmpresaViewModel extends ChangeNotifier {
       convites = results[2] as List<AdminConviteResumo>;
     } catch (error) {
       errorMessage = _friendlyError(error);
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-
-    isLoading = false;
-    notifyListeners();
   }
 
   Future<CreateTecnicoConviteResult> createConvite({
@@ -165,14 +165,13 @@ class AdminEmpresaViewModel extends ChangeNotifier {
     try {
       await _updateTecnicoEquipe(tecnicoId: tecnico.id, ativo: ativo);
       await load();
-      isSubmitting = false;
-      notifyListeners();
-      return true;
+      return errorMessage == null;
     } catch (error) {
       errorMessage = _friendlyError(error);
+      return false;
+    } finally {
       isSubmitting = false;
       notifyListeners();
-      return false;
     }
   }
 
@@ -246,6 +245,19 @@ class AdminEmpresaViewModel extends ChangeNotifier {
 
   String _friendlyError(Object error) {
     final message = error.toString();
+    final normalized = message.toLowerCase();
+
+    if (normalized.contains('authretryablefetchexception') ||
+        normalized.contains('socketconnection') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('network is unreachable') ||
+        normalized.contains('failed host lookup') ||
+        normalized.contains('connection refused') ||
+        normalized.contains('connection reset') ||
+        normalized.contains('timeout')) {
+      return 'Sem conexão com o servidor. Verifique sua conexão e tente novamente.';
+    }
+
     const prefix = 'PostgrestException(message: ';
     if (message.contains(prefix)) {
       final start = message.indexOf(prefix) + prefix.length;

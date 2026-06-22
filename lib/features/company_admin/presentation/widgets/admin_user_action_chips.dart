@@ -11,6 +11,7 @@ class AdminUserActionChips extends StatelessWidget {
     required this.ativo,
     required this.mustChangePassword,
     required this.canManage,
+    this.enabled = true,
     required this.onToggleAtivo,
     required this.onToggleMustChangePassword,
   });
@@ -18,6 +19,7 @@ class AdminUserActionChips extends StatelessWidget {
   final bool ativo;
   final bool mustChangePassword;
   final bool canManage;
+  final bool enabled;
   final ValueChanged<bool> onToggleAtivo;
   final ValueChanged<bool> onToggleMustChangePassword;
 
@@ -43,7 +45,7 @@ class AdminUserActionChips extends StatelessWidget {
             backgroundColor: ativo
                 ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
                 : theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-            onPressed: () => onToggleAtivo(!ativo),
+            onPressed: enabled ? () => onToggleAtivo(!ativo) : null,
           ),
           ActionChip(
             label: Text(mustChangePassword ? 'Senha OK' : 'Trocar senha'),
@@ -57,7 +59,9 @@ class AdminUserActionChips extends StatelessWidget {
             backgroundColor: mustChangePassword
                 ? theme.colorScheme.errorContainer
                 : null,
-            onPressed: () => onToggleMustChangePassword(!mustChangePassword),
+            onPressed: enabled
+                ? () => onToggleMustChangePassword(!mustChangePassword)
+                : null,
           ),
         ],
       ],

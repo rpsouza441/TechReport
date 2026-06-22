@@ -11,7 +11,6 @@ import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_state_view.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_status_chip.dart';
 
 class AdminEmpresaArea extends StatefulWidget {
   const AdminEmpresaArea({super.key, required this.viewModel});
@@ -40,45 +39,40 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: widget.viewModel.load,
-          child: _buildBody(context),
-        ),
-        ListenableBuilder(
-          listenable: widget.viewModel,
-          builder: (context, _) {
-            final isLoading = widget.viewModel.isSubmitting || widget.viewModel.isLoading;
-            return isLoading
-                ? const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LinearProgressIndicator(minHeight: 2),
-                  )
-                : const SizedBox.shrink();
-          },
-        ),
-        ListenableBuilder(
-          listenable: widget.viewModel,
-          builder: (context, _) {
-            final canInvite = widget.viewModel.canInviteMembers;
-            final isSubmitting = widget.viewModel.isSubmitting;
-            return canInvite
-                ? Positioned(
-                    right: MetricSlateSpacing.lg,
-                    bottom: MetricSlateSpacing.lg,
-                    child: FloatingActionButton.extended(
-                      onPressed: isSubmitting ? null : _openInviteScreen,
-                      icon: const Icon(Icons.person_add_outlined),
-                      label: const Text('Convidar'),
-                    ),
-                  )
-                : const SizedBox.shrink();
-          },
-        ),
-      ],
+    return ListenableBuilder(
+      listenable: widget.viewModel,
+      builder: (context, _) {
+        final isBusy =
+            widget.viewModel.isSubmitting || widget.viewModel.isLoading;
+
+        return Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: widget.viewModel.load,
+              child: _buildBody(context),
+            ),
+            if (isBusy)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+            if (widget.viewModel.canInviteMembers)
+              Positioned(
+                right: MetricSlateSpacing.lg,
+                bottom: MetricSlateSpacing.lg,
+                child: FloatingActionButton.extended(
+                  onPressed: widget.viewModel.isSubmitting
+                      ? null
+                      : _openInviteScreen,
+                  icon: const Icon(Icons.person_add_outlined),
+                  label: const Text('Convidar'),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -303,6 +297,7 @@ class _AdminEmpresaAreaState extends State<AdminEmpresaArea> {
             _TecnicoCard(
               tecnico: tecnico,
               canManage: widget.viewModel.canManageTecnico(tecnico),
+              isSubmitting: widget.viewModel.isSubmitting,
               onToggleAtivo: (ativo) => widget.viewModel.setTecnicoAtivo(
                 tecnico: tecnico,
                 ativo: ativo,
@@ -528,12 +523,14 @@ class _TecnicoCard extends StatelessWidget {
   const _TecnicoCard({
     required this.tecnico,
     required this.canManage,
+    required this.isSubmitting,
     required this.onToggleAtivo,
     required this.onToggleMustChangePassword,
   });
 
   final AdminTecnicoResumo tecnico;
   final bool canManage;
+  final bool isSubmitting;
   final ValueChanged<bool> onToggleAtivo;
   final ValueChanged<bool> onToggleMustChangePassword;
 
@@ -599,6 +596,7 @@ class _TecnicoCard extends StatelessWidget {
           AdminUserActionChips(
             ativo: tecnico.ativo,
             canManage: canManage,
+            enabled: !isSubmitting,
             mustChangePassword: tecnico.mustChangePassword,
             onToggleAtivo: onToggleAtivo,
             onToggleMustChangePassword: onToggleMustChangePassword,
