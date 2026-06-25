@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
+import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 
 import '../../domain/entities/rat.dart';
@@ -53,27 +54,23 @@ class RatListViewModel extends ChangeNotifier {
 
   void setQuery(String value) {
     _query = value;
-    _resetPagination();
     notifyListeners();
   }
 
   void setStatusFilter(RatStatus? status) {
     _statusFilter = status;
-    _resetPagination();
     notifyListeners();
   }
 
   void setDateRange({DateTime? from, DateTime? to}) {
     _dateFrom = from;
     _dateTo = to;
-    _resetPagination();
     notifyListeners();
   }
 
   void clearDateRange() {
     _dateFrom = null;
     _dateTo = null;
-    _resetPagination();
     notifyListeners();
   }
 
@@ -82,7 +79,6 @@ class RatListViewModel extends ChangeNotifier {
     _statusFilter = null;
     _dateFrom = null;
     _dateTo = null;
-    _resetPagination();
     notifyListeners();
   }
 
@@ -173,12 +169,6 @@ class RatListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _resetPagination() {
-    _lastId = null;
-    _hasMorePages = true;
-    _rats = [];
-  }
-
   Future<List<Rat>> _fetchPageCursor(int limit, String? lastId) async {
     switch (_scope.type) {
       case RatListScopeType.local:
@@ -205,9 +195,20 @@ class RatListViewModel extends ChangeNotifier {
     final ratIds = rats.map((r) => r.id).toList();
     final assinaturaMap = await _assinaturaRepository.listByRatIds(ratIds);
 
-    return assinaturaMap.entries
-        .where((e) => e.value.isNotEmpty)
-        .map((e) => e.key)
+    return rats
+        .where((rat) => _hasValidSignature(rat, assinaturaMap[rat.id] ?? []))
+        .map((rat) => rat.id)
         .toSet();
+  }
+
+  bool _hasValidSignature(Rat rat, List<Assinatura> assinaturas) {
+    if (assinaturas.isEmpty) return false;
+
+    final invalidatedAt = rat.assinaturaInvalidadaEm;
+    if (invalidatedAt == null) return true;
+
+    return assinaturas.any(
+      (assinatura) => assinatura.updatedAt.isAfter(invalidatedAt),
+    );
   }
 }

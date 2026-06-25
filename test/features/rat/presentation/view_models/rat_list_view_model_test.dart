@@ -14,6 +14,9 @@ class _StubRatRepository implements RatRepository {
   int listLocalPageCallCount = 0;
   int listCompanyForTechnicianPageCallCount = 0;
   int listCompanyForManagerPageCallCount = 0;
+  int listLocalCursorCallCount = 0;
+  int listCompanyForTechnicianCursorCallCount = 0;
+  int listCompanyForManagerCursorCallCount = 0;
 
   @override
   Future<Rat?> getById(String id) async => null;
@@ -22,8 +25,7 @@ class _StubRatRepository implements RatRepository {
   Future<Rat?> getByIdScoped({
     required String id,
     required RatListScope scope,
-  }) async =>
-      null;
+  }) async => null;
 
   @override
   Future<List<Rat>> listLocal() async => rats;
@@ -39,9 +41,17 @@ class _StubRatRepository implements RatRepository {
   }
 
   @override
-  Future<List<Rat>> listCompanyForManager({
-    required String empresaId,
-  }) async =>
+  Future<List<Rat>> listLocalCursor({
+    required int limit,
+    String? lastId,
+  }) async {
+    listLocalCursorCallCount++;
+    if (shouldThrowOnList) throw Exception('list failed');
+    return _cursorPage(limit: limit, lastId: lastId);
+  }
+
+  @override
+  Future<List<Rat>> listCompanyForManager({required String empresaId}) async =>
       rats;
 
   @override
@@ -56,11 +66,21 @@ class _StubRatRepository implements RatRepository {
   }
 
   @override
+  Future<List<Rat>> listCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    String? lastId,
+  }) async {
+    listCompanyForManagerCursorCallCount++;
+    if (shouldThrowOnList) throw Exception('list failed');
+    return _cursorPage(limit: limit, lastId: lastId);
+  }
+
+  @override
   Future<List<Rat>> listCompanyForTechnician({
     required String empresaId,
     required String tecnicoId,
-  }) async =>
-      rats;
+  }) async => rats;
 
   @override
   Future<List<Rat>> listCompanyForTechnicianPage({
@@ -75,10 +95,29 @@ class _StubRatRepository implements RatRepository {
   }
 
   @override
+  Future<List<Rat>> listCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    String? lastId,
+  }) async {
+    listCompanyForTechnicianCursorCallCount++;
+    if (shouldThrowOnList) throw Exception('list failed');
+    return _cursorPage(limit: limit, lastId: lastId);
+  }
+
+  @override
   Future<void> save(Rat rat) async {}
 
   @override
   Future<void> update(Rat rat) async {}
+
+  List<Rat> _cursorPage({required int limit, String? lastId}) {
+    final start = lastId == null
+        ? 0
+        : rats.indexWhere((rat) => rat.id == lastId) + 1;
+    return rats.skip(start).take(limit).toList();
+  }
 }
 
 class _StubAssinaturaRepository implements AssinaturaRepository {
@@ -98,7 +137,9 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   }
 
   @override
-  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async {
+  Future<Map<String, List<Assinatura>>> listByRatIds(
+    List<String> ratIds,
+  ) async {
     listByRatIdsCallCount++;
     listByRatIdsCalledWith ??= [];
     listByRatIdsCalledWith!.add(ratIds);
@@ -133,7 +174,12 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   Future<void> delete(String id) async {}
 }
 
-Rat _rat(String id, String clienteNome, {DateTime? dataVisita}) {
+Rat _rat(
+  String id,
+  String clienteNome, {
+  DateTime? dataVisita,
+  DateTime? assinaturaInvalidadaEm,
+}) {
   final now = DateTime.now();
   return Rat(
     id: id,
@@ -153,10 +199,11 @@ Rat _rat(String id, String clienteNome, {DateTime? dataVisita}) {
     syncStatus: RatSyncStatus.synced,
     createdAt: now,
     updatedAt: now,
+    assinaturaInvalidadaEm: assinaturaInvalidadaEm,
   );
 }
 
-Assinatura _assinatura(String ratId) {
+Assinatura _assinatura(String ratId, {DateTime? updatedAt}) {
   final now = DateTime.now();
   return Assinatura(
     id: 'assinatura-$ratId',
@@ -166,8 +213,8 @@ Assinatura _assinatura(String ratId) {
     data: Uint8List.fromList([1, 2, 3]),
     sizeBytes: 3,
     mimeType: 'image/png',
-    createdAt: now,
-    updatedAt: now,
+    createdAt: updatedAt ?? now,
+    updatedAt: updatedAt ?? now,
   );
 }
 
@@ -191,28 +238,31 @@ void main() {
   // ─── load() ──────────────────────────────────────────────────────────────────
 
   group('load()', () {
-    test('carrega RATs e busca assinaturas em lote (listByRatIds chamado uma vez)', () async {
-      ratRepo.rats.addAll([
-        _rat('rat-1', 'Cliente A'),
-        _rat('rat-2', 'Cliente B'),
-        _rat('rat-3', 'Cliente C'),
-      ]);
-      // Apenas rat-1 tem assinatura
-      assinaturaRepo.setAssinaturas('rat-1', [_assinatura('rat-1')]);
-      assinaturaRepo.setAssinaturas('rat-2', []);
-      assinaturaRepo.setAssinaturas('rat-3', []);
+    test(
+      'carrega RATs e busca assinaturas em lote (listByRatIds chamado uma vez)',
+      () async {
+        ratRepo.rats.addAll([
+          _rat('rat-1', 'Cliente A'),
+          _rat('rat-2', 'Cliente B'),
+          _rat('rat-3', 'Cliente C'),
+        ]);
+        // Apenas rat-1 tem assinatura
+        assinaturaRepo.setAssinaturas('rat-1', [_assinatura('rat-1')]);
+        assinaturaRepo.setAssinaturas('rat-2', []);
+        assinaturaRepo.setAssinaturas('rat-3', []);
 
-      final sut = buildVm(scope: const RatListScope.local());
-      await sut.load();
+        final sut = buildVm(scope: const RatListScope.local());
+        await sut.load();
 
-      expect(sut.rats, hasLength(3));
-      // listByRatIds chamado uma vez com todos os 3 ratIds (N+1 corrigido)
-      expect(assinaturaRepo.listByRatIdsCallCount, 1);
-      expect(assinaturaRepo.listByRatIdsCalledWith?.first, hasLength(3));
-      expect(sut.hasSignature('rat-1'), isTrue);
-      expect(sut.hasSignature('rat-2'), isFalse);
-      expect(sut.hasSignature('rat-3'), isFalse);
-    });
+        expect(sut.rats, hasLength(3));
+        // listByRatIds chamado uma vez com todos os 3 ratIds (N+1 corrigido)
+        expect(assinaturaRepo.listByRatIdsCallCount, 1);
+        expect(assinaturaRepo.listByRatIdsCalledWith?.first, hasLength(3));
+        expect(sut.hasSignature('rat-1'), isTrue);
+        expect(sut.hasSignature('rat-2'), isFalse);
+        expect(sut.hasSignature('rat-3'), isFalse);
+      },
+    );
 
     test('load() com erro seta errorMessage', () async {
       ratRepo.shouldThrowOnList = true;
@@ -235,7 +285,10 @@ void main() {
       expect(sut.rats, hasLength(1));
 
       // Adiciona mais RATs ao repo (simula dados que chegaram entre loads)
-      ratRepo.rats.addAll([_rat('rat-2', 'Cliente B'), _rat('rat-3', 'Cliente C')]);
+      ratRepo.rats.addAll([
+        _rat('rat-2', 'Cliente B'),
+        _rat('rat-3', 'Cliente C'),
+      ]);
 
       // Segundo load — offset volta a 0, lista é substituída não concatenada
       await sut.load();
@@ -259,49 +312,58 @@ void main() {
       expect(sut.isLoading, isFalse);
     });
 
-    test('load() define hasMorePages false quando página é menor que pageSize', () async {
+    test(
+      'load() define hasMorePages false quando página é menor que pageSize',
+      () async {
+        ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
+
+        final sut = buildVm(scope: const RatListScope.local());
+        await sut.load();
+
+        // Com 1 RAT e pageSize=30, não há mais páginas
+        expect(sut.hasMorePages, isFalse);
+      },
+    );
+
+    test('load() com escopo local usa listLocalCursor', () async {
       ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
 
       final sut = buildVm(scope: const RatListScope.local());
       await sut.load();
 
-      // Com 1 RAT e pageSize=30, não há mais páginas
-      expect(sut.hasMorePages, isFalse);
+      expect(ratRepo.listLocalCursorCallCount, 1);
     });
 
-    test('load() com escopo local usa listLocalPage', () async {
-      ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
+    test(
+      'load() com escopo company technician usa listCompanyForTechnicianCursor',
+      () async {
+        ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
 
-      final sut = buildVm(scope: const RatListScope.local());
-      await sut.load();
+        final sut = buildVm(
+          scope: const RatListScope.companyTechnician(
+            empresaId: 'emp-1',
+            tecnicoId: 'tec-1',
+          ),
+        );
+        await sut.load();
 
-      expect(ratRepo.listLocalPageCallCount, 1);
-    });
+        expect(ratRepo.listCompanyForTechnicianCursorCallCount, 1);
+      },
+    );
 
-    test('load() com escopo company technician usa listCompanyForTechnicianPage', () async {
-      ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
+    test(
+      'load() com escopo company manager usa listCompanyForManagerCursor',
+      () async {
+        ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
 
-      final sut = buildVm(
-        scope: const RatListScope.companyTechnician(
-          empresaId: 'emp-1',
-          tecnicoId: 'tec-1',
-        ),
-      );
-      await sut.load();
+        final sut = buildVm(
+          scope: const RatListScope.companyManager(empresaId: 'emp-1'),
+        );
+        await sut.load();
 
-      expect(ratRepo.listCompanyForTechnicianPageCallCount, 1);
-    });
-
-    test('load() com escopo company manager usa listCompanyForManagerPage', () async {
-      ratRepo.rats.add(_rat('rat-1', 'Cliente A'));
-
-      final sut = buildVm(
-        scope: const RatListScope.companyManager(empresaId: 'emp-1'),
-      );
-      await sut.load();
-
-      expect(ratRepo.listCompanyForManagerPageCallCount, 1);
-    });
+        expect(ratRepo.listCompanyForManagerCursorCallCount, 1);
+      },
+    );
   });
 
   // ─── loadMore() ─────────────────────────────────────────────────────────────
@@ -334,20 +396,22 @@ void main() {
       expect(sut.hasMorePages, isFalse);
 
       // Reset call count
-      ratRepo.listLocalPageCallCount = 0;
+      ratRepo.listLocalCursorCallCount = 0;
 
       await sut.loadMore();
 
-      expect(ratRepo.listLocalPageCallCount, 0);
+      expect(ratRepo.listLocalCursorCallCount, 0);
     });
 
     test('loadMore() não faz nada quando já está carregando mais', () async {
-      ratRepo.rats.addAll(List.generate(30, (i) => _rat('rat-$i', 'Cliente $i')));
+      ratRepo.rats.addAll(
+        List.generate(20, (i) => _rat('rat-$i', 'Cliente $i')),
+      );
 
       final sut = buildVm(scope: const RatListScope.local());
       await sut.load();
 
-      ratRepo.listLocalPageCallCount = 0;
+      ratRepo.listLocalCursorCallCount = 0;
 
       // Não deve fazer nada se já está loadingMore
       // (Não há como testar isso facilmente sem async mocking, mas
@@ -355,7 +419,9 @@ void main() {
     });
 
     test('loadMore() atualiza hasMorePages após append', () async {
-      ratRepo.rats.addAll(List.generate(30, (i) => _rat('rat-$i', 'Cliente $i')));
+      ratRepo.rats.addAll(
+        List.generate(20, (i) => _rat('rat-$i', 'Cliente $i')),
+      );
 
       final sut = buildVm(scope: const RatListScope.local());
       await sut.load();
@@ -364,7 +430,7 @@ void main() {
       // Segunda página com exatamente 30 items → ainda tem mais
       await sut.loadMore();
       // Com apenas 30 rats e limit=30, loadMore não appenda mais nada (page < limit)
-      expect(sut.rats, hasLength(30));
+      expect(sut.rats, hasLength(20));
       expect(sut.hasMorePages, isFalse);
     });
   });
@@ -425,13 +491,20 @@ void main() {
       final today = DateTime.now();
       ratRepo.rats.addAll([
         _rat('rat-1', 'Cliente A', dataVisita: today),
-        _rat('rat-2', 'Cliente B', dataVisita: today.subtract(const Duration(days: 30))),
+        _rat(
+          'rat-2',
+          'Cliente B',
+          dataVisita: today.subtract(const Duration(days: 30)),
+        ),
       ]);
 
       final sut = buildVm(scope: const RatListScope.local());
       await sut.load();
 
-      sut.setDateRange(from: today.subtract(const Duration(days: 7)), to: today);
+      sut.setDateRange(
+        from: today.subtract(const Duration(days: 7)),
+        to: today,
+      );
 
       expect(sut.filteredRats, hasLength(1));
     });
@@ -440,13 +513,20 @@ void main() {
       final today = DateTime.now();
       ratRepo.rats.addAll([
         _rat('rat-1', 'Cliente A', dataVisita: today),
-        _rat('rat-2', 'Cliente B', dataVisita: today.subtract(const Duration(days: 30))),
+        _rat(
+          'rat-2',
+          'Cliente B',
+          dataVisita: today.subtract(const Duration(days: 30)),
+        ),
       ]);
 
       final sut = buildVm(scope: const RatListScope.local());
       await sut.load();
 
-      sut.setDateRange(from: today.subtract(const Duration(days: 7)), to: today);
+      sut.setDateRange(
+        from: today.subtract(const Duration(days: 7)),
+        to: today,
+      );
       expect(sut.filteredRats, hasLength(1));
 
       sut.clearDateRange();
@@ -508,6 +588,91 @@ void main() {
 
       expect(sut.hasSignature('rat-inexistente'), isFalse);
     });
+
+    test(
+      'retorna false quando assinatura foi invalidada na reabertura',
+      () async {
+        final assinaturaEm = DateTime(2024, 6, 15, 10);
+        final invalidadaEm = DateTime(2024, 6, 15, 11);
+        ratRepo.rats.add(
+          _rat('rat-1', 'Cliente A', assinaturaInvalidadaEm: invalidadaEm),
+        );
+        assinaturaRepo.setAssinaturas('rat-1', [
+          _assinatura('rat-1', updatedAt: assinaturaEm),
+        ]);
+
+        final sut = buildVm(scope: const RatListScope.local());
+        await sut.load();
+
+        expect(sut.hasSignature('rat-1'), isFalse);
+      },
+    );
+
+    test(
+      'retorna false quando assinatura tem mesmo momento da invalidacao',
+      () async {
+        final momento = DateTime(2024, 6, 15, 10);
+        ratRepo.rats.add(
+          _rat('rat-1', 'Cliente A', assinaturaInvalidadaEm: momento),
+        );
+        assinaturaRepo.setAssinaturas('rat-1', [
+          _assinatura('rat-1', updatedAt: momento),
+        ]);
+
+        final sut = buildVm(scope: const RatListScope.local());
+        await sut.load();
+
+        expect(sut.hasSignature('rat-1'), isFalse);
+      },
+    );
+
+    test(
+      'retorna true quando nova assinatura e posterior a invalidacao',
+      () async {
+        final invalidadaEm = DateTime(2024, 6, 15, 10);
+        final novaAssinaturaEm = DateTime(2024, 6, 15, 11);
+        ratRepo.rats.add(
+          _rat('rat-1', 'Cliente A', assinaturaInvalidadaEm: invalidadaEm),
+        );
+        assinaturaRepo.setAssinaturas('rat-1', [
+          _assinatura('rat-1', updatedAt: novaAssinaturaEm),
+        ]);
+
+        final sut = buildVm(scope: const RatListScope.local());
+        await sut.load();
+
+        expect(sut.hasSignature('rat-1'), isTrue);
+      },
+    );
+
+    test(
+      'usa uma chamada em lote ao avaliar assinaturas de multiplas RATs',
+      () async {
+        final invalidadaEm = DateTime(2024, 6, 15, 10);
+        ratRepo.rats.addAll([
+          _rat('rat-1', 'Cliente A'),
+          _rat('rat-2', 'Cliente B', assinaturaInvalidadaEm: invalidadaEm),
+        ]);
+        assinaturaRepo.setAssinaturas('rat-1', [_assinatura('rat-1')]);
+        assinaturaRepo.setAssinaturas('rat-2', [
+          _assinatura(
+            'rat-2',
+            updatedAt: invalidadaEm.subtract(const Duration(minutes: 1)),
+          ),
+        ]);
+
+        final sut = buildVm(scope: const RatListScope.local());
+        await sut.load();
+
+        expect(assinaturaRepo.listByRatIdsCallCount, 1);
+        expect(assinaturaRepo.listByRatIdsCalledWith?.single, [
+          'rat-1',
+          'rat-2',
+        ]);
+        expect(sut.hasSignature('rat-1'), isTrue);
+        expect(sut.hasSignature('rat-2'), isFalse);
+      },
+    );
   });
 
   // ─── Estado geral ───────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/presentation/widgets/rat_list_item_card.dart';
 
 void main() {
-  final _fixtureRat = Rat(
+  final fixtureRat = Rat(
     id: 'rat-1',
     authorId: 'author-1',
     ownerType: RatOwnerType.localTecnico,
@@ -41,14 +41,14 @@ void main() {
     testWidgets('exibe nome do cliente e numero do RAT', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(buildCard(rat: _fixtureRat));
+      await tester.pumpWidget(buildCard(rat: fixtureRat));
 
       expect(find.text('Acme Corp'), findsOneWidget);
       expect(find.text('RAT-2024-001'), findsOneWidget);
     });
 
     testWidgets('exibe descricao do RAT', (WidgetTester tester) async {
-      await tester.pumpWidget(buildCard(rat: _fixtureRat));
+      await tester.pumpWidget(buildCard(rat: fixtureRat));
 
       expect(find.text('Manutenção preventiva'), findsOneWidget);
     });
@@ -56,25 +56,47 @@ void main() {
     testWidgets('exibe icone de assinatura quando hasSignature=true', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(buildCard(rat: _fixtureRat, hasSignature: true));
+      await tester.pumpWidget(buildCard(rat: fixtureRat, hasSignature: true));
 
-      expect(find.byIcon(Icons.draw_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.draw), findsOneWidget);
+      expect(find.byTooltip('Assinatura capturada'), findsOneWidget);
+      final opacity = tester.widget<Opacity>(
+        find.ancestor(
+          of: find.byIcon(Icons.draw),
+          matching: find.byType(Opacity),
+        ),
+      );
+      expect(opacity.opacity, 1.0);
     });
 
-    testWidgets('NAO exibe icone de assinatura quando hasSignature=false', (
+    testWidgets('exibe icone pendente quando hasSignature=false', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(buildCard(rat: _fixtureRat, hasSignature: false));
+      await tester.pumpWidget(buildCard(rat: fixtureRat, hasSignature: false));
 
-      expect(find.byIcon(Icons.draw_outlined), findsNothing);
+      expect(find.byIcon(Icons.draw_outlined), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Tooltip &&
+              widget.message?.startsWith('Assinatura n') == true &&
+              widget.message?.endsWith('capturada') == true,
+        ),
+        findsOneWidget,
+      );
+      final opacity = tester.widget<Opacity>(
+        find.ancestor(
+          of: find.byIcon(Icons.draw_outlined),
+          matching: find.byType(Opacity),
+        ),
+      );
+      expect(opacity.opacity, 0.4);
     });
 
     testWidgets('exibe chip de sync quando showSyncStatus=true', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(
-        buildCard(rat: _fixtureRat, showSyncStatus: true),
-      );
+      await tester.pumpWidget(buildCard(rat: fixtureRat, showSyncStatus: true));
 
       expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
     });
@@ -83,7 +105,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        buildCard(rat: _fixtureRat, showSyncStatus: false),
+        buildCard(rat: fixtureRat, showSyncStatus: false),
       );
 
       expect(find.byIcon(Icons.cloud_done_outlined), findsNothing);
@@ -94,7 +116,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         buildCard(
-          rat: _fixtureRat,
+          rat: fixtureRat,
           showSyncStatus: false,
           trailingDate: DateTime(2024, 6, 15),
         ),
@@ -107,7 +129,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        buildCard(rat: _fixtureRat, showSyncStatus: false, trailingDate: null),
+        buildCard(rat: fixtureRat, showSyncStatus: false, trailingDate: null),
       );
 
       expect(find.text('15/06/2024'), findsNothing);
@@ -119,7 +141,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: RatListItemCard(
-              rat: _fixtureRat,
+              rat: fixtureRat,
               hasSignature: false,
               onTap: () => tapped = true,
               onPreviewPdf: () {},
@@ -140,7 +162,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: RatListItemCard(
-              rat: _fixtureRat,
+              rat: fixtureRat,
               hasSignature: false,
               onTap: () {},
               onPreviewPdf: () => pdfTapped = true,
