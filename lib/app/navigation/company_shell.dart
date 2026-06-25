@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:techreport/app/di/app_scope.dart';
+import 'package:techreport/app/navigation/company_sync_runner.dart';
 import 'package:techreport/features/company_admin/domain/entities/admin_tecnico_resumo.dart';
 import 'package:techreport/features/company_admin/presentation/screens/admin_empresa_area.dart';
 import 'package:techreport/features/company_admin/presentation/screens/app_admin_area.dart';
-import 'package:techreport/features/company_admin/presentation/screens/company_invite_member_screen.dart';
 import 'package:techreport/features/company_admin/presentation/widgets/convite_card.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/admin_empresa_view_model.dart';
 import 'package:techreport/features/company_admin/presentation/view_models/app_admin_view_model.dart';
@@ -148,7 +148,11 @@ class _CompanyShellState extends State<CompanyShell> {
       if (pendingCount == 0) {
         final confirmed = await _showExitConfirmation();
         if (confirmed != true) {
-          if (mounted) setState(() { _isSigningOut = false; });
+          if (mounted) {
+            setState(() {
+              _isSigningOut = false;
+            });
+          }
           return;
         }
         await widget.onSignOut();
@@ -425,18 +429,14 @@ class _CompanyShellState extends State<CompanyShell> {
             updateAdminEmpresa: widget.scope.updateAdminEmpresa,
           );
         }
-        return AdminEmpresaArea(
-          viewModel: _adminEmpresaViewModel!,
-        );
+        return AdminEmpresaArea(viewModel: _adminEmpresaViewModel!);
       case CompanyArea.appAdmin:
-        if (_appAdminViewModel == null) {
-          _appAdminViewModel = AppAdminViewModel(
-            listEmpresas: widget.scope.listAdminEmpresas,
-            createEmpresa: widget.scope.createAdminEmpresa,
-            createEmpresaConvite: widget.scope.createEmpresaConvite,
-            updateEmpresa: widget.scope.updateAdminEmpresa,
-          );
-        }
+        _appAdminViewModel ??= AppAdminViewModel(
+          listEmpresas: widget.scope.listAdminEmpresas,
+          createEmpresa: widget.scope.createAdminEmpresa,
+          createEmpresaConvite: widget.scope.createEmpresaConvite,
+          updateEmpresa: widget.scope.updateAdminEmpresa,
+        );
         return AppAdminArea(
           viewModel: _appAdminViewModel!,
           listEmpresaAdmins: widget.scope.listEmpresaAdmins,
@@ -513,6 +513,8 @@ class _CompanyShellState extends State<CompanyShell> {
   }
 
   Future<void> _syncNow() async {
+    if (_isSyncing) return;
+
     final currentSession = session;
     if (currentSession == null) return;
 
@@ -525,27 +527,40 @@ class _CompanyShellState extends State<CompanyShell> {
       _isSyncing = true;
     });
 
-    final papel =
-        currentSession.papelEmpresa?.name ??
-        currentSession.papelGlobal?.name ??
-        'unknown';
-
     try {
       debugPrint('_syncNow: Starting sync for empresaId=$empresaId');
-      await widget.scope.processSyncQueue.call(
-        empresaId: empresaId,
-        usuarioId: currentSession.usuarioId,
-        retryFailed: true,
+      final result = await CompanySyncRunner(
+        processQueue:
+            ({required empresaId, required usuarioId, required retryFailed}) =>
+                widget.scope.processSyncQueue.call(
+                  empresaId: empresaId,
+                  usuarioId: usuarioId,
+                  retryFailed: retryFailed,
+                ),
+        downloadRemoteRats:
+            ({required empresaId, required usuarioId, required papel}) => widget
+                .scope
+                .downloadRemoteRats
+                .call(empresaId: empresaId, usuarioId: usuarioId, papel: papel),
+        reloadRatList: () async {
+          await _ratListViewModel?.load();
+        },
+      ).sync(currentSession);
+
+      if (result.isFailure) {
+        debugPrint('Error syncing: ${result.error}');
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.message!)));
+        return;
+      }
+
+      debugPrint(
+        result.status == CompanySyncStatus.success
+            ? '_syncNow: sync completed successfully'
+            : '_syncNow: sync skipped',
       );
-      debugPrint('_syncNow: processSyncQueue completed');
-      await widget.scope.downloadRemoteRats.call(
-        empresaId: empresaId,
-        usuarioId: currentSession.usuarioId,
-        papel: papel,
-      );
-      debugPrint('_syncNow: downloadRemoteRats completed');
-      await _ratListViewModel?.load();
-      debugPrint('_syncNow: sync completed successfully');
     } catch (e, st) {
       debugPrint('Error syncing: $e\n$st');
 
@@ -571,9 +586,9 @@ class _CompanyShellState extends State<CompanyShell> {
         message = 'Não foi possível sincronizar. Tente novamente.';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {
