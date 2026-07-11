@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
@@ -9,11 +10,13 @@ import 'package:techreport/features/signature/domain/repositories/assinatura_rep
 import 'package:techreport/features/rat/domain/repositories/remote_rat_repository.dart';
 import 'package:techreport/features/signature/domain/repositories/remote_assinatura_repository.dart';
 import 'package:techreport/features/sync/domain/entities/sync_item.dart';
+import 'package:techreport/features/sync/domain/entities/sync_session_context.dart';
 import 'package:techreport/features/sync/domain/repositories/sync_queue_repository.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
-import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/rat/domain/entities/rat_remote_snapshot.dart';
+
+const _session = SyncSessionContext(empresaId: 'emp-1', usuarioId: 'user-1');
 
 // ─── Mock Repositories ──────────────────────────────────────────────────────
 
@@ -56,10 +59,12 @@ class MockSyncQueueRepository implements SyncQueueRepository {
     required String usuarioId,
   }) async {
     return _items
-        .where((item) =>
-            item.empresaId == empresaId &&
-            item.usuarioId == usuarioId &&
-            item.status == SyncItemStatus.pending)
+        .where(
+          (item) =>
+              item.empresaId == empresaId &&
+              item.usuarioId == usuarioId &&
+              item.status == SyncItemStatus.pending,
+        )
         .length;
   }
 
@@ -80,7 +85,10 @@ class MockSyncQueueRepository implements SyncQueueRepository {
     if (index < 0) return false;
 
     final item = _items[index];
-    if (item.status != SyncItemStatus.pending) return false;
+    if (item.status != SyncItemStatus.pending &&
+        item.status != SyncItemStatus.failed) {
+      return false;
+    }
 
     _items[index] = SyncItem(
       id: item.id,
@@ -92,6 +100,8 @@ class MockSyncQueueRepository implements SyncQueueRepository {
       payload: item.payload,
       status: SyncItemStatus.processing,
       attempts: item.attempts,
+      lastError: item.lastError,
+      nextAttemptAt: item.nextAttemptAt,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     );
@@ -151,10 +161,56 @@ class MockSyncQueueRepository implements SyncQueueRepository {
     int limit = 50,
   }) async {
     return _items
-        .where((item) =>
-            item.empresaId == empresaId && item.usuarioId == usuarioId)
+        .where(
+          (item) => item.empresaId == empresaId && item.usuarioId == usuarioId,
+        )
         .take(limit)
         .toList();
+  }
+
+  @override
+  Future<bool> replacePendingPayload({
+    required String empresaId,
+    required String usuarioId,
+    required SyncEntityType entityType,
+    required String entityId,
+    required SyncOperation operation,
+    required String payload,
+    required DateTime updatedAt,
+    bool resetFailure = true,
+  }) async {
+    // Cross-user/cross-operation: no maximo um item pendente/falho por
+    // (empresaId, entityType, entityId); transfere escopo e operacao.
+    final index = _items.indexWhere((item) {
+      final statusMatches =
+          item.status == SyncItemStatus.pending ||
+          (resetFailure && item.status == SyncItemStatus.failed);
+      return item.empresaId == empresaId &&
+          item.entityType == entityType &&
+          item.entityId == entityId &&
+          statusMatches;
+    });
+
+    if (index < 0) return false;
+
+    final item = _items[index];
+    final resetFailed = resetFailure && item.status == SyncItemStatus.failed;
+    _items[index] = SyncItem(
+      id: item.id,
+      empresaId: item.empresaId,
+      usuarioId: usuarioId,
+      entityType: item.entityType,
+      entityId: item.entityId,
+      operation: operation,
+      payload: payload,
+      status: resetFailed ? SyncItemStatus.pending : item.status,
+      attempts: resetFailed ? 0 : item.attempts,
+      lastError: resetFailed ? null : item.lastError,
+      nextAttemptAt: resetFailed ? null : item.nextAttemptAt,
+      createdAt: item.createdAt,
+      updatedAt: updatedAt,
+    );
+    return true;
   }
 
   @override
@@ -164,13 +220,15 @@ class MockSyncQueueRepository implements SyncQueueRepository {
     required SyncEntityType entityType,
     required String entityId,
   }) async {
-    return _items.any((item) =>
-        item.empresaId == empresaId &&
-        item.usuarioId == usuarioId &&
-        item.entityType == entityType &&
-        item.entityId == entityId &&
-        (item.status == SyncItemStatus.pending ||
-            item.status == SyncItemStatus.processing));
+    return _items.any(
+      (item) =>
+          item.empresaId == empresaId &&
+          item.usuarioId == usuarioId &&
+          item.entityType == entityType &&
+          item.entityId == entityId &&
+          (item.status == SyncItemStatus.pending ||
+              item.status == SyncItemStatus.processing),
+    );
   }
 
   void clear() => _items.clear();
@@ -181,12 +239,15 @@ class MockSyncQueueRepository implements SyncQueueRepository {
 class MockRemoteRatRepository implements RemoteRatRepository {
   final List<String> upsertedPayloads = [];
   final List<String> deletedPayloads = [];
+  final Set<String> failUpsertEntityIds = {};
   bool shouldFailUpsert = false;
   bool shouldFailDelete = false;
 
   @override
   Future<void> upsertFromPayload(String payload) async {
-    if (shouldFailUpsert) {
+    final decoded = jsonDecode(payload) as Map<String, dynamic>;
+    final id = decoded['id'] as String?;
+    if (shouldFailUpsert || failUpsertEntityIds.contains(id)) {
       throw Exception('Remote upsert failed');
     }
     upsertedPayloads.add(payload);
@@ -211,6 +272,7 @@ class MockRemoteRatRepository implements RemoteRatRepository {
   void reset() {
     upsertedPayloads.clear();
     deletedPayloads.clear();
+    failUpsertEntityIds.clear();
     shouldFailUpsert = false;
     shouldFailDelete = false;
   }
@@ -244,22 +306,21 @@ class MockRatRepository implements RatRepository {
   }
 
   @override
-  Future<List<Rat>> listCompanyForManager({required String empresaId}) async => [];
+  Future<List<Rat>> listCompanyForManager({required String empresaId}) async =>
+      [];
 
   @override
   Future<List<Rat>> listCompanyForManagerPage({
     required String empresaId,
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForTechnician({
     required String empresaId,
     required String tecnicoId,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForTechnicianPage({
@@ -267,8 +328,7 @@ class MockRatRepository implements RatRepository {
     required String tecnicoId,
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listLocalCursor({
@@ -284,16 +344,14 @@ class MockRatRepository implements RatRepository {
     required String tecnicoId,
     required int limit,
     String? lastId,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForManagerCursor({
     required String empresaId,
     required int limit,
     String? lastId,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<void> save(Rat rat) async {
@@ -320,10 +378,14 @@ class MockAssinaturaRepository implements AssinaturaRepository {
   }
 
   @override
-  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async {
+  Future<Map<String, List<Assinatura>>> listByRatIds(
+    List<String> ratIds,
+  ) async {
     final result = <String, List<Assinatura>>{};
     for (final ratId in ratIds) {
-      result[ratId] = _assinaturas.values.where((a) => a.ratId == ratId).toList();
+      result[ratId] = _assinaturas.values
+          .where((a) => a.ratId == ratId)
+          .toList();
     }
     return result;
   }
@@ -392,8 +454,7 @@ class MockRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
   Future<String> createSignedUrl({
     required String storagePath,
     int expiresInSeconds = 300,
-  }) async =>
-      '';
+  }) async => '';
 
   @override
   Future<bool> objectExists(String storagePath) async => true;
@@ -445,24 +506,6 @@ Rat _makeRat({
   );
 }
 
-Assinatura _makeAssinatura({
-  required String id,
-  required String ratId,
-}) {
-  final now = DateTime.now();
-  return Assinatura(
-    id: id,
-    ratId: ratId,
-    storageMode: StorageMode.inlineBinary,
-    assetRef: 'signatures/$id.png',
-    data: Uint8List(0),
-    sizeBytes: 0,
-    mimeType: 'image/png',
-    createdAt: now,
-    updatedAt: now,
-  );
-}
-
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 void main() {
@@ -489,27 +532,31 @@ void main() {
       remoteAssinaturaRepository: remoteAssinaturaRepo,
     );
 
-    enqueueRatSync = EnqueueRatSync(
-      queueRepository: queueRepo,
-    );
+    enqueueRatSync = EnqueueRatSync(queueRepository: queueRepo);
   });
 
   // ─── Offline Create → Online Sync ──────────────────────────────────────────
 
   group('Offline create → online sync', () {
     test('offline RAT is saved locally with pendingSync status', () async {
-      final rat = _makeRat(id: 'rat-offline-1', syncStatus: RatSyncStatus.pendingSync);
+      final rat = _makeRat(
+        id: 'rat-offline-1',
+        syncStatus: RatSyncStatus.pendingSync,
+      );
 
       // Simulate offline save
       await ratRepo.save(rat);
 
-      expect(ratRepo._rats['rat-offline-1']?.syncStatus, RatSyncStatus.pendingSync);
+      expect(
+        ratRepo._rats['rat-offline-1']?.syncStatus,
+        RatSyncStatus.pendingSync,
+      );
     });
 
     test('enqueueSync adds RAT to sync queue', () async {
       final rat = _makeRat(id: 'rat-queue-1');
 
-      await enqueueRatSync.upsert(rat);
+      await enqueueRatSync.upsert(rat, session: _session);
 
       expect(queueRepo.items.length, 1);
       expect(queueRepo.items.first.entityType, SyncEntityType.rat);
@@ -518,29 +565,73 @@ void main() {
       expect(queueRepo.items.first.status, SyncItemStatus.pending);
     });
 
+    test(
+      'RAT editada por superior usa escopo da sessao (cross-user)',
+      () async {
+        // RAT criada pelo tecnico A, editada pelo gerente B na mesma empresa.
+        final rat = _makeRat(id: 'rat-cross-1', usuarioId: 'criador-A');
+        const sessionB = SyncSessionContext(
+          empresaId: 'emp-1',
+          usuarioId: 'user-B',
+        );
+
+        await enqueueRatSync.upsert(rat, session: sessionB);
+
+        final scoped = await queueRepo.listForSession(
+          empresaId: 'emp-1',
+          usuarioId: 'user-B',
+        );
+        expect(scoped, hasLength(1));
+        expect(scoped.first.usuarioId, 'user-B');
+
+        await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-B');
+
+        expect(remoteRatRepo.upsertedPayloads, hasLength(1));
+        final payload =
+            jsonDecode(remoteRatRepo.upsertedPayloads.single)
+                as Map<String, dynamic>;
+        expect(payload['criado_por_user_id'], 'criador-A');
+      },
+    );
+
+    test(
+      'delete enfileirado resolve em exclusao logica (nao fisica)',
+      () async {
+        final rat = _makeRat(id: 'rat-del-1');
+
+        await enqueueRatSync.delete(rat, session: _session);
+        await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
+
+        expect(remoteRatRepo.deletedPayloads, hasLength(1));
+        expect(remoteRatRepo.upsertedPayloads, isEmpty);
+      },
+    );
+
     test('processSyncQueue sends pending RAT to remote', () async {
       final rat = _makeRat(id: 'rat-process-1');
       await ratRepo.save(rat);
 
       // Manually add to queue (simulating what enqueueRatSync does)
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({
-          'id': rat.id,
-          'empresaId': rat.empresaId,
-          'tecnicoId': rat.tecnicoId,
-        }),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({
+            'id': rat.id,
+            'empresaId': rat.empresaId,
+            'tecnicoId': rat.tecnicoId,
+          }),
+          status: SyncItemStatus.pending,
+          attempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -549,23 +640,28 @@ void main() {
     });
 
     test('successful sync updates RAT local status to synced', () async {
-      final rat = _makeRat(id: 'rat-synced-1', syncStatus: RatSyncStatus.pendingSync);
+      final rat = _makeRat(
+        id: 'rat-synced-1',
+        syncStatus: RatSyncStatus.pendingSync,
+      );
       await ratRepo.save(rat);
 
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat.id}),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat.id}),
+          status: SyncItemStatus.pending,
+          attempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -638,10 +734,10 @@ void main() {
       final rat = _makeRat(id: 'rat-dedup');
 
       // First enqueue
-      await enqueueRatSync.upsert(rat);
+      await enqueueRatSync.upsert(rat, session: _session);
 
       // Second enqueue (should be deduped)
-      await enqueueRatSync.upsert(rat);
+      await enqueueRatSync.upsert(rat, session: _session);
 
       // Should only have one item in queue
       final pendingCount = await queueRepo.countPending(
@@ -649,6 +745,48 @@ void main() {
         usuarioId: 'user-1',
       );
       expect(pendingCount, 1);
+    });
+
+    test('reopening RAT updates pending payload before remote sync', () async {
+      final rat = _makeRat(id: 'rat-reopen-sync');
+      final reopenedAt = DateTime(2026, 6, 26, 10);
+      final invalidatedAt = DateTime(2026, 6, 26, 10, 5);
+
+      await ratRepo.save(rat);
+      await enqueueRatSync.upsert(rat, session: _session);
+      await ratRepo.save(
+        rat.copyWith(
+          descricao: 'Descricao corrigida',
+          reabertaParaCorrecaoEm: reopenedAt,
+          reabertaParaCorrecaoPorUserId: 'user-1',
+          motivoReabertura: 'Corrigir dados operacionais',
+          assinaturaInvalidadaEm: invalidatedAt,
+          assinaturaInvalidadaPorUserId: 'user-1',
+        ),
+      );
+      await enqueueRatSync.upsert(
+        await ratRepo.getById('rat-reopen-sync') as Rat,
+        session: _session,
+      );
+
+      expect(queueRepo.items, hasLength(1));
+
+      await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
+
+      expect(remoteRatRepo.upsertedPayloads, hasLength(1));
+      final payload =
+          jsonDecode(remoteRatRepo.upsertedPayloads.single)
+              as Map<String, dynamic>;
+      expect(payload['descricao'], 'Descricao corrigida');
+      expect(payload['motivo_reabertura'], 'Corrigir dados operacionais');
+      expect(
+        payload['reaberta_para_correcao_em'],
+        reopenedAt.toIso8601String(),
+      );
+      expect(
+        payload['assinatura_invalidada_em'],
+        invalidatedAt.toIso8601String(),
+      );
     });
   });
 
@@ -661,21 +799,23 @@ void main() {
 
       // Add failed item
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat.id}),
-        status: SyncItemStatus.failed,
-        attempts: 1,
-        lastError: 'Network timeout',
-        nextAttemptAt: now, // Ready for retry
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat.id}),
+          status: SyncItemStatus.failed,
+          attempts: 1,
+          lastError: 'Network timeout',
+          nextAttemptAt: now, // Ready for retry
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       // Process with retry
       await processSyncQueue.call(
@@ -692,21 +832,23 @@ void main() {
       await ratRepo.save(rat);
 
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat.id}),
-        status: SyncItemStatus.failed,
-        attempts: 1,
-        lastError: 'Network timeout',
-        nextAttemptAt: now,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat.id}),
+          status: SyncItemStatus.failed,
+          attempts: 1,
+          lastError: 'Network timeout',
+          nextAttemptAt: now,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       // Process without retry
       await processSyncQueue.call(
@@ -724,19 +866,21 @@ void main() {
       await ratRepo.save(rat);
 
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat.id}),
-        status: SyncItemStatus.pending,
-        attempts: 2,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat.id}),
+          status: SyncItemStatus.pending,
+          attempts: 2,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -750,19 +894,21 @@ void main() {
       await ratRepo.save(rat);
 
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat.id}),
-        status: SyncItemStatus.pending,
-        attempts: 5, // Max attempts
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat.id}),
+          status: SyncItemStatus.pending,
+          attempts: 5, // Max attempts
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -789,19 +935,21 @@ void main() {
 
       final now = DateTime.now();
       for (final rat in rats) {
-        await queueRepo.enqueue(SyncItem(
-          id: queueRepo.nextId(),
-          empresaId: 'emp-1',
-          usuarioId: 'user-1',
-          entityType: SyncEntityType.rat,
-          entityId: rat.id,
-          operation: SyncOperation.upsert,
-          payload: jsonEncode({'id': rat.id}),
-          status: SyncItemStatus.pending,
-          attempts: 0,
-          createdAt: now,
-          updatedAt: now,
-        ));
+        await queueRepo.enqueue(
+          SyncItem(
+            id: queueRepo.nextId(),
+            empresaId: 'emp-1',
+            usuarioId: 'user-1',
+            entityType: SyncEntityType.rat,
+            entityId: rat.id,
+            operation: SyncOperation.upsert,
+            payload: jsonEncode({'id': rat.id}),
+            status: SyncItemStatus.pending,
+            attempts: 0,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
       }
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
@@ -814,33 +962,31 @@ void main() {
     });
 
     test('failed item does not block other items', () async {
-      final rats = [
-        _makeRat(id: 'rat-success'),
-        _makeRat(id: 'rat-fail'),
-      ];
+      final rats = [_makeRat(id: 'rat-success'), _makeRat(id: 'rat-fail')];
 
       for (final rat in rats) {
         await ratRepo.save(rat);
       }
 
-      // Make second RAT fail
-      remoteRatRepo.shouldFailUpsert = true;
+      remoteRatRepo.failUpsertEntityIds.add('rat-fail');
 
       final now = DateTime.now();
       for (final rat in rats) {
-        await queueRepo.enqueue(SyncItem(
-          id: queueRepo.nextId(),
-          empresaId: 'emp-1',
-          usuarioId: 'user-1',
-          entityType: SyncEntityType.rat,
-          entityId: rat.id,
-          operation: SyncOperation.upsert,
-          payload: jsonEncode({'id': rat.id}),
-          status: SyncItemStatus.pending,
-          attempts: 0,
-          createdAt: now,
-          updatedAt: now,
-        ));
+        await queueRepo.enqueue(
+          SyncItem(
+            id: queueRepo.nextId(),
+            empresaId: 'emp-1',
+            usuarioId: 'user-1',
+            entityType: SyncEntityType.rat,
+            entityId: rat.id,
+            operation: SyncOperation.upsert,
+            payload: jsonEncode({'id': rat.id}),
+            status: SyncItemStatus.pending,
+            attempts: 0,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
       }
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
@@ -858,19 +1004,21 @@ void main() {
       await ratRepo.save(rat);
 
       final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.delete,
-        payload: jsonEncode({'id': rat.id, 'deletado': true}),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat.id,
+          operation: SyncOperation.delete,
+          payload: jsonEncode({'id': rat.id, 'deletado': true}),
+          status: SyncItemStatus.pending,
+          attempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -887,19 +1035,21 @@ void main() {
 
       final now = DateTime.now();
       for (final rat in rats) {
-        await queueRepo.enqueue(SyncItem(
-          id: queueRepo.nextId(),
-          empresaId: 'emp-1',
-          usuarioId: 'user-1',
-          entityType: SyncEntityType.rat,
-          entityId: rat.id,
-          operation: SyncOperation.upsert,
-          payload: jsonEncode({'id': rat.id}),
-          status: SyncItemStatus.pending,
-          attempts: 0,
-          createdAt: now,
-          updatedAt: now,
-        ));
+        await queueRepo.enqueue(
+          SyncItem(
+            id: queueRepo.nextId(),
+            empresaId: 'emp-1',
+            usuarioId: 'user-1',
+            entityType: SyncEntityType.rat,
+            entityId: rat.id,
+            operation: SyncOperation.upsert,
+            payload: jsonEncode({'id': rat.id}),
+            status: SyncItemStatus.pending,
+            attempts: 0,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
       }
 
       final count = await queueRepo.countPending(
@@ -911,37 +1061,49 @@ void main() {
     });
 
     test('items filter by empresa and usuario correctly', () async {
-      final rat1 = _makeRat(id: 'rat-emp1', empresaId: 'emp-1', usuarioId: 'user-1');
-      final rat2 = _makeRat(id: 'rat-emp2', empresaId: 'emp-2', usuarioId: 'user-2');
-
-      final now = DateTime.now();
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
+      final rat1 = _makeRat(
+        id: 'rat-emp1',
         empresaId: 'emp-1',
         usuarioId: 'user-1',
-        entityType: SyncEntityType.rat,
-        entityId: rat1.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat1.id}),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ));
-
-      await queueRepo.enqueue(SyncItem(
-        id: queueRepo.nextId(),
+      );
+      final rat2 = _makeRat(
+        id: 'rat-emp2',
         empresaId: 'emp-2',
         usuarioId: 'user-2',
-        entityType: SyncEntityType.rat,
-        entityId: rat2.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode({'id': rat2.id}),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      );
+
+      final now = DateTime.now();
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.rat,
+          entityId: rat1.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat1.id}),
+          status: SyncItemStatus.pending,
+          attempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      await queueRepo.enqueue(
+        SyncItem(
+          id: queueRepo.nextId(),
+          empresaId: 'emp-2',
+          usuarioId: 'user-2',
+          entityType: SyncEntityType.rat,
+          entityId: rat2.id,
+          operation: SyncOperation.upsert,
+          payload: jsonEncode({'id': rat2.id}),
+          status: SyncItemStatus.pending,
+          attempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       // Process only emp-1 items
       await processSyncQueue.call(empresaId: 'emp-1', usuarioId: 'user-1');

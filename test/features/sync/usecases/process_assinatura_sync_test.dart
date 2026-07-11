@@ -4,14 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/features/signature/domain/repositories/remote_assinatura_repository.dart';
-import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/domain/entities/sync_item.dart';
-import 'package:techreport/features/sync/domain/repositories/sync_queue_repository.dart';
 import 'package:techreport/features/sync/domain/usecases/process_assinatura_sync.dart';
 
 class _StubAssinaturaRepository implements AssinaturaRepository {
   Uint8List? _bytesToReturn;
-  List<String> _readHistory = [];
+  final List<String> _readHistory = [];
 
   void setBytesToReturn(Uint8List? bytes) {
     _bytesToReturn = bytes;
@@ -34,22 +32,17 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   @override
   Future<void> delete(String id) async {}
   @override
-  Future<void> deleteByRatId(String ratId) async {}
-  @override
   Future<List<Assinatura>> listByRatId(String ratId) async => [];
   @override
-  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async => {};
+  Future<Map<String, List<Assinatura>>> listByRatIds(
+    List<String> ratIds,
+  ) async => {};
   @override
   Future<void> saveBytes({
     required String assinaturaId,
     required List<int> bytes,
     required String assetRef,
     required String ratId,
-  }) async {}
-  @override
-  Future<void> saveInline({
-    required String assinaturaId,
-    required Assinatura assinatura,
   }) async {}
 }
 
@@ -143,49 +136,6 @@ class _DeleteCall {
     required this.ratId,
     required this.assinaturaId,
   });
-}
-
-class _StubSyncQueueRepository implements SyncQueueRepository {
-  @override
-  Future<bool> hasPendingItem({
-    required String empresaId,
-    required String usuarioId,
-    required SyncEntityType entityType,
-    required String entityId,
-  }) async => false;
-
-  @override
-  Future<void> enqueue(SyncItem item) async {}
-  @override
-  Future<List<SyncItem>> listPending({
-    required String empresaId,
-    required String usuarioId,
-    bool includeFailed = false,
-    int limit = 20,
-  }) async => [];
-  @override
-  Future<int> countPending({
-    required String empresaId,
-    required String usuarioId,
-  }) async => 0;
-  @override
-  Future<void> markProcessing(String id) async {}
-  @override
-  Future<bool> tryMarkProcessing(String id) async => true;
-  @override
-  Future<void> markSynced(String id) async {}
-  @override
-  Future<void> markFailed({
-    required String id,
-    required String errorMessage,
-    required DateTime nextAttemptAt,
-  }) async {}
-  @override
-  Future<List<SyncItem>> listForSession({
-    required String empresaId,
-    required String usuarioId,
-    int limit = 50,
-  }) async => [];
 }
 
 SyncItem _buildUpsertItem({

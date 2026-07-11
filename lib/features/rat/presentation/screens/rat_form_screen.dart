@@ -450,6 +450,7 @@ class _RatFormScreenState extends State<RatFormScreen> {
     }
 
     if (signatureSaved) {
+      setState(() => _hasUnsavedChanges = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Assinatura capturada.')));

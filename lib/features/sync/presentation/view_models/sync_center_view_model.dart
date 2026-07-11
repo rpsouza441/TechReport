@@ -53,14 +53,15 @@ class SyncCenterViewModel extends ChangeNotifier {
 
   List<SyncItem> get synced {
     final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
-    final syncedItems = _items
-        .where(
-          (i) =>
-              i.status == SyncItemStatus.synced &&
-              i.updatedAt.isAfter(sevenDaysAgo),
-        )
-        .toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final syncedItems =
+        _items
+            .where(
+              (i) =>
+                  i.status == SyncItemStatus.synced &&
+                  i.updatedAt.isAfter(sevenDaysAgo),
+            )
+            .toList()
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return syncedItems.take(50).toList();
   }
 
@@ -76,7 +77,7 @@ class SyncCenterViewModel extends ChangeNotifier {
     try {
       final payload = jsonDecode(item.payload) as Map<String, dynamic>;
       final numero = payload['numero'] as String?;
-      final clienteNome = payload['clienteNome'] as String?;
+      final clienteNome = payload['cliente_nome'] as String?;
 
       if (numero != null && clienteNome != null) {
         return 'RAT #$numero - $clienteNome';

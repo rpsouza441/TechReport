@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../rat/data/dtos/rat_remote_dto.dart';
 import '../../../rat/domain/entities/rat.dart';
 import '../../domain/entities/sync_item.dart';
+import '../../domain/entities/sync_session_context.dart';
 import '../../domain/repositories/sync_queue_repository.dart';
 
 class EnqueueRatSync {
@@ -17,19 +18,66 @@ class EnqueueRatSync {
   final SyncQueueRepository _queueRepository;
   final Uuid _uuid;
 
-  Future<void> upsert(Rat rat) async {
-    final context = _requireCompanyContext(rat);
+  Future<void> upsert(Rat rat, {required SyncSessionContext session}) async {
+    await _enqueue(rat, session: session, operation: SyncOperation.upsert);
+  }
 
-    final existing = await _queueRepository.hasPendingItem(
-      empresaId: context.empresaId,
-      usuarioId: context.usuarioId,
-      entityType: SyncEntityType.rat,
-      entityId: rat.id,
-    );
-    if (existing) return; // já existe item pendente para este RAT
+  Future<void> delete(Rat rat, {required SyncSessionContext session}) async {
+    await _enqueue(rat, session: session, operation: SyncOperation.delete);
+  }
+
+  Future<void> _enqueue(
+    Rat rat, {
+    required SyncSessionContext session,
+    required SyncOperation operation,
+  }) async {
+    final context = _requireCompanyContext(rat);
+    _validateSession(session: session, context: context);
 
     final now = DateTime.now();
+    final payload = _buildPayload(
+      rat,
+      context: context,
+      deletado: operation == SyncOperation.delete,
+    );
 
+    // RF-09: no maximo uma operacao pendente por RAT. Uma edicao posterior
+    // (de qualquer usuario autorizado) assume o item existente, transferindo o
+    // escopo de processamento para a sessao atual e gravando a operacao/payload
+    // mais recentes.
+    final replaced = await _queueRepository.replacePendingPayload(
+      empresaId: session.empresaId,
+      usuarioId: session.usuarioId,
+      entityType: SyncEntityType.rat,
+      entityId: rat.id,
+      operation: operation,
+      payload: payload,
+      updatedAt: now,
+    );
+    if (replaced) return;
+
+    await _queueRepository.enqueue(
+      SyncItem(
+        id: _uuid.v4(),
+        empresaId: session.empresaId,
+        usuarioId: session.usuarioId,
+        entityType: SyncEntityType.rat,
+        entityId: rat.id,
+        operation: operation,
+        payload: payload,
+        status: SyncItemStatus.pending,
+        attempts: 0,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+
+  String _buildPayload(
+    Rat rat, {
+    required _CompanyRatContext context,
+    required bool deletado,
+  }) {
     final dto = RatRemoteDto(
       id: rat.id,
       empresaId: context.empresaId,
@@ -47,7 +95,7 @@ class EnqueueRatSync {
       equipamentoDescricao: rat.equipamentoDescricao,
       equipamentoObservacao: rat.equipamentoObservacao,
       status: rat.status.name,
-      deletado: rat.deletedAt != null,
+      deletado: deletado || rat.deletedAt != null,
       criadoEmDispositivo: rat.createdAt,
       ultimoAlteradorUserId: rat.ultimoAlteradorUserId,
       ultimaAlteracaoEm: rat.ultimaAlteracaoEm,
@@ -57,72 +105,23 @@ class EnqueueRatSync {
       assinaturaInvalidadaEm: rat.assinaturaInvalidadaEm,
       assinaturaInvalidadaPorUserId: rat.assinaturaInvalidadaPorUserId,
     );
-
-    await _queueRepository.enqueue(
-      SyncItem(
-        id: _uuid.v4(),
-        empresaId: context.empresaId,
-        usuarioId: context.usuarioId,
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.upsert,
-        payload: jsonEncode(dto.toJson()),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+    return jsonEncode(dto.toJson());
   }
 
-  Future<void> delete(Rat rat) async {
-    final context = _requireCompanyContext(rat);
-
-    final existing = await _queueRepository.hasPendingItem(
-      empresaId: context.empresaId,
-      usuarioId: context.usuarioId,
-      entityType: SyncEntityType.rat,
-      entityId: rat.id,
-    );
-    if (existing) return; // já existe item pendente para este RAT
-
-    final now = DateTime.now();
-
-    final dto = RatRemoteDto(
-      id: rat.id,
-      empresaId: context.empresaId,
-      tecnicoId: context.tecnicoId,
-      criadoPorUserId: context.usuarioId,
-      numero: rat.numero,
-      clienteNome: rat.clienteNome,
-      descricao: rat.descricao,
-      status: rat.status.name,
-      deletado: true,
-      criadoEmDispositivo: rat.createdAt,
-      ultimoAlteradorUserId: rat.ultimoAlteradorUserId,
-      ultimaAlteracaoEm: rat.ultimaAlteracaoEm,
-      reabertaParaCorrecaoEm: rat.reabertaParaCorrecaoEm,
-      reabertaParaCorrecaoPorUserId: rat.reabertaParaCorrecaoPorUserId,
-      motivoReabertura: rat.motivoReabertura,
-      assinaturaInvalidadaEm: rat.assinaturaInvalidadaEm,
-      assinaturaInvalidadaPorUserId: rat.assinaturaInvalidadaPorUserId,
-    );
-
-    await _queueRepository.enqueue(
-      SyncItem(
-        id: _uuid.v4(),
-        empresaId: context.empresaId,
-        usuarioId: context.usuarioId,
-        entityType: SyncEntityType.rat,
-        entityId: rat.id,
-        operation: SyncOperation.delete,
-        payload: jsonEncode(dto.toJson()),
-        status: SyncItemStatus.pending,
-        attempts: 0,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+  /// RF-08: a operacao so e enfileirada se a sessao for valida e pertencer a
+  /// mesma empresa da RAT. Em divergencia, falha sem tocar na fila.
+  void _validateSession({
+    required SyncSessionContext session,
+    required _CompanyRatContext context,
+  }) {
+    if (!session.isValid) {
+      throw StateError('Sessao de sync sem empresaId/usuarioId.');
+    }
+    if (session.empresaId != context.empresaId) {
+      throw StateError(
+        'Empresa da sessao difere da empresa da RAT; sync abortado.',
+      );
+    }
   }
 
   _CompanyRatContext _requireCompanyContext(Rat rat) {

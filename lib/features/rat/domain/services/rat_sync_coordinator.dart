@@ -2,6 +2,7 @@ import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/data/usecases/enqueue_rat_sync.dart';
+import 'package:techreport/features/sync/domain/entities/sync_session_context.dart';
 import 'package:techreport/features/sync/domain/usecases/process_sync_queue.dart';
 
 /// Centraliza a logica de sync apos operacoes de save, delete e assinatura
@@ -34,7 +35,10 @@ class RatSyncCoordinator {
     required String empresaId,
     required String usuarioId,
   }) async {
-    await _enqueueRatSync.upsert(rat);
+    await _enqueueRatSync.upsert(
+      rat,
+      session: SyncSessionContext(empresaId: empresaId, usuarioId: usuarioId),
+    );
     await _processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
   }
 
@@ -44,7 +48,10 @@ class RatSyncCoordinator {
     required String empresaId,
     required String usuarioId,
   }) async {
-    await _enqueueRatSync.delete(rat);
+    await _enqueueRatSync.delete(
+      rat,
+      session: SyncSessionContext(empresaId: empresaId, usuarioId: usuarioId),
+    );
     await _processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
   }
 

@@ -12,9 +12,9 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
   Future<void> enqueue(domain.SyncItem item) async {
     // Se item já existe com status failed, não sobrescreve para pending.
     // Isso evita que retry manual seja sobrescrito ao reabrir o app.
-    final existing = await (_database.select(_database.syncQueueItems)
-          ..where((tbl) => tbl.id.equals(item.id)))
-        .getSingleOrNull();
+    final existing = await (_database.select(
+      _database.syncQueueItems,
+    )..where((tbl) => tbl.id.equals(item.id))).getSingleOrNull();
 
     if (existing != null &&
         existing.status == domain.SyncItemStatus.failed.name) {
@@ -109,12 +109,14 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
 
   @override
   Future<bool> tryMarkProcessing(String id) async {
-    final rows = await (_database.select(_database.syncQueueItems)
-          ..where((tbl) =>
-              tbl.id.equals(id) &
-              (tbl.status.equals(domain.SyncItemStatus.pending.name) |
-                  tbl.status.equals(domain.SyncItemStatus.failed.name))))
-        .get();
+    final rows =
+        await (_database.select(_database.syncQueueItems)..where(
+              (tbl) =>
+                  tbl.id.equals(id) &
+                  (tbl.status.equals(domain.SyncItemStatus.pending.name) |
+                      tbl.status.equals(domain.SyncItemStatus.failed.name)),
+            ))
+            .get();
 
     if (rows.isEmpty) return false; // não era pending/failed ou não existe
 
@@ -189,6 +191,80 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
             .get();
 
     return rows.map(_toEntity).toList();
+  }
+
+  @override
+  Future<bool> replacePendingPayload({
+    required String empresaId,
+    required String usuarioId,
+    required domain.SyncEntityType entityType,
+    required String entityId,
+    required domain.SyncOperation operation,
+    required String payload,
+    required DateTime updatedAt,
+    bool resetFailure = true,
+  }) async {
+    final updatableStatus = resetFailure
+        ? _database.syncQueueItems.status.equals(
+                domain.SyncItemStatus.pending.name,
+              ) |
+              _database.syncQueueItems.status.equals(
+                domain.SyncItemStatus.failed.name,
+              )
+        : _database.syncQueueItems.status.equals(
+            domain.SyncItemStatus.pending.name,
+          );
+
+    // Busca cross-user e cross-operation: no maximo um item pendente/falho por
+    // (empresaId, entityType, entityId). Nao filtra por usuarioId nem operation,
+    // pois uma edicao posterior (de qualquer usuario autorizado) deve assumir o
+    // item existente, transferindo o escopo de processamento e podendo trocar a
+    // operacao (ex.: upsert -> delete).
+    final row =
+        await (_database.select(_database.syncQueueItems)
+              ..where(
+                (tbl) =>
+                    tbl.empresaId.equals(empresaId) &
+                    tbl.entityType.equals(entityType.name) &
+                    tbl.entityId.equals(entityId) &
+                    updatableStatus,
+              )
+              ..orderBy([
+                (tbl) => OrderingTerm.asc(tbl.createdAt),
+                (tbl) => OrderingTerm.asc(tbl.id),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (row == null) return false;
+
+    final isFailed = row.status == domain.SyncItemStatus.failed.name;
+    final update = SyncQueueItemsCompanion(
+      // Transfere o escopo de processamento para o usuario da sessao atual e
+      // grava a operacao/payload mais recentes (RF-09).
+      usuarioId: Value(usuarioId),
+      operation: Value(operation.name),
+      payload: Value(payload),
+      status: isFailed && resetFailure
+          ? Value(domain.SyncItemStatus.pending.name)
+          : const Value.absent(),
+      attempts: isFailed && resetFailure
+          ? const Value(0)
+          : const Value.absent(),
+      lastError: isFailed && resetFailure
+          ? const Value<String?>(null)
+          : const Value.absent(),
+      nextAttemptAt: isFailed && resetFailure
+          ? const Value<DateTime?>(null)
+          : const Value.absent(),
+      updatedAt: Value(updatedAt),
+    );
+
+    await (_database.update(
+      _database.syncQueueItems,
+    )..where((tbl) => tbl.id.equals(row.id))).write(update);
+
+    return true;
   }
 
   @override

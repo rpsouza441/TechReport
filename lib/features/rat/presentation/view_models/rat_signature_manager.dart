@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
 import 'package:techreport/features/signature/domain/entities/assinatura.dart';
@@ -17,11 +16,11 @@ class RatSignatureManager extends ChangeNotifier {
     required String ratId,
     required void Function(String) onError,
     EnqueueAssinaturaSync? enqueueAssinaturaSync,
-  })  : _assinaturaRepository = assinaturaRepository,
-        _localSignatureAssetStore = localSignatureAssetStore,
-        _ratId = ratId,
-        _onError = onError,
-        _enqueueAssinaturaSync = enqueueAssinaturaSync;
+  }) : _assinaturaRepository = assinaturaRepository,
+       _localSignatureAssetStore = localSignatureAssetStore,
+       _ratId = ratId,
+       _onError = onError,
+       _enqueueAssinaturaSync = enqueueAssinaturaSync;
 
   static const maxSignatureBytes = 1 * 1024 * 1024; // 1 MB
 
@@ -62,8 +61,9 @@ class RatSignatureManager extends ChangeNotifier {
 
       if (_assinatura case final assinatura?) {
         if (assinatura.storageMode == StorageMode.inlineBinary) {
-          _signaturePreviewBytes =
-              await _assinaturaRepository.readBytes(assinatura.id);
+          _signaturePreviewBytes = await _assinaturaRepository.readBytes(
+            assinatura.id,
+          );
         } else if (assinatura.storageMode == StorageMode.localFile) {
           _signaturePreviewBytes = await _localSignatureAssetStore.read(
             assinatura.assetRef,
@@ -102,8 +102,9 @@ class RatSignatureManager extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Save the RAT first (without enqueuing sync)
-      final saved = await saveRat(enqueueSync: false);
+      // Save the RAT first. In company mode this must enqueue the latest RAT
+      // payload too, because signing can finalize the RAT after a previous save.
+      final saved = await saveRat(enqueueSync: hasCompanyContext);
       if (!saved) {
         _isSavingSignature = false;
         notifyListeners();
@@ -111,17 +112,18 @@ class RatSignatureManager extends ChangeNotifier {
       }
 
       // Delete existing signatures
-      final currentSignatures =
-          await _assinaturaRepository.listByRatId(_ratId);
+      final currentSignatures = await _assinaturaRepository.listByRatId(_ratId);
       for (final assinatura in currentSignatures) {
         // Fire-and-forget remote delete before removing locally
         if (hasCompanyContext) {
-          unawaited(_enqueueAssinaturaSync?.delete(
-            assinatura,
-            empresaId: empresaId,
-            usuarioId: usuarioId,
-            ratId: _ratId,
-          ));
+          unawaited(
+            _enqueueAssinaturaSync?.delete(
+              assinatura,
+              empresaId: empresaId,
+              usuarioId: usuarioId,
+              ratId: _ratId,
+            ),
+          );
         }
 
         if (assinatura.storageMode == StorageMode.localFile) {

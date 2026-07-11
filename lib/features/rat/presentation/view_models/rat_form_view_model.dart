@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:techreport/features/company_auth/data/services/supabase_client_factory.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
@@ -9,7 +8,6 @@ import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dar
 import 'package:techreport/features/sync/data/usecases/enqueue_assinatura_sync.dart';
 import 'package:techreport/features/sync/domain/usecases/download_remote_rats.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
-import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
@@ -44,43 +42,40 @@ class RatFormViewModel extends ChangeNotifier {
     RatSyncCoordinator? syncCoordinator,
     DownloadRemoteRats? downloadRemoteRats,
     SupabaseClientFactory? supabaseClientFactory,
-  })  : _ratRepository = ratRepository,
-        _assinaturaRepository = assinaturaRepository,
-        _localSignatureAssetStore = localSignatureAssetStore,
-        _ratPdfShareService = ratPdfShareService,
-        _shareRatLocally = shareRatLocally,
-        _initialRat = initialRat,
-        ratId = initialRat?.id ?? _newRatId(),
-        numero = initialRat?.numero ?? _newRatNumber(),
-        _remoteSession = remoteSession,
-        _enqueueAssinaturaSync = enqueueAssinaturaSync,
-        _syncCoordinator = syncCoordinator,
-        _downloadRemoteRats = downloadRemoteRats,
-        _supabaseClientFactory = supabaseClientFactory,
-        _isSaved = initialRat != null,
-        _ultimoAlteradorUserId = initialRat?.ultimoAlteradorUserId,
-        _ultimaAlteracaoEm = initialRat?.ultimaAlteracaoEm,
-        _reabertaParaCorrecaoEm = initialRat?.reabertaParaCorrecaoEm,
-        _reabertaParaCorrecaoPorUserId =
-            initialRat?.reabertaParaCorrecaoPorUserId,
-        _motivoReabertura = initialRat?.motivoReabertura,
-        _assinaturaInvalidadaEm = initialRat?.assinaturaInvalidadaEm,
-        _assinaturaInvalidadaPorUserId =
-            initialRat?.assinaturaInvalidadaPorUserId,
-        _formState = RatFormState(initialRat: initialRat),
-        _syncHandler = RatSyncHandler(
-          syncCoordinator: syncCoordinator,
-          downloadRemoteRats: downloadRemoteRats,
-          empresaId: remoteSession?.empresaId,
-          usuarioId: remoteSession?.usuarioId,
-          papel: remoteSession?.papelEmpresa?.name ??
-              remoteSession?.papelGlobal?.name,
-        ) {
+  }) : _ratRepository = ratRepository,
+       _ratPdfShareService = ratPdfShareService,
+       _shareRatLocally = shareRatLocally,
+       _initialRat = initialRat,
+       ratId = initialRat?.id ?? _newRatId(),
+       numero = initialRat?.numero ?? _newRatNumber(),
+       _remoteSession = remoteSession,
+       _isSaved = initialRat != null,
+       _ultimoAlteradorUserId = initialRat?.ultimoAlteradorUserId,
+       _ultimaAlteracaoEm = initialRat?.ultimaAlteracaoEm,
+       _reabertaParaCorrecaoEm = initialRat?.reabertaParaCorrecaoEm,
+       _reabertaParaCorrecaoPorUserId =
+           initialRat?.reabertaParaCorrecaoPorUserId,
+       _motivoReabertura = initialRat?.motivoReabertura,
+       _assinaturaInvalidadaEm = initialRat?.assinaturaInvalidadaEm,
+       _assinaturaInvalidadaPorUserId =
+           initialRat?.assinaturaInvalidadaPorUserId,
+       _formState = RatFormState(initialRat: initialRat),
+       _syncHandler = RatSyncHandler(
+         syncCoordinator: syncCoordinator,
+         downloadRemoteRats: downloadRemoteRats,
+         empresaId: remoteSession?.empresaId,
+         usuarioId: remoteSession?.usuarioId,
+         papel:
+             remoteSession?.papelEmpresa?.name ??
+             remoteSession?.papelGlobal?.name,
+       ) {
     _signatureManager = RatSignatureManager(
       assinaturaRepository: assinaturaRepository,
       localSignatureAssetStore: localSignatureAssetStore,
       ratId: ratId,
-      onError: (msg) {},
+      onError: (msg) {
+        _errorMessage = msg;
+      },
       enqueueAssinaturaSync: enqueueAssinaturaSync,
     );
     _pdfGenerator = RatPdfGenerator(
@@ -95,20 +90,15 @@ class RatFormViewModel extends ChangeNotifier {
   }
 
   static const _permissions = RatPermissions();
+
   /// 1 MB maximum signature size.
   static const maxSignatureBytes = 1 * 1024 * 1024;
 
   final RatRepository _ratRepository;
-  final AssinaturaRepository _assinaturaRepository;
-  final LocalSignatureAssetStore _localSignatureAssetStore;
   final RatPdfShareService _ratPdfShareService;
   final ShareRatLocally _shareRatLocally;
   final Rat? _initialRat;
   final SessaoRemota? _remoteSession;
-  final EnqueueAssinaturaSync? _enqueueAssinaturaSync;
-  final RatSyncCoordinator? _syncCoordinator;
-  final DownloadRemoteRats? _downloadRemoteRats;
-  final SupabaseClientFactory? _supabaseClientFactory;
   final String ratId;
   final String numero;
 
@@ -153,10 +143,8 @@ class RatFormViewModel extends ChangeNotifier {
   String get responsavelRecebimento => _formState.responsavelRecebimento;
   String get responsavelDocumento => _formState.responsavelDocumento;
   DateTime? get dataVisita => _formState.dataVisita;
-  String get horarioInicioAtendimento =>
-      _formState.horarioInicioAtendimento;
-  String get horarioTerminoAtendimento =>
-      _formState.horarioTerminoAtendimento;
+  String get horarioInicioAtendimento => _formState.horarioInicioAtendimento;
+  String get horarioTerminoAtendimento => _formState.horarioTerminoAtendimento;
   String get descricao => _formState.descricao;
   EquipamentoMovimentoTipo get equipamentoMovimentoTipo =>
       _formState.equipamentoMovimentoTipo;
@@ -198,8 +186,7 @@ class RatFormViewModel extends ChangeNotifier {
 
   bool get canEditFields => canEdit && !isLockedUntilReopen;
 
-  bool get canPreviewPdf =>
-      _initialRat != null || _isSaved || canEditFields;
+  bool get canPreviewPdf => _initialRat != null || _isSaved || canEditFields;
 
   /// True quando o formulario deve ser exibido em modo somente leitura.
   ///
@@ -260,8 +247,7 @@ class RatFormViewModel extends ChangeNotifier {
 
   String? validate() => _formState.validate();
 
-  Future<void> loadSignatureStatus() =>
-      _signatureManager.loadSignatureStatus();
+  Future<void> loadSignatureStatus() => _signatureManager.loadSignatureStatus();
 
   /// Constrói o objeto Rat a partir dos campos do formulário.
   Rat _buildRatForSave({
@@ -269,8 +255,9 @@ class RatFormViewModel extends ChangeNotifier {
     required SessaoRemota? remoteSession,
     required DateTime now,
   }) {
-    final auditUserId =
-        isCompanyMode ? _remoteSession!.usuarioId : _ultimoAlteradorUserId;
+    final auditUserId = isCompanyMode
+        ? _remoteSession!.usuarioId
+        : _ultimoAlteradorUserId;
     final auditUpdatedAt = isCompanyMode ? now : _ultimaAlteracaoEm;
 
     return Rat(
@@ -280,28 +267,34 @@ class RatFormViewModel extends ChangeNotifier {
       empresaId: _initialRat?.empresaId ?? remoteSession?.empresaId,
       usuarioId: _initialRat?.usuarioId ?? remoteSession?.usuarioId,
       tecnicoId: _initialRat?.tecnicoId ?? remoteSession?.tecnicoId,
-      ownerType: _initialRat?.ownerType ??
-          (isCompanyMode ? RatOwnerType.companyTecnico : RatOwnerType.localTecnico),
+      ownerType:
+          _initialRat?.ownerType ??
+          (isCompanyMode
+              ? RatOwnerType.companyTecnico
+              : RatOwnerType.localTecnico),
       numero: numero,
       clienteNome: _formState.clienteNome.trim(),
       responsavelRecebimento: _formState.responsavelRecebimento.trim(),
       responsavelDocumento: _optionalText(_formState.responsavelDocumento),
       dataVisita: _formState.dataVisita,
-      horarioInicioAtendimento:
-          _normalizeHour(_formState.horarioInicioAtendimento)!,
-      horarioTerminoAtendimento:
-          _normalizeHour(_formState.horarioTerminoAtendimento)!,
+      horarioInicioAtendimento: _normalizeHour(
+        _formState.horarioInicioAtendimento,
+      )!,
+      horarioTerminoAtendimento: _normalizeHour(
+        _formState.horarioTerminoAtendimento,
+      )!,
       descricao: _formState.descricao.trim(),
       equipamentoMovimentoTipo: _formState.equipamentoMovimentoTipo,
       equipamentoDescricao: _formState.equipamentoDescricao.trim().isEmpty
           ? null
           : _formState.equipamentoDescricao.trim(),
-      equipamentoObservacao:
-          _formState.equipamentoObservacao.trim().isEmpty
-              ? null
-              : _formState.equipamentoObservacao.trim(),
+      equipamentoObservacao: _formState.equipamentoObservacao.trim().isEmpty
+          ? null
+          : _formState.equipamentoObservacao.trim(),
       status: _formState.status,
-      syncStatus: isCompanyMode ? RatSyncStatus.pendingSync : RatSyncStatus.localOnly,
+      syncStatus: isCompanyMode
+          ? RatSyncStatus.pendingSync
+          : RatSyncStatus.localOnly,
       createdAt: _initialRat?.createdAt ?? now,
       updatedAt: now,
       deletedAt: _initialRat?.deletedAt,
@@ -316,7 +309,14 @@ class RatFormViewModel extends ChangeNotifier {
   }
 
   Future<bool> save({bool enqueueSync = true}) async {
-    if (!canEditFields) {
+    return _saveCurrentRat(enqueueSync: enqueueSync, requireEditable: true);
+  }
+
+  Future<bool> _saveCurrentRat({
+    required bool enqueueSync,
+    required bool requireEditable,
+  }) async {
+    if (requireEditable && !canEditFields) {
       _errorMessage = isLockedUntilReopen
           ? 'Reabra este RAT para correcao antes de editar.'
           : 'Este RAT pertence a outro tecnico.';
@@ -397,10 +397,12 @@ class RatFormViewModel extends ChangeNotifier {
     final previousUltimoAlteradorUserId = _ultimoAlteradorUserId;
     final previousUltimaAlteracaoEm = _ultimaAlteracaoEm;
     final previousReabertaParaCorrecaoEm = _reabertaParaCorrecaoEm;
-    final previousReabertaParaCorrecaoPorUserId = _reabertaParaCorrecaoPorUserId;
+    final previousReabertaParaCorrecaoPorUserId =
+        _reabertaParaCorrecaoPorUserId;
     final previousMotivoReabertura = _motivoReabertura;
     final previousAssinaturaInvalidadaEm = _assinaturaInvalidadaEm;
-    final previousAssinaturaInvalidadaPorUserId = _assinaturaInvalidadaPorUserId;
+    final previousAssinaturaInvalidadaPorUserId =
+        _assinaturaInvalidadaPorUserId;
     final now = DateTime.now();
 
     // Apply new state
@@ -436,7 +438,8 @@ class RatFormViewModel extends ChangeNotifier {
         previousUltimoAlteradorUserId: previousUltimoAlteradorUserId,
         previousUltimaAlteracaoEm: previousUltimaAlteracaoEm,
         previousReabertaParaCorrecaoEm: previousReabertaParaCorrecaoEm,
-        previousReabertaParaCorrecaoPorUserId: previousReabertaParaCorrecaoPorUserId,
+        previousReabertaParaCorrecaoPorUserId:
+            previousReabertaParaCorrecaoPorUserId,
         previousMotivoReabertura: previousMotivoReabertura,
         previousAssinaturaInvalidadaEm: previousAssinaturaInvalidadaEm,
         previousAssinaturaInvalidadaPorUserId:
@@ -487,8 +490,9 @@ class RatFormViewModel extends ChangeNotifier {
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
     final deletedRat = initialRat.copyWith(
-      syncStatus:
-          isCompanyMode ? RatSyncStatus.pendingSync : RatSyncStatus.localOnly,
+      syncStatus: isCompanyMode
+          ? RatSyncStatus.pendingSync
+          : RatSyncStatus.localOnly,
       updatedAt: now,
       deletedAt: now,
     );
@@ -527,7 +531,8 @@ class RatFormViewModel extends ChangeNotifier {
       empresaId: remoteSession?.empresaId ?? '',
       usuarioId: remoteSession?.usuarioId ?? '',
       hasCompanyContext: isCompanyMode,
-      saveRat: ({required bool enqueueSync}) => save(enqueueSync: enqueueSync),
+      saveRat: ({required bool enqueueSync}) =>
+          _saveCurrentRat(enqueueSync: enqueueSync, requireEditable: false),
       syncAfterSignature: (empresaId, usuarioId) async {
         final assinatura = _signatureManager.assinatura;
         if (assinatura != null) {
@@ -720,8 +725,9 @@ String _newRatId() {
 
 String _newRatNumber() {
   final uuid = const Uuid().v4().substring(0, 8);
-  final timestamp =
-      DateTime.now().millisecondsSinceEpoch.toString().substring(5);
+  final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(
+    5,
+  );
   return '$timestamp-$uuid';
 }
 

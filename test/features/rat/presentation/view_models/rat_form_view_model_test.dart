@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
+import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
@@ -197,6 +198,37 @@ class _StubShareRatLocally implements ShareRatLocally {
   }
 }
 
+class _StubRatSyncCoordinator implements RatSyncCoordinator {
+  final List<Rat> savedRats = [];
+  final List<Assinatura> savedAssinaturas = [];
+
+  @override
+  Future<void> syncAfterSave({
+    required Rat rat,
+    required String empresaId,
+    required String usuarioId,
+  }) async {
+    savedRats.add(rat);
+  }
+
+  @override
+  Future<void> syncAfterDelete({
+    required Rat rat,
+    required String empresaId,
+    required String usuarioId,
+  }) async {}
+
+  @override
+  Future<void> syncAfterSignature({
+    required Assinatura assinatura,
+    required String empresaId,
+    required String usuarioId,
+    required String ratId,
+  }) async {
+    savedAssinaturas.add(assinatura);
+  }
+}
+
 SessaoRemota _makeRemoteSession({
   String empresaId = 'emp-1',
   String usuarioId = 'user-1',
@@ -275,7 +307,11 @@ void main() {
     shareRatLocally = _StubShareRatLocally();
   });
 
-  RatFormViewModel buildVm({Rat? initialRat, SessaoRemota? remoteSession}) {
+  RatFormViewModel buildVm({
+    Rat? initialRat,
+    SessaoRemota? remoteSession,
+    RatSyncCoordinator? syncCoordinator,
+  }) {
     return RatFormViewModel(
       assinaturaRepository: assinaturaRepo,
       localSignatureAssetStore: signatureAssetStore,
@@ -284,6 +320,7 @@ void main() {
       shareRatLocally: shareRatLocally,
       initialRat: initialRat,
       remoteSession: remoteSession,
+      syncCoordinator: syncCoordinator,
     );
   }
 
@@ -323,7 +360,7 @@ void main() {
       final result = sut.validate();
 
       expect(result, isNotNull);
-      expect(result, contains('responsável'));
+      expect(result, contains('responsavel'));
     });
 
     test('retorna erro para dataVisita nula', () {
@@ -350,7 +387,7 @@ void main() {
       final result = sut.validate();
 
       expect(result, isNotNull);
-      expect(result, contains('término'));
+      expect(result, contains('termino'));
     });
 
     test('retorna erro para horário de início inválido (fora do range)', () {
@@ -364,7 +401,7 @@ void main() {
       final result = sut.validate();
 
       expect(result, isNotNull);
-      expect(result, contains('início'));
+      expect(result, contains('inicio'));
     });
 
     test('retorna erro para descrição vazia', () {
@@ -379,7 +416,7 @@ void main() {
       final result = sut.validate();
 
       expect(result, isNotNull);
-      expect(result, contains('descrição'));
+      expect(result, contains('descricao'));
     });
 
     test('retorna null para formulário válido', () {
@@ -625,20 +662,23 @@ void main() {
       expect(sut.status, RatStatus.finalizado);
     });
 
-    test('RAT ja reaberta permanece inelegivel ao carregar ViewModel', () async {
-      final initialRat = _makeValidRat(
-        status: RatStatus.finalizado,
-        reabertaParaCorrecaoEm: DateTime(2026, 6, 20),
-      );
-      final sut = buildVm(
-        initialRat: initialRat,
-        remoteSession: _makeRemoteSession(),
-      );
-      addSignature(initialRat);
-      await sut.loadSignatureStatus();
+    test(
+      'RAT ja reaberta permanece inelegivel ao carregar ViewModel',
+      () async {
+        final initialRat = _makeValidRat(
+          status: RatStatus.finalizado,
+          reabertaParaCorrecaoEm: DateTime(2026, 6, 20),
+        );
+        final sut = buildVm(
+          initialRat: initialRat,
+          remoteSession: _makeRemoteSession(),
+        );
+        addSignature(initialRat);
+        await sut.loadSignatureStatus();
 
-      expect(sut.canReopenForCorrection, isFalse);
-    });
+        expect(sut.canReopenForCorrection, isFalse);
+      },
+    );
 
     test('falha ao salvar restaura status observavel', () async {
       final initialRat = _makeValidRat(status: RatStatus.finalizado);
@@ -779,9 +819,7 @@ void main() {
     test('falha de assinatura restaura status rascunho', () async {
       final sut = buildVm();
 
-      final result = await sut.saveSignature(
-        Uint8List(1 * 1024 * 1024 + 1),
-      );
+      final result = await sut.saveSignature(Uint8List(1 * 1024 * 1024 + 1));
 
       expect(result, isFalse);
       expect(sut.status, RatStatus.draft);
@@ -815,6 +853,57 @@ void main() {
       expect(reopened.canReopenForCorrection, isTrue);
       expect(reopened.isLockedUntilReopen, isTrue);
     });
+
+    test(
+      'assinatura em modo empresa tambem sincroniza RAT finalizada',
+      () async {
+        final remoteSession = _makeRemoteSession();
+        final syncCoordinator = _StubRatSyncCoordinator();
+        final sut = buildVm(
+          remoteSession: remoteSession,
+          syncCoordinator: syncCoordinator,
+        );
+        sut.setClienteNome('Cliente Valido');
+        sut.setResponsavelRecebimento('Responsavel');
+        sut.setDataVisita(DateTime(2026, 6, 22));
+        sut.setHorarioInicioAtendimento('0800');
+        sut.setHorarioTerminoAtendimento('1000');
+        sut.setDescricao('Descricao valida');
+
+        final result = await sut.saveSignature(Uint8List.fromList([1, 2, 3]));
+
+        expect(result, isTrue);
+        expect(syncCoordinator.savedRats, hasLength(1));
+        expect(syncCoordinator.savedRats.single.id, sut.ratId);
+        expect(syncCoordinator.savedRats.single.status, RatStatus.finalizado);
+        expect(syncCoordinator.savedAssinaturas, hasLength(1));
+      },
+    );
+
+    test(
+      'assinatura sincroniza RAT mesmo quando formulario fica bloqueado',
+      () async {
+        final remoteSession = _makeRemoteSession();
+        final syncCoordinator = _StubRatSyncCoordinator();
+        final initialRat = _makeValidRat(status: RatStatus.finalizado);
+        addSignature(initialRat);
+        final sut = buildVm(
+          initialRat: initialRat,
+          remoteSession: remoteSession,
+          syncCoordinator: syncCoordinator,
+        );
+        await sut.loadSignatureStatus();
+
+        expect(sut.canEditFields, isFalse);
+
+        final result = await sut.saveSignature(Uint8List.fromList([1, 2, 3]));
+
+        expect(result, isTrue);
+        expect(syncCoordinator.savedRats, hasLength(1));
+        expect(syncCoordinator.savedRats.single.id, initialRat.id);
+        expect(syncCoordinator.savedAssinaturas, hasLength(1));
+      },
+    );
 
     test('rejeita assinatura maior que 1 MB com mensagem de erro', () async {
       final sut = buildVm();
@@ -878,7 +967,6 @@ void main() {
 
   // ─── save() edge cases ────────────────────────────────────────────────────────
 
-
   group('save() edge cases', () {
     test('save() com enqueueSync=false nao enfila para sync', () async {
       final sut = buildVm();
@@ -890,7 +978,6 @@ void main() {
       sut.setDescricao('Descrição válida');
 
       final result = await sut.save(enqueueSync: false);
-
 
       expect(result, isTrue);
       expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.localOnly);
@@ -937,18 +1024,20 @@ void main() {
       sut.setHorarioInicioAtendimento('0800');
       sut.setHorarioTerminoAtendimento('1000');
       sut.setDescricao('Descrição válida');
-      sut.setEquipamentoMovimentoTipo(EquipamentoMovimentoTipo.retiradaParaReparo);
+      sut.setEquipamentoMovimentoTipo(
+        EquipamentoMovimentoTipo.retiradaParaReparo,
+      );
       sut.setEquipamentoDescricao('Equipamento X');
       sut.setEquipamentoObservacao('Observação do equipamento');
 
       final result = await sut.save();
 
-
       expect(result, isTrue);
       expect(ratRepo.savedRat!.responsavelDocumento, 'Documento');
-      expect(ratRepo.savedRat!.equipamentoMovimentoTipo,
-          EquipamentoMovimentoTipo.retiradaParaReparo);
+      expect(
+        ratRepo.savedRat!.equipamentoMovimentoTipo,
+        EquipamentoMovimentoTipo.retiradaParaReparo,
+      );
     });
   });
-
 }

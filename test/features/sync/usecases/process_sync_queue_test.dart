@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -55,11 +56,13 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String errorMessage,
     required DateTime nextAttemptAt,
   }) async {
-    failedCalls.add(_FailedCall(
-      id: id,
-      errorMessage: errorMessage,
-      nextAttemptAt: nextAttemptAt,
-    ));
+    failedCalls.add(
+      _FailedCall(
+        id: id,
+        errorMessage: errorMessage,
+        nextAttemptAt: nextAttemptAt,
+      ),
+    );
   }
 
   @override
@@ -69,16 +72,26 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
   Future<int> countPending({
     required String empresaId,
     required String usuarioId,
-  }) async =>
-      0;
+  }) async => 0;
 
   @override
   Future<List<SyncItem>> listForSession({
     required String empresaId,
     required String usuarioId,
     int limit = 50,
-  }) async =>
-      [];
+  }) async => [];
+
+  @override
+  Future<bool> replacePendingPayload({
+    required String empresaId,
+    required String usuarioId,
+    required SyncEntityType entityType,
+    required String entityId,
+    required SyncOperation operation,
+    required String payload,
+    required DateTime updatedAt,
+    bool resetFailure = true,
+  }) async => false;
 
   @override
   Future<bool> hasPendingItem({
@@ -86,8 +99,7 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
     required String usuarioId,
     required SyncEntityType entityType,
     required String entityId,
-  }) async =>
-      false;
+  }) async => false;
 }
 
 class _FailedCall {
@@ -104,12 +116,17 @@ class _FailedCall {
 class _StubRemoteRatRepository implements RemoteRatRepository {
   final List<String> upsertedPayloads = [];
   final List<String> deletedPayloads = [];
+  final Set<String> failUpsertEntityIds = {};
   bool shouldThrowUpsert = false;
   bool shouldThrowDelete = false;
 
   @override
   Future<void> upsertFromPayload(String payload) async {
-    if (shouldThrowUpsert) throw Exception('Upsert failed');
+    final decoded = jsonDecode(payload) as Map<String, dynamic>;
+    final id = decoded['id'] as String?;
+    if (shouldThrowUpsert || failUpsertEntityIds.contains(id)) {
+      throw Exception('Upsert failed');
+    }
     upsertedPayloads.add(payload);
   }
 
@@ -123,13 +140,13 @@ class _StubRemoteRatRepository implements RemoteRatRepository {
   Future<List<RatRemoteSnapshot>> fetchUpdatedSince({
     required String empresaId,
     required DateTime? since,
-  }) async =>
-      [];
+  }) async => [];
 }
 
 class _StubRatRepository implements RatRepository {
   Rat? savedRat;
   bool shouldThrowOnGetById = false;
+  int saveCallCount = 0;
 
   @override
   Future<Rat?> getById(String id) async {
@@ -141,8 +158,7 @@ class _StubRatRepository implements RatRepository {
   Future<Rat?> getByIdScoped({
     required String id,
     required RatListScope scope,
-  }) async =>
-      null;
+  }) async => null;
 
   @override
   Future<List<Rat>> listLocal() async => [];
@@ -151,13 +167,10 @@ class _StubRatRepository implements RatRepository {
   Future<List<Rat>> listLocalPage({
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
-  Future<List<Rat>> listCompanyForManager({
-    required String empresaId,
-  }) async =>
+  Future<List<Rat>> listCompanyForManager({required String empresaId}) async =>
       [];
 
   @override
@@ -165,15 +178,13 @@ class _StubRatRepository implements RatRepository {
     required String empresaId,
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForTechnician({
     required String empresaId,
     required String tecnicoId,
-  }) async =>
-      [];
+  }) async => [];
 
   @override
   Future<List<Rat>> listCompanyForTechnicianPage({
@@ -181,11 +192,32 @@ class _StubRatRepository implements RatRepository {
     required String tecnicoId,
     required int limit,
     required int offset,
-  }) async =>
-      [];
+  }) async => [];
+
+  @override
+  Future<List<Rat>> listLocalCursor({
+    required int limit,
+    String? lastId,
+  }) async => [];
+
+  @override
+  Future<List<Rat>> listCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    String? lastId,
+  }) async => [];
+
+  @override
+  Future<List<Rat>> listCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    String? lastId,
+  }) async => [];
 
   @override
   Future<void> save(Rat rat) async {
+    saveCallCount++;
     savedRat = rat;
   }
 
@@ -201,7 +233,9 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   Future<List<Assinatura>> listByRatId(String ratId) async => [];
 
   @override
-  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async => {};
+  Future<Map<String, List<Assinatura>>> listByRatIds(
+    List<String> ratIds,
+  ) async => {};
 
   @override
   Future<void> save(Assinatura assinatura) async {}
@@ -233,8 +267,7 @@ class _StubRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
     required int version,
     required List<int> bytes,
     required String mimeType,
-  }) async =>
-      '';
+  }) async => '';
 
   @override
   Future<void> upsertMetadata({
@@ -253,8 +286,7 @@ class _StubRemoteAssinaturaRepository implements RemoteAssinaturaRepository {
   Future<String> createSignedUrl({
     required String storagePath,
     int expiresInSeconds = 300,
-  }) async =>
-      '';
+  }) async => '';
 
   @override
   Future<bool> objectExists(String storagePath) async => false;
@@ -274,7 +306,7 @@ SyncItem _buildRatUpsertItem({
   required String id,
   required String empresaId,
   required String ratId,
-  String payload = '{"id":"rat-1","empresaId":"emp-1"}',
+  String? payload,
   int attempts = 0,
 }) {
   final now = DateTime.now();
@@ -285,7 +317,7 @@ SyncItem _buildRatUpsertItem({
     entityType: SyncEntityType.rat,
     entityId: ratId,
     operation: SyncOperation.upsert,
-    payload: payload,
+    payload: payload ?? jsonEncode({'id': ratId, 'empresaId': empresaId}),
     status: SyncItemStatus.pending,
     attempts: attempts,
     createdAt: now,
@@ -364,11 +396,9 @@ void main() {
         updatedAt: now,
       );
       ratRepo.savedRat = rat;
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-1',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatUpsertItem(id: 'sync-1', empresaId: 'emp-1', ratId: 'rat-1'),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -398,11 +428,9 @@ void main() {
         updatedAt: now,
       );
       ratRepo.savedRat = rat;
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-1',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatUpsertItem(id: 'sync-1', empresaId: 'emp-1', ratId: 'rat-1'),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -411,11 +439,13 @@ void main() {
 
     test('upsert não bloqueia se RAT local não existe', () async {
       // ratRepo.getById retorna null
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-1',
-        empresaId: 'emp-1',
-        ratId: 'rat-inexistente',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatUpsertItem(
+          id: 'sync-1',
+          empresaId: 'emp-1',
+          ratId: 'rat-inexistente',
+        ),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -429,11 +459,9 @@ void main() {
 
   group('RAT delete', () {
     test('delete com sucesso marca item como synced', () async {
-      queueRepo.pendingItems.add(_buildRatDeleteItem(
-        id: 'sync-2',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatDeleteItem(id: 'sync-2', empresaId: 'emp-1', ratId: 'rat-1'),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -463,16 +491,14 @@ void main() {
         updatedAt: now,
       );
       ratRepo.savedRat = rat;
-      queueRepo.pendingItems.add(_buildRatDeleteItem(
-        id: 'sync-2',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatDeleteItem(id: 'sync-2', empresaId: 'emp-1', ratId: 'rat-1'),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
-      // Delete não chama _markRatSynced (não há save do RAT local)
-      expect(ratRepo.savedRat, isNull); // save não foi chamado
+      // Delete nao chama _markRatSynced.
+      expect(ratRepo.saveCallCount, 0);
       expect(queueRepo.syncedIds, contains('sync-2'));
     });
   });
@@ -482,11 +508,13 @@ void main() {
   group('falha e retry', () {
     test('falha no upsert marca failed com retry em 5 minutos', () async {
       remoteRatRepo.shouldThrowUpsert = true;
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-fail-1',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatUpsertItem(
+          id: 'sync-fail-1',
+          empresaId: 'emp-1',
+          ratId: 'rat-1',
+        ),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -502,11 +530,13 @@ void main() {
 
     test('falha no delete marca failed com retry em 5 minutos', () async {
       remoteRatRepo.shouldThrowDelete = true;
-      queueRepo.pendingItems.add(_buildRatDeleteItem(
-        id: 'sync-fail-2',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatDeleteItem(
+          id: 'sync-fail-2',
+          empresaId: 'emp-1',
+          ratId: 'rat-1',
+        ),
+      );
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
@@ -522,7 +552,7 @@ void main() {
 
     test('item falhando não bloqueia próximo item', () async {
       // Primeiro item falha, segundo succeeds
-      remoteRatRepo.shouldThrowUpsert = true;
+      remoteRatRepo.failUpsertEntityIds.add('rat-1');
       queueRepo.pendingItems.addAll([
         _buildRatUpsertItem(id: 'sync-1', empresaId: 'emp-1', ratId: 'rat-1'),
         _buildRatUpsertItem(id: 'sync-2', empresaId: 'emp-1', ratId: 'rat-2'),
@@ -558,128 +588,206 @@ void main() {
       expect(queueRepo.syncedIds, contains('sync-2'));
     });
 
-    test('item com 5 attempts não é processado — marcado failed permanente', () async {
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-max-attempts',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-        attempts: 5, // limite atingido
-      ));
-
-      await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
-
-      // Não deve chamar markProcessing (não é processado)
-      expect(queueRepo.processingIds, isEmpty);
-      // Deve marcar failed permanente com mensagem de limite
-      expect(queueRepo.failedCalls, hasLength(1));
-      expect(queueRepo.failedCalls.first.id, 'sync-max-attempts');
-      expect(queueRepo.failedCalls.first.errorMessage, contains('Limite'));
-    });
-  });
-
-  // ─── Lock otimista ──────────────────────────────────────────────────────────
-
-  group('lock otimista', () {
-    test('markProcessing é chamado para cada item antes do processamento', () async {
-      queueRepo.pendingItems.addAll([
-        _buildRatUpsertItem(id: 'sync-1', empresaId: 'emp-1', ratId: 'rat-1'),
-        _buildRatUpsertItem(id: 'sync-2', empresaId: 'emp-1', ratId: 'rat-2'),
-      ]);
-
-      final now = DateTime.now();
-      ratRepo.savedRat = Rat(
-        id: 'rat-1',
-        authorId: 'author-1',
-        empresaId: 'emp-1',
-        usuarioId: 'user-1',
-        tecnicoId: 'tec-1',
-        ownerType: RatOwnerType.companyTecnico,
-        numero: '0001',
-        clienteNome: 'Cliente',
-        responsavelRecebimento: 'Responsável',
-        dataVisita: now,
-        horarioInicioAtendimento: '0800',
-        horarioTerminoAtendimento: '0900',
-        descricao: 'Descrição',
-        status: RatStatus.draft,
-        syncStatus: RatSyncStatus.pendingSync,
-        createdAt: now,
-        updatedAt: now,
-      );
-
-      await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
-
-      expect(queueRepo.processingIds, containsAll(['sync-1', 'sync-2']));
-    });
-
-    test('listPending inclui items failed quando retryFailed=true', () async {
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-retry',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
-
-      await sut.call(empresaId: 'emp-1', usuarioId: 'user-1', retryFailed: true);
-
-      expect(queueRepo.includeFailedOnList, isTrue);
-    });
-
-    test('listPending não inclui items failed quando retryFailed=false', () async {
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-normal',
-        empresaId: 'emp-1',
-        ratId: 'rat-1',
-      ));
-
-      await sut.call(empresaId: 'emp-1', usuarioId: 'user-1', retryFailed: false);
-
-      expect(queueRepo.includeFailedOnList, isFalse);
-    });
-  });
-
-  // ─── Processamento geral ────────────────────────────────────────────────────
-
-  group('processamento geral', () {
-    test('processa itens na ordem em que são retornados por listPending', () async {
+    test('assinatura falhando nao bloqueia sync da RAT seguinte', () async {
       final now = DateTime.now();
       final rat = Rat(
-        id: 'rat-1',
+        id: 'rat-apos-assinatura',
         authorId: 'author-1',
         empresaId: 'emp-1',
         usuarioId: 'user-1',
         tecnicoId: 'tec-1',
         ownerType: RatOwnerType.companyTecnico,
-        numero: '0001',
-        clienteNome: 'Cliente',
-        responsavelRecebimento: 'Responsável',
+        numero: '0003',
+        clienteNome: 'Cliente 3',
+        responsavelRecebimento: 'Responsavel',
         dataVisita: now,
         horarioInicioAtendimento: '0800',
         horarioTerminoAtendimento: '0900',
-        descricao: 'Descrição',
-        status: RatStatus.draft,
+        descricao: 'Descricao 3',
+        status: RatStatus.finalizado,
         syncStatus: RatSyncStatus.pendingSync,
         createdAt: now,
         updatedAt: now,
       );
       ratRepo.savedRat = rat;
       queueRepo.pendingItems.addAll([
-        _buildRatUpsertItem(id: 'sync-a', empresaId: 'emp-1', ratId: 'rat-1'),
-        _buildRatUpsertItem(id: 'sync-b', empresaId: 'emp-1', ratId: 'rat-1'),
+        SyncItem(
+          id: 'sync-assinatura-falha',
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          entityType: SyncEntityType.assinatura,
+          entityId: 'assinatura-sem-bytes',
+          operation: SyncOperation.upsert,
+          payload:
+              '{"empresaId":"emp-1","ratId":"rat-apos-assinatura","assinaturaId":"assinatura-sem-bytes","mimeType":"image/png","deletedAt":null}',
+          status: SyncItemStatus.pending,
+          attempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        _buildRatUpsertItem(
+          id: 'sync-rat-depois',
+          empresaId: 'emp-1',
+          ratId: 'rat-apos-assinatura',
+        ),
       ]);
 
       await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
 
-      expect(queueRepo.processingIds[0], 'sync-a');
-      expect(queueRepo.processingIds[1], 'sync-b');
-      expect(queueRepo.syncedIds, hasLength(2));
+      expect(
+        queueRepo.failedCalls.any((c) => c.id == 'sync-assinatura-falha'),
+        isTrue,
+      );
+      expect(queueRepo.syncedIds, contains('sync-rat-depois'));
+      expect(ratRepo.savedRat!.syncStatus, RatSyncStatus.synced);
     });
 
+    test(
+      'item com 5 attempts não é processado — marcado failed permanente',
+      () async {
+        queueRepo.pendingItems.add(
+          _buildRatUpsertItem(
+            id: 'sync-max-attempts',
+            empresaId: 'emp-1',
+            ratId: 'rat-1',
+            attempts: 5, // limite atingido
+          ),
+        );
+
+        await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
+
+        // Não deve chamar markProcessing (não é processado)
+        expect(queueRepo.processingIds, isEmpty);
+        // Deve marcar failed permanente com mensagem de limite
+        expect(queueRepo.failedCalls, hasLength(1));
+        expect(queueRepo.failedCalls.first.id, 'sync-max-attempts');
+        expect(queueRepo.failedCalls.first.errorMessage, contains('Limite'));
+      },
+    );
+  });
+
+  // ─── Lock otimista ──────────────────────────────────────────────────────────
+
+  group('lock otimista', () {
+    test(
+      'markProcessing é chamado para cada item antes do processamento',
+      () async {
+        queueRepo.pendingItems.addAll([
+          _buildRatUpsertItem(id: 'sync-1', empresaId: 'emp-1', ratId: 'rat-1'),
+          _buildRatUpsertItem(id: 'sync-2', empresaId: 'emp-1', ratId: 'rat-2'),
+        ]);
+
+        final now = DateTime.now();
+        ratRepo.savedRat = Rat(
+          id: 'rat-1',
+          authorId: 'author-1',
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          tecnicoId: 'tec-1',
+          ownerType: RatOwnerType.companyTecnico,
+          numero: '0001',
+          clienteNome: 'Cliente',
+          responsavelRecebimento: 'Responsável',
+          dataVisita: now,
+          horarioInicioAtendimento: '0800',
+          horarioTerminoAtendimento: '0900',
+          descricao: 'Descrição',
+          status: RatStatus.draft,
+          syncStatus: RatSyncStatus.pendingSync,
+          createdAt: now,
+          updatedAt: now,
+        );
+
+        await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
+
+        expect(queueRepo.processingIds, containsAll(['sync-1', 'sync-2']));
+      },
+    );
+
+    test('listPending inclui items failed quando retryFailed=true', () async {
+      queueRepo.pendingItems.add(
+        _buildRatUpsertItem(
+          id: 'sync-retry',
+          empresaId: 'emp-1',
+          ratId: 'rat-1',
+        ),
+      );
+
+      await sut.call(
+        empresaId: 'emp-1',
+        usuarioId: 'user-1',
+        retryFailed: true,
+      );
+
+      expect(queueRepo.includeFailedOnList, isTrue);
+    });
+
+    test(
+      'listPending não inclui items failed quando retryFailed=false',
+      () async {
+        queueRepo.pendingItems.add(
+          _buildRatUpsertItem(
+            id: 'sync-normal',
+            empresaId: 'emp-1',
+            ratId: 'rat-1',
+          ),
+        );
+
+        await sut.call(
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          retryFailed: false,
+        );
+
+        expect(queueRepo.includeFailedOnList, isFalse);
+      },
+    );
+  });
+
+  // ─── Processamento geral ────────────────────────────────────────────────────
+
+  group('processamento geral', () {
+    test(
+      'processa itens na ordem em que são retornados por listPending',
+      () async {
+        final now = DateTime.now();
+        final rat = Rat(
+          id: 'rat-1',
+          authorId: 'author-1',
+          empresaId: 'emp-1',
+          usuarioId: 'user-1',
+          tecnicoId: 'tec-1',
+          ownerType: RatOwnerType.companyTecnico,
+          numero: '0001',
+          clienteNome: 'Cliente',
+          responsavelRecebimento: 'Responsável',
+          dataVisita: now,
+          horarioInicioAtendimento: '0800',
+          horarioTerminoAtendimento: '0900',
+          descricao: 'Descrição',
+          status: RatStatus.draft,
+          syncStatus: RatSyncStatus.pendingSync,
+          createdAt: now,
+          updatedAt: now,
+        );
+        ratRepo.savedRat = rat;
+        queueRepo.pendingItems.addAll([
+          _buildRatUpsertItem(id: 'sync-a', empresaId: 'emp-1', ratId: 'rat-1'),
+          _buildRatUpsertItem(id: 'sync-b', empresaId: 'emp-1', ratId: 'rat-1'),
+        ]);
+
+        await sut.call(empresaId: 'emp-1', usuarioId: 'user-1');
+
+        expect(queueRepo.processingIds[0], 'sync-a');
+        expect(queueRepo.processingIds[1], 'sync-b');
+        expect(queueRepo.syncedIds, hasLength(2));
+      },
+    );
+
     test('listPending é chamado com empresaId e usuarioId corretos', () async {
-      queueRepo.pendingItems.add(_buildRatUpsertItem(
-        id: 'sync-1',
-        empresaId: 'emp-xyz',
-        ratId: 'rat-1',
-      ));
+      queueRepo.pendingItems.add(
+        _buildRatUpsertItem(id: 'sync-1', empresaId: 'emp-xyz', ratId: 'rat-1'),
+      );
 
       await sut.call(empresaId: 'emp-xyz', usuarioId: 'user-abc');
 

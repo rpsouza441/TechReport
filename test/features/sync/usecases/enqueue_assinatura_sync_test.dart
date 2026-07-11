@@ -16,6 +16,18 @@ class _StubSyncQueueRepository implements SyncQueueRepository {
   String? lastHasPendingEntityId;
 
   @override
+  Future<bool> replacePendingPayload({
+    required String empresaId,
+    required String usuarioId,
+    required SyncEntityType entityType,
+    required String entityId,
+    required SyncOperation operation,
+    required String payload,
+    required DateTime updatedAt,
+    bool resetFailure = true,
+  }) async => false;
+
+  @override
   Future<bool> hasPendingItem({
     required String empresaId,
     required String usuarioId,
@@ -76,7 +88,7 @@ void main() {
     sut = EnqueueAssinaturaSync(queueRepository: queueRepo);
   });
 
-  Assinatura _assinatura(String id) => Assinatura(
+  Assinatura makeAssinatura(String id) => Assinatura(
     id: id,
     ratId: 'rat-1',
     storageMode: StorageMode.inlineBinary,
@@ -94,7 +106,7 @@ void main() {
       queueRepo.hasPendingItemReturn = false;
 
       await sut.upsert(
-        _assinatura('assinatura-1'),
+        makeAssinatura('assinatura-1'),
         empresaId: 'emp-1',
         usuarioId: 'user-1',
         ratId: 'rat-1',
@@ -113,7 +125,7 @@ void main() {
       queueRepo.hasPendingItemReturn = true;
 
       await sut.upsert(
-        _assinatura('assinatura-1'),
+        makeAssinatura('assinatura-1'),
         empresaId: 'emp-1',
         usuarioId: 'user-1',
         ratId: 'rat-1',
@@ -128,7 +140,7 @@ void main() {
       queueRepo.hasPendingItemReturn = false;
 
       await sut.delete(
-        _assinatura('assinatura-1'),
+        makeAssinatura('assinatura-1'),
         empresaId: 'emp-1',
         usuarioId: 'user-1',
         ratId: 'rat-1',
@@ -143,7 +155,7 @@ void main() {
       queueRepo.hasPendingItemReturn = true;
 
       await sut.delete(
-        _assinatura('assinatura-1'),
+        makeAssinatura('assinatura-1'),
         empresaId: 'emp-1',
         usuarioId: 'user-1',
         ratId: 'rat-1',
