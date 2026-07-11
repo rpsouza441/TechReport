@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:techreport/features/local_auth/data/services/local_backup_parser.dart';
 import 'package:techreport/features/local_auth/data/services/local_data_import_parser.dart';
@@ -148,8 +149,7 @@ class TestBackupBuilder {
   }
 
   String _sha256(List<int> bytes) {
-    // Simple hash for testing - in production uses crypto package
-    return 'test_sha256_${base64Encode(bytes).substring(0, 16)}';
+    return sha256.convert(bytes).toString();
   }
 }
 
@@ -328,7 +328,7 @@ void main() {
       expect(ratRepo.rats.first.clienteNome, 'Restored Client');
     });
 
-    test('import handles legacy JSON format', () async {
+    test('import rejects unsupported legacy JSON format', () async {
       // Create legacy JSON backup (non-zip format)
       final legacyJson = '''
       {
@@ -348,12 +348,12 @@ void main() {
       final legacyFile = File('${tempDir.path}/legacy.json');
       await legacyFile.writeAsString(legacyJson);
 
-      // LocalBackupParser should handle legacy format via LocalDataImportParser
       final legacyParser = LocalDataImportParser();
-      final parsed = legacyParser.parse(legacyJson);
 
-      expect(parsed['rats'], isNotNull);
-      expect((parsed['rats'] as List).length, 1);
+      expect(
+        () => legacyParser.parse(legacyJson),
+        throwsA(isA<FormatException>()),
+      );
     });
 
     test('restore preserves RAT status and sync status', () async {
@@ -470,8 +470,19 @@ void main() {
         assinaturas: [],
       ).build();
 
-      // Tamper with content
-      final tampered = Uint8List.fromList([...backup, 0xFF]);
+      // Replace the RAT payload without updating the checksum in manifest.json.
+      final archive = ZipDecoder().decodeBytes(backup);
+      final tamperedPayload = utf8.encode('[{"id":"tampered"}]');
+      final tamperedArchive = Archive();
+      for (final file in archive) {
+        final content = file.name == 'data/rats.json'
+            ? tamperedPayload
+            : file.readBytes()!;
+        tamperedArchive.addFile(ArchiveFile.bytes(file.name, content));
+      }
+      final tampered = Uint8List.fromList(
+        ZipEncoder().encode(tamperedArchive)!,
+      );
       final backupFile = File('${tempDir.path}/tampered.zip');
       await backupFile.writeAsBytes(tampered);
 

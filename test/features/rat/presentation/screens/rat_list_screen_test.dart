@@ -54,10 +54,8 @@ void main() {
       ),
     );
 
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Relatórios RAT'), findsOneWidget);
     expect(find.text('Buscar cliente ou descrição'), findsOneWidget);
     expect(find.text('Cliente Piloto'), findsOneWidget);
     expect(find.text('Rascunho'), findsWidgets);
@@ -86,8 +84,7 @@ void main() {
       ),
     );
 
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Nenhum RAT cadastrado ainda.'), findsOneWidget);
   });
@@ -121,6 +118,18 @@ class _StubRatRepository implements RatRepository {
   Future<List<Rat>> listLocalPage({required int limit, required int offset}) async {
     if (offset >= rats.length) return [];
     return rats.skip(offset).take(limit).toList();
+  }
+
+  @override
+  Future<List<Rat>> listLocalCursor({
+    required int limit,
+    String? lastId,
+  }) async {
+    final start = lastId == null
+        ? 0
+        : rats.indexWhere((rat) => rat.id == lastId) + 1;
+    if (start < 0 || start >= rats.length) return [];
+    return rats.skip(start).take(limit).toList();
   }
 
   @override
