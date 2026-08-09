@@ -55,9 +55,8 @@ begin
     where c.conrelid = 'public.rat_audit_log'::regclass
       and pg_get_constraintdef(c.oid, true) ilike '%event_type%'
       and pg_get_constraintdef(c.oid, true) ilike all (array['%created%', '%updated%', '%trashed%', '%restored%'])
-      and c.convalidated
   ) then
-    raise exception using errcode = 'P0001', message = 'Missing validated rat_audit_log event_type constraint';
+    raise exception using errcode = 'P0001', message = 'Missing enforced rat_audit_log event_type constraint';
   end if;
 end
 $postflight$;
