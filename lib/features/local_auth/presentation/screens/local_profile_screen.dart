@@ -253,14 +253,6 @@ class _LocalProfileScreenState extends State<LocalProfileScreen> {
             value: t.empresaNome!,
           ),
         ],
-        const SizedBox(height: MetricSlateSpacing.sm),
-        _buildProfileCard(
-          icon: t.pinConfigured
-              ? Icons.lock_outlined
-              : Icons.lock_open_outlined,
-          title: 'PIN',
-          value: t.pinConfigured ? 'Configurado' : 'Não configurado',
-        ),
       ],
     );
   }

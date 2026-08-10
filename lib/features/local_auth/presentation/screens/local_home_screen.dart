@@ -47,7 +47,6 @@ class LocalHomeScreen extends StatefulWidget {
     required this.viewModel,
     required this.ratRepository,
     required this.shareRatLocally,
-    required this.onLocalLocked,
     required this.onSwitchMode,
     required this.themeViewModel,
     required this.tecnicoLocalRepository,
@@ -65,7 +64,6 @@ class LocalHomeScreen extends StatefulWidget {
   final AppSessionViewModel viewModel;
   final RatRepository ratRepository;
   final ShareRatLocally shareRatLocally;
-  final VoidCallback onLocalLocked;
   final Future<void> Function() onSwitchMode;
   final AppThemeViewModel themeViewModel;
   final TecnicoLocalRepository tecnicoLocalRepository;
@@ -153,7 +151,6 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
           ratPdfShareService: widget.ratPdfShareService,
           ratRepository: widget.ratRepository,
           shareRatLocally: widget.shareRatLocally,
-          onLocalLocked: widget.onLocalLocked,
           onSwitchMode: widget.onSwitchMode,
           themeViewModel: widget.themeViewModel,
           onNavigateToSettings: () => _navigateToSettings(context),
@@ -184,21 +181,22 @@ class _LocalHomeScreenState extends State<LocalHomeScreen> {
   void _navigateToSettings(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => LocalSettingsScreen(
+        builder: (_) => LocalAdministrationScreen(
           appSessionViewModel: widget.viewModel,
           themeViewModel: widget.themeViewModel,
-          onSwitchMode: () async {
-            if (widget.viewModel.pinConfigured) {
-              await widget.viewModel.lock();
-            }
-            await widget.onSwitchMode();
-          },
+          onSwitchMode: widget.onSwitchMode,
           ratRepository: widget.ratRepository,
           localBackupService: widget.localBackupService,
           localBackupParser: widget.localBackupParser,
           localDataImportParser: widget.localDataImportParser,
           applyLocalDataImport: widget.applyLocalDataImport,
           previewLocalDataImport: widget.previewLocalDataImport,
+          onOpenProfile: () => setState(() {
+            _selectedTab = _LocalTab.profile;
+          }),
+          onOpenRats: () => setState(() {
+            _selectedTab = _LocalTab.rats;
+          }),
         ),
       ),
     );
@@ -221,7 +219,6 @@ class _RatsTab extends StatelessWidget {
     required this.ratPdfShareService,
     required this.ratRepository,
     required this.shareRatLocally,
-    required this.onLocalLocked,
     required this.onSwitchMode,
     required this.themeViewModel,
     required this.onNavigateToSettings,
@@ -239,7 +236,6 @@ class _RatsTab extends StatelessWidget {
   final RatPdfShareService ratPdfShareService;
   final RatRepository ratRepository;
   final ShareRatLocally shareRatLocally;
-  final VoidCallback onLocalLocked;
   final Future<void> Function() onSwitchMode;
   final AppThemeViewModel themeViewModel;
   final VoidCallback onNavigateToSettings;
@@ -253,15 +249,10 @@ class _RatsTab extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: const TechReportModeTitle(modeLabel: 'Modo Local'),
         actions: [
-          if (viewModel.pinConfigured)
-            TextButton(
-              onPressed: () => _lockLocal(context),
-              child: const Text('Bloquear'),
-            ),
           IconButton(
             onPressed: onNavigateToSettings,
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Configurações',
+            tooltip: 'Abrir configurações locais',
           ),
         ],
       ),
@@ -372,34 +363,6 @@ class _RatsTab extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Future<void> _lockLocal(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Bloquear modo local?'),
-        content: const Text(
-          'Você precisará inserir o PIN para acessar novamente. '
-          'Seus RATs permanecem no dispositivo.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Bloquear'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    await viewModel.lock();
-    onLocalLocked();
   }
 
   Future<void> _openCreate(BuildContext context) async {

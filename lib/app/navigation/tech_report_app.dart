@@ -217,7 +217,6 @@ class AppShell extends StatelessWidget {
           ratPdfShareService: scope.ratPdfShareService,
           ratRepository: scope.ratRepository,
           shareRatLocally: scope.shareRatLocally,
-          onLocalLocked: bootstrapViewModel.syncLocalStatus,
           onSwitchMode: bootstrapViewModel.chooseCompany,
           themeViewModel: scope.appThemeViewModel,
           tecnicoLocalRepository: scope.tecnicoLocalRepository,

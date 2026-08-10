@@ -31,9 +31,15 @@ class RatSyncCoordinator {
        _processSyncQueue = processSyncQueue,
        _restoreRat = restoreRat;
 
-  final EnqueueRatSync _enqueueRatSync;
-  final EnqueueAssinaturaSync _enqueueAssinaturaSync;
-  final ProcessSyncQueue _processSyncQueue;
+  RatSyncCoordinator.local({required RestoreRat restoreRat})
+    : _enqueueRatSync = null,
+      _enqueueAssinaturaSync = null,
+      _processSyncQueue = null,
+      _restoreRat = restoreRat;
+
+  final EnqueueRatSync? _enqueueRatSync;
+  final EnqueueAssinaturaSync? _enqueueAssinaturaSync;
+  final ProcessSyncQueue? _processSyncQueue;
   final RestoreRat? _restoreRat;
 
   Future<RatRestoreSyncResult> restore({
@@ -55,14 +61,15 @@ class RatSyncCoordinator {
       throw StateError('Sessao remota invalida para restaurar RAT.');
     }
 
-    await _enqueueRatSync.restore(
+    final dependencies = _remoteDependencies;
+    await dependencies.$1.restore(
       restored,
       session: SyncSessionContext(
         empresaId: empresaId,
         usuarioId: session.usuarioId,
       ),
     );
-    final completed = await _processSyncQueue.call(
+    final completed = await dependencies.$3.call(
       empresaId: empresaId,
       usuarioId: session.usuarioId,
     );
@@ -78,11 +85,12 @@ class RatSyncCoordinator {
     required String empresaId,
     required String usuarioId,
   }) async {
-    await _enqueueRatSync.upsert(
+    final dependencies = _remoteDependencies;
+    await dependencies.$1.upsert(
       rat,
       session: SyncSessionContext(empresaId: empresaId, usuarioId: usuarioId),
     );
-    await _processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
+    await dependencies.$3.call(empresaId: empresaId, usuarioId: usuarioId);
   }
 
   /// Enfileira o delete do RAT para sync e processa a fila.
@@ -91,11 +99,12 @@ class RatSyncCoordinator {
     required String empresaId,
     required String usuarioId,
   }) async {
-    await _enqueueRatSync.delete(
+    final dependencies = _remoteDependencies;
+    await dependencies.$1.delete(
       rat,
       session: SyncSessionContext(empresaId: empresaId, usuarioId: usuarioId),
     );
-    await _processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
+    await dependencies.$3.call(empresaId: empresaId, usuarioId: usuarioId);
   }
 
   /// Enfileira a assinatura para sync e processa a fila.
@@ -105,12 +114,24 @@ class RatSyncCoordinator {
     required String usuarioId,
     required String ratId,
   }) async {
-    await _enqueueAssinaturaSync.upsert(
+    final dependencies = _remoteDependencies;
+    await dependencies.$2.upsert(
       assinatura,
       empresaId: empresaId,
       usuarioId: usuarioId,
       ratId: ratId,
     );
-    await _processSyncQueue.call(empresaId: empresaId, usuarioId: usuarioId);
+    await dependencies.$3.call(empresaId: empresaId, usuarioId: usuarioId);
+  }
+
+  (EnqueueRatSync, EnqueueAssinaturaSync, ProcessSyncQueue)
+  get _remoteDependencies {
+    final rat = _enqueueRatSync;
+    final signature = _enqueueAssinaturaSync;
+    final processor = _processSyncQueue;
+    if (rat == null || signature == null || processor == null) {
+      throw StateError('Dependencias remotas nao configuradas no coordenador.');
+    }
+    return (rat, signature, processor);
   }
 }
