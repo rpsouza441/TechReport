@@ -15,7 +15,6 @@ import '../../features/company_auth/presentation/view_models/company_sign_in_vie
 import '../../features/company_auth/presentation/view_models/remote_server_config_view_model.dart';
 import '../../features/local_auth/presentation/screens/local_home_screen.dart';
 import '../../features/local_auth/presentation/screens/local_onboarding_screen.dart';
-import '../../features/local_auth/presentation/screens/local_unlock_screen.dart';
 import '../di/app_scope.dart';
 import 'company_shell.dart';
 
@@ -202,12 +201,6 @@ class AppShell extends StatelessWidget {
           viewModel: scope.appSessionViewModel,
           onCompleted: bootstrapViewModel.syncLocalStatus,
           onBackToModeChoice: bootstrapViewModel.requireModeChoice,
-        );
-
-      case AppBootstrapStatus.localLocked:
-        return LocalUnlockScreen(
-          viewModel: scope.appSessionViewModel,
-          onUnlocked: bootstrapViewModel.syncLocalStatus,
         );
 
       case AppBootstrapStatus.localUnlocked:
