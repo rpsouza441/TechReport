@@ -1,18 +1,32 @@
 # Estado Do Projeto
 
-O TechReport esta em desenvolvimento ativo.
+O TechReport esta em desenvolvimento ativo e em preparacao de release.
 
-**Sprint atual:** **Sprint 9 - decisoes e ajustes pos Sprint 8**.
+**Sprint atual:** **Fase 20 - preparacao de release**.
 
-**Ultima atualizacao desta pagina:** 2026-06-08 (maioria dos ajustes do Sprint 9 implementados).
+**Ultima atualizacao desta pagina:** 2026-08-10.
+
+## Estado Da Release
+
+- gate automatizado concluido: 357 testes aprovados;
+- `flutter analyze` sem erros, com 29 avisos/informacoes nao bloqueantes;
+- APK release gerado com 71.243.359 bytes;
+- SHA-256: `4BC5D2670BB004A5F1EF08A3773A7B81A6069A51E7F46D4FDA0CB0CDAD9F14B1`;
+- bibliotecas SQLite3MultipleCiphers confirmadas nas tres arquiteturas do APK;
+- QA manual em aparelho fisico ainda pendente;
+- release candidate ainda nao aprovada.
+
+O roteiro versionado de validacao esta em
+[`spec/12-qa-android-fisico.md`](./spec/12-qa-android-fisico.md). A versao somente
+sera classificada como release candidate depois da execucao e aprovacao desse
+roteiro sem bloqueadores criticos.
 
 ## Ja Existe
 
 ### Base e modo local
 
 - base Flutter multi-plataforma;
-- modo local com onboarding, PIN opcional (hash + salt, 4-8 digitos),
-  bloqueio/desbloqueio;
+- modo local com onboarding de perfil sem PIN, biometria ou tela de desbloqueio;
 - banco local criptografado via SQLite3MultipleCiphers (`sqlite3mc`);
 - CRUD de RAT local;
 - captura de assinatura local persistida em BLOB no SQLite;
@@ -21,14 +35,19 @@ O TechReport esta em desenvolvimento ativo.
 - tema configuravel em 3 variantes (cobalt, volt, burgundy) com light/dark
   respeitando o sistema.
 
+- area de administracao local para perfil, RATs, lixeira, tema, backup e
+  informacoes seguras dos dados;
+- lixeira local com restauracao e backup distinguindo RATs ativas/excluidas.
+
 ### Modo empresa
 
 - escolha entre modo local e modo empresa;
 - configuracao de servidor remoto (URL + chave publica);
 - login remoto com Supabase Auth;
 - sessao remota sem tokens puros no dominio;
-- schema Supabase: empresas, tecnicos, rats, app_admins, convites e anexos de
-  assinatura (migrations 0001-0016);
+- schema Supabase: empresas, tecnicos, rats, app_admins, convites, anexos de
+  assinatura e auditoria (migrations 0001-0016 e 0018-0027; 0017 e uma lacuna
+  historica intencional);
 - fila local de sync para RAT;
 - upload/download incremental de RATs;
 - status de sync na lista;
@@ -47,9 +66,14 @@ O TechReport esta em desenvolvimento ativo.
 - admin global com tela de detalhe da empresa para gerir admins da empresa;
 - edicao do nome exibido no perfil (persistida no Supabase, migration 0016);
 - sync remoto de assinatura via Supabase Storage privado (migration 0015);
-- deep link nativo `techreport://convite`, reenvio de confirmacao de e-mail e
-  exception handler global;
+- deep link nativo `techreport://convite`, interface de reenvio de confirmacao
+  com fallback amigavel e exception handler global;
 - tema Metric Slate e widgets compartilhados (cobertura parcial).
+- matriz final de RAT: tecnico opera somente as proprias; gerente e
+  admin_empresa operam RATs da mesma empresa; app_admin nao acessa RAT;
+- lixeira pessoal/empresarial com restauracao estreita;
+- auditoria server-side por campo, com tela de historico e escopo por papel;
+- invariante impedindo dupla identidade ativa app_admin/empresa.
 
 ### RAT estendida
 
@@ -73,7 +97,7 @@ O TechReport esta em desenvolvimento ativo.
 | `flutter test` | Feito em 2026-06-04, 15 testes |
 | Validacao manual completa do modo local | Feito em 2026-06-04 |
 | Revisao ampla de acentuacao PT-BR | Parcial/backlog |
-| Testes automatizados especificos de auth/sync/convites | Pendente |
+| Testes automatizados especificos de auth/sync/convites | Feito |
 
 Detalhes: [spec/10-pendencias-e-perguntas-abertas.md](./spec/10-pendencias-e-perguntas-abertas.md).
 
@@ -84,6 +108,7 @@ Detalhes: [spec/10-pendencias-e-perguntas-abertas.md](./spec/10-pendencias-e-per
 | Sprint 5 | 2026-05-12 | Sync MVP de RAT, RLS tecnico/gerente validada |
 | Sprint 8.5 | 2026-06-04 | Equipe, convites, criacao de conta pelo app e permissoes validadas manualmente |
 | Sprint 8 Final | 2026-06-04 | Modo local validado: PIN, bloqueio/desbloqueio e troca de modo |
+| Fase 20.2 | 2026-08-10 | Permissoes, auditoria, lixeira, restore e modo local sem PIN validados |
 
 Sprints 6 a 8 entregaram funcionalidades listadas acima. O Sprint 9 foi aberto
 para aplicar decisoes e ajustes encontrados no fechamento, antes da sprint de
@@ -92,9 +117,9 @@ QA/build/release candidate.
 ## Proximos Marcos
 
 ```text
-Sprint 9           -> decisoes e ajustes pos Sprint 8
-Sprint 10          -> QA, build Android, release candidate
-Sprint 11          -> hardening residual/reset local, sem migracao de banco legado nesta fase
+Fase 20.2          -> concluida e validada automaticamente
+UAT empresa nova   -> admin_empresa, gerente, tecnico, RAT, auditoria e lixeira
+QA Android         -> aparelho fisico e decisao de release candidate
 ```
 
 Fonte do replanejamento: `docs/decisions/plano-pos-sprint5-prompt2.md` e
@@ -103,17 +128,13 @@ validacao manual de Sprint 8.5.
 ## Ainda Fora Do Escopo Implementado
 
 - upload remoto de anexos genericos (alem da assinatura);
-- visualizacao/restauracao de RATs deletados;
 - area gerencial dedicada com filtros avancados;
-- edicao gerencial de RAT de outro tecnico;
-- auditoria de ultimo modificador;
 - RBAC avancado;
 - provisionamento automatico de instancia Supabase;
 - exibicao/edicao do nome da empresa pelo proprio usuario;
 - migracao de banco local antigo para usuarios reais; sem aplicacao nesta fase,
   pois ainda nao ha usuarios reais com dados a preservar;
-- reset/recuperacao de PIN esquecido;
-- build Android/release candidate.
+- aprovacao da release candidate apos QA manual em aparelho fisico.
 
 ## Sprint 9 - Decisoes E Ajustes
 
@@ -128,8 +149,8 @@ Itens ja implementados no Sprint 9:
 - reenviar confirmacao de e-mail;
 - correcao da configuracao Supabase sumindo apos `flutter run`;
 - loading/desabilitar botao no logout remoto;
-- regra final do PIN local: opcional, minimo 4 e maximo 8 digitos;
-- PIN salvo como hash/verificador com salt;
+- regra historica do PIN local e armazenamento com hash/salt, posteriormente
+  substituidos pelo fluxo sem PIN da fase 20.2;
 - criptografia do banco local inteiro com Drift + `sqlite3` 3.x +
   SQLite3MultipleCiphers (`sqlite3mc`);
 - backup local completo em formato proprio, substituindo export JSON isolado de
@@ -157,9 +178,8 @@ Decisoes fechadas:
 - PDF nao deve ser salvo como arquivo permanente nem entrar no backup;
 - assinatura deve entrar no backup local e no sync remoto.
 
-Ficam para Sprint 11/futuro:
+Ficam para fase futura:
 
-- reset/recuperacao de PIN esquecido;
 - migracao de banco legado fica fora do plano atual, pois o app ainda nao foi
   lancado; reabrir somente se houver usuarios reais com dados a preservar;
 - suporte avancado para limpeza segura de dados locais.
@@ -171,7 +191,7 @@ Ficam para Sprint 11/futuro:
 - gerente ve RATs da propria empresa;
 - upload corrigido com client Supabase autenticado;
 - retry de sync failed sem reeditar RAT;
-- banco local nomeado `tech_report_local.sqlite`;
+- banco local nomeado `tech_report_local.db`;
 - admin global cria/ativa/inativa empresa e convida admin;
 - admin da empresa convida admin/gerente/tecnico;
 - gerente convida e gerencia tecnico;
@@ -179,12 +199,15 @@ Ficam para Sprint 11/futuro:
 - aceite de convite com conta criada pelo app e conta existente funciona;
 - tecnico inativo recebe mensagem amigavel;
 - regressao `_dependents.isEmpty` passou.
-- modo local com PIN opcional passou;
-- criar/trocar PIN em tela propria passou;
-- bloquear/desbloquear e trocar modo com PIN configurado passou.
+- bootstrap local sem PIN/bloqueio passou;
+- banco criptografado falha de forma segura quando a chave esta ausente ou
+  incorreta;
+- permissoes, auditoria, lixeira e restauracao passaram em testes Flutter e
+  pgTAP no Supabase self-hosted.
 
-**Pendencia:** executar a sprint de testes automatizados descrita em
-`documentacao/spec/11-sprint-testes-automatizados.md`.
+**Estado:** a suite automatizada descrita em
+`documentacao/spec/11-sprint-testes-automatizados.md` foi ampliada e passou com
+357 testes. Permanecem o UAT de empresa nova e o QA em aparelho fisico.
 
 ## Documentacao
 
@@ -218,3 +241,22 @@ Decisoes fechadas:
 - gerente ve equipe em modo limitado e pode convidar/ativar/inativar/exigir
   troca de senha apenas de `tecnico`;
 - tecnico nao gerencia equipe.
+
+## Decisoes De Produto - 2026-08-09
+
+- todo membro da empresa pode criar RAT propria;
+- tecnico visualiza somente RATs proprias;
+- gerente/admin_empresa visualizam e corrigem RATs da mesma empresa, mantendo
+  criador e dono;
+- toda alteracao remota deve gerar auditoria server-side por campo;
+- tecnico ve auditoria das proprias RATs; gerente/admin_empresa veem auditoria
+  da empresa;
+- tecnico aplica soft delete, consulta lixeira e restaura somente RAT propria;
+  gerente/admin_empresa podem excluir, consultar e restaurar na empresa;
+- restauracao preserva proprietario, status, assinatura e demais dados e gera
+  auditoria server-side;
+- app_admin nao acessa RAT e nao pode acumular perfil ativo de empresa;
+- modo offline deixa de exigir PIN/biometria, mas mantem SQLite criptografado;
+- migrations aplicadas nao serao reescritas depois do reset de desenvolvimento.
+
+Detalhes: [spec/13-permissoes-auditoria-e-modo-offline.md](./spec/13-permissoes-auditoria-e-modo-offline.md).

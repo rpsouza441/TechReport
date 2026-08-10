@@ -24,9 +24,12 @@
 | RN-02.2 | Finalizacao exige campos obrigatorios definidos no formulario (cliente, descricao, etc.) |
 | RN-02.3 | Assinatura exige RAT finalizada (**Confirmado** em `rat_form_view_model.dart`) |
 | RN-02.4 | Exclusao e soft delete (`deletedAt` local; `deletado` remoto) |
-| RN-02.5 | Tecnico dono pode editar/excluir proprio RAT; gerente tem leitura ampliada |
+| RN-02.5 | Tecnico edita e aplica soft delete somente na propria RAT |
+| RN-02.6 | Gerente/admin_empresa corrigem e aplicam soft delete em RAT da mesma empresa sem trocar o dono |
+| RN-02.7 | Delete fisico pelo aplicativo e proibido |
 
-**Confirmado** — enums `RatStatus`, policies RLS em `0002_company_rats_base.sql`.
+**Confirmado** — enums `RatStatus` e policies/guards nas migrations `0025` e
+`0026`.
 
 ## RN-03 — Responsavel e documento (Sprint 8.2)
 
@@ -46,9 +49,10 @@
 | --- | --- |
 | RN-04.1 | Assinatura e asset local referenciado por `assetRef` |
 | RN-04.2 | Uma assinatura vinculada a uma RAT por vez (modelo atual) |
-| RN-04.3 | Sync remoto de assinatura nao faz parte do MVP atual |
+| RN-04.3 | Assinatura integra o sync remoto e usa armazenamento privado |
 
-**Confirmado** — tabela `Assinaturas`, **Pendente** sync remoto.
+**Confirmado** — tabela `Assinaturas`, fila de sync e bucket privado
+`rat-signatures`.
 
 ## RN-05 — Sincronizacao
 
@@ -67,14 +71,15 @@
 | Papel | Leitura RAT | Escrita RAT | Admin |
 | --- | --- | --- | --- |
 | `tecnico` | Proprios | Proprios | Nao |
-| `gerente` | Empresa | Proprios (nao edita de outro tecnico) | Equipe limitada: gerencia tecnicos |
-| `admin_empresa` | Empresa | Conforme policy | Equipe (parcial) |
-| `app_admin` | Global conforme RLS | Nao operacional de campo | Global |
+| `gerente` | Empresa | Proprias + correcao excepcional na empresa | Equipe limitada: gerencia tecnicos |
+| `admin_empresa` | Empresa | Proprias + correcao excepcional na empresa | Equipe e empresa |
+| `app_admin` | Nenhuma RAT | Nenhuma RAT | Global: empresas e primeiro admin |
 
 **Confirmado** — RLS e `SessaoRemotaPapelEmpresa`.
 
-**Hipotese:** edicao gerencial de RAT de outro tecnico permanece fora do escopo
-ate decisao explicita (mencionado como pendencia pos-Sprint 5).
+**Decisao confirmada em 2026-08-09:** todo membro da empresa pode criar RAT
+propria. Tecnico ve apenas as proprias. Gerente/admin_empresa veem e podem
+corrigir RATs da mesma empresa, preservando criador e dono.
 
 ## RN-07 — Sessao remota
 
@@ -108,3 +113,24 @@ ate decisao explicita (mencionado como pendencia pos-Sprint 5).
 
 **Pendencia:** regra formal de numeracao visivel (`numero` da RAT) nao esta
 documentada além do campo texto livre — ver perguntas abertas.
+
+## RN-10 — Auditoria e lixeira
+
+| Regra | Descricao |
+| --- | --- |
+| RN-10.1 | Toda alteracao remota gera diff imutavel atribuido pelo servidor |
+| RN-10.2 | Tecnico ve auditoria somente das proprias RATs |
+| RN-10.3 | Gerente/admin_empresa veem auditoria e lixeira da mesma empresa |
+| RN-10.4 | Tecnico faz soft delete somente proprio; gerente/admin_empresa fazem na empresa |
+| RN-10.5 | Tecnico ve/restaura somente RAT propria; gerente/admin_empresa veem/restauram na empresa |
+| RN-10.6 | Restauracao preserva proprietario, status, assinatura e demais dados |
+| RN-10.7 | Soft delete e restauracao remotos geram auditoria server-side |
+
+## RN-11 — Identidade e modo offline
+
+| Regra | Descricao |
+| --- | --- |
+| RN-11.1 | app_admin ativo nao pode ser membro ativo de empresa |
+| RN-11.2 | Modo offline e individual e nao replica papeis de empresa |
+| RN-11.3 | Modo offline nao exige PIN ou biometria |
+| RN-11.4 | Remocao do desbloqueio nao remove a criptografia automatica do SQLite |

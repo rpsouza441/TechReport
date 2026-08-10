@@ -14,6 +14,7 @@ Materiais auxiliares de sprint, prompts e decisoes de trabalho ficam em `docs/`
 5. [Execucao local](./execucao-local.md)
 6. [Configuracao Supabase](./configuracao-supabase.md)
 7. [Contribuicao](./contribuicao.md)
+8. [Politica de privacidade (preliminar)](./politica-de-privacidade.md)
 
 ## Estrutura
 
@@ -26,19 +27,21 @@ documentacao/
   configuracao-supabase.md  ← setup remoto
   execucao-local.md         ← como rodar e testar
   contribuicao.md           ← fluxo de trabalho
+  politica-de-privacidade.md ← texto preliminar para revisao de publicacao
   spec/                     ← especificacao Spec-Driven Development
     README.md               ← mapa dos arquivos de spec
-    00-visao-geral.md … 10-pendencias-e-perguntas-abertas.md
+    00-visao-geral.md … 13-permissoes-auditoria-e-modo-offline.md
 ```
 
 ## Sprint atual
 
-**Sprint 9** — decisoes e ajustes pos Sprint 8: hardening local (criptografia,
-PIN com hash), sync de assinatura, backup local, tema configuravel com dark mode
-e polimento de telas.
+**Fase 20.2 concluida** — matriz final de permissoes, auditoria server-side,
+lixeira/restauracao e modo local sem PIN, preservando a criptografia.
 
-Detalhes operacionais da sprint: consultar `docs/sprint9/` localmente (nao
-versionado).
+O proximo gate e o UAT com empresa nova e o QA Android em aparelho fisico.
+
+O historico operacional das sprints antigas permanece em `docs/` localmente
+(nao versionado).
 
 ## Relacao com `docs/`
 

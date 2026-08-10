@@ -23,20 +23,22 @@
 **Pre-condicao:** App instalado; modo local escolhido  
 **Fluxo principal:**
 
-1. Usuario conclui onboarding (nome, email, PIN).
-2. Sistema desbloqueia home local.
+1. Usuario conclui onboarding de perfil local, sem PIN.
+2. Sistema abre a home local; a chave do banco e gerenciada automaticamente.
 3. Usuario cria RATs, assina e compartilha.
 
-**Pos-condicao:** Dados persistidos em SQLite (`tech_report_local.sqlite`).
+**Pos-condicao:** Dados persistidos em SQLite (`tech_report_local.db`).
 
 **Status:** Implementado.
 
-## UC-02 — Bloquear e desbloquear sessao local
+## UC-02 — Acessar sessao local sem bloqueio proprio
 
 **Ator:** Tecnico local  
-**Fluxo:** usuario bloqueia app → informa PIN → retoma home local.
+**Fluxo:** usuario escolhe modo local → app abre o perfil local sem
+PIN, biometria ou tela de desbloqueio; SQLite permanece criptografado.
 
-**Status:** Implementado (`LocalUnlockScreen`).
+**Status:** Implementado; o bootstrap local segue direto para a home e nao
+oferece rota de desbloqueio.
 
 ## UC-03 — Exportar e importar backup local
 
@@ -49,7 +51,7 @@
 
 ## UC-04 — Entrar no modo empresa
 
-**Ator:** Tecnico empresa  
+**Ator:** Usuario de empresa (tecnico, gerente ou admin_empresa)
 **Fluxo principal:**
 
 1. Escolhe modo empresa.
@@ -65,7 +67,7 @@ continuar (confirmado em `CompanyHomeScreen`).
 
 ## UC-05 — Criar e sincronizar RAT empresa
 
-**Ator:** Tecnico empresa  
+**Ator:** Tecnico, gerente ou admin_empresa
 **Fluxo principal:**
 
 1. Usuario cria/edita RAT (persistencia local imediata).
@@ -81,12 +83,16 @@ continuar (confirmado em `CompanyHomeScreen`).
 
 **Status:** Implementado.
 
+**Regra:** cada usuario cria RAT propria. Gerente/admin_empresa podem corrigir
+RAT de terceiro da mesma empresa sem alterar o dono; tecnico nao acessa RAT de
+outro tecnico.
+
 ## UC-06 — Assinar RAT
 
 **Ator:** Tecnico (local ou empresa)  
 **Fluxo:** abrir captura de assinatura → salvar asset local → vincular a RAT.
 
-**Status:** Implementado (local). Sync remoto de assinatura: **Pendente**.
+**Status:** Implementado no modo local e no sync remoto.
 
 ## UC-07 — Compartilhar RAT (texto e PDF)
 
@@ -185,3 +191,29 @@ local.
 
 **Status:** Implementado em nivel operacional inicial; precisa de cobertura
 automatizada e QA/RLS.
+
+## UC-14 — Consultar auditoria e lixeira da empresa
+
+**Atores:** Tecnico, gerente e admin_empresa
+
+**Fluxo de auditoria:**
+
+1. Usuario abre uma RAT permitida pelo seu papel.
+2. Sistema lista ator, instante e diff por campo.
+3. Tecnico ve somente historico de RAT propria.
+4. Gerente/admin_empresa ve historico de qualquer RAT da mesma empresa.
+
+**Fluxo de lixeira:**
+
+1. Tecnico aplica soft delete apenas na propria RAT; gerente/admin_empresa
+   podem aplicar em RAT da mesma empresa.
+2. RAT sai da lista operacional.
+3. Tecnico consulta uma lixeira pessoal contendo somente suas RATs; gerente e
+   admin_empresa consultam a lixeira da empresa.
+4. Tecnico pode restaurar somente RAT propria; gerente/admin_empresa podem
+   restaurar qualquer RAT da mesma empresa.
+5. Sistema remove apenas a marca de exclusao, preserva status e assinatura e
+   registra a restauracao na auditoria.
+
+**Status:** Implementado e validado por testes de permissao, auditoria,
+lixeira, restore e sync, incluindo 67 assercoes pgTAP no Supabase self-hosted.

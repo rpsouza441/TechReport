@@ -3,7 +3,7 @@
 > **Proposito:** registrar lacunas explicitamente — nada escondido entre spec e
 > codigo.
 >
-> **Ultima revisao:** alinhada a Sprint **8.2** (2026-05-30).
+> **Ultima revisao:** fase **20.2** concluida (2026-08-10).
 >
 > **Fontes:** diff codigo vs `docs/sprint8.2/`, `estado-do-projeto.md`,
 > grep no repositorio.
@@ -17,10 +17,10 @@
 | Export/import local JSON | Campo `responsavelDocumento` | **Implementado** |
 | Migration Supabase | `alter table rats add responsavel_documento` | **Implementado** — `0008_responsavel_documento.sql` |
 | Acentuacao PT-BR | Revisao ampla | **Parcial** — algumas telas corrigidas |
-| `flutter analyze` limpo | Criterio de fechamento | **Feito** em 2026-06-01 |
-| `flutter test` | Criterio de fechamento | **Feito** em 2026-06-01, 15 testes |
+| `flutter analyze` sem erros | Criterio de fechamento | **Feito** em 2026-08-10; 29 avisos/infos |
+| `flutter test` | Criterio de fechamento | **Feito** em 2026-08-10, 357 testes |
 
-**Implementado (confirmado):** dominio, Drift v7, drift repo, DTO, enqueue,
+**Implementado (confirmado):** dominio, Drift v9, drift repo, DTO, enqueue,
 leitura remota, formulario, PDF/share, export/import e migration remota.
 
 **Pendente:** QA manual e testes automatizados especificos para regressao do
@@ -43,15 +43,11 @@ via commit oficial.
 
 Confirmado como **nao implementado** (referencia `docs/prompt.md` e codigo):
 
-- sync remoto de assinatura;
 - upload remoto de anexos;
-- visualizacao/restauracao de RATs deletados;
 - area gerencial dedicada com filtros avancados;
-- edicao gerencial de RAT de outro tecnico;
-- auditoria de ultimo modificador;
 - RBAC avancado alem dos papeis atuais;
 - provisionamento automatico de instancia Supabase;
-- build Android / release candidate (Sprint 10);
+- aprovacao da release candidate em aparelho fisico;
 - hardening local residual/reset, sem migracao de banco legado nesta fase (Sprint 11).
 
 ---
@@ -103,8 +99,10 @@ validacao fiscal em sprint posterior?
 
 ## P-07 — Cobertura de testes automatizados
 
-**Pendencia:** testes existem para tema, widgets, login empresa e lista RAT; nao
-ha suite integrada de sync/auth/RLS/convites.
+**Estado:** a suite automatizada cobre sync, auth, administracao, permissoes,
+auditoria, lixeira, restore, backup e criptografia. Em 2026-08-10, 357 testes
+Flutter e 67 assercoes pgTAP passaram. O QA manual em aparelho fisico continua
+pendente.
 
 Foi criada a proposta de sprint de testes em
 [`11-sprint-testes-automatizados.md`](./11-sprint-testes-automatizados.md).
@@ -126,7 +124,8 @@ Codigo envia `responsavel_documento` no payload e a migration `0008` esta
 versionada.
 
 **Risco residual:** ambientes Supabase que nao aplicaram a migration ainda podem
-falhar no sync. A acao operacional e aplicar migrations ate `0014`.
+falhar no sync. A acao operacional e aplicar a sequencia versionada ate `0027`,
+preservando a lacuna historica intencional `0017`.
 
 ---
 
@@ -150,16 +149,11 @@ Use antes de fechar Sprint 8.2:
 - [ ] Teste manual minimo (10 passos em `docs/sprint8.2/passos.md`)
 - [ ] Atualizar `documentacao/estado-do-projeto.md`
 - [ ] Atualizar RF-04.4 nesta spec para **Implementado**
-## P-11 - Bloqueio por PIN antes do modo empresa
+## P-11 - Remocao do bloqueio local legado
 
-**Pendencia:** quando o app esta bloqueado por PIN/local, o usuario pode ficar
-preso antes de acessar o modo empresa caso nao saiba o PIN.
-
-**Risco:** suporte precisa orientar reset de cache local, ruim para usuario
-final.
-
-**Acao futura:** avaliar recuperacao de PIN, troca de modo antes do PIN ou reset
-seguro do cache local.
+**Decisao superveniente (2026-08-09):** remover PIN, biometria e tela de
+desbloqueio do modo local. A criptografia do SQLite continua ativa com chave
+gerenciada automaticamente. A execucao esta consolidada em P-21.
 
 ---
 
@@ -176,67 +170,45 @@ nao estiverem configurados.
 empresa. Para entrar na equipe, precisa aceitar convite valido e gerar linha em
 `public.tecnicos`.
 
-**Pendencia principal:** ampliar cobertura automatizada e validar RLS/RPCs com
-mais cenarios negativos.
+**Estado atual:** a cobertura automatizada foi ampliada e a matriz final de
+RLS passou por cenarios positivos/negativos no Supabase self-hosted. Permanece
+o QA manual de release.
 
 ---
 
-## P-13 - Deep link de convite ainda nao configurado
+## P-13 - Deep link de convite
 
-**Status atual:** o app gera link no formato
-`techreport://convite?codigo=XXXXXXXX`, mas ele ainda funciona apenas como texto
-copiavel/compartilhavel.
-
-**Pendencia:** configurar deep link nativo para abrir o app e preencher o codigo
-automaticamente na tela `Aceitar convite`.
-
-**Acao futura:**
-
-- Android: configurar intent filter no `AndroidManifest.xml`;
-- iOS: configurar URL scheme no `Info.plist`;
-- Flutter: ler link recebido com pacote como `app_links`;
-- Navegacao: abrir `CompanyAcceptInviteScreen` com codigo preenchido.
+**Concluido:** o app gera `techreport://convite?codigo=XXXXXXXX`, possui intent
+filter Android, usa `app_links` e abre `CompanyAcceptInviteScreen` com o codigo.
 
 ---
 ## P-14 - Exception handler global
 
-**Pendencia:** o app ainda nao tem um tratamento global padronizado para
-excecoes nao esperadas de Flutter/Dart/plugins. Quando ocorre uma assertion de
-plugin/framework, a mensagem tecnica pode aparecer na UI.
-
-**Risco:** usuario final ve erro tecnico como `_dependents.isEmpty`,
-`asyncStorage`, stack traces ou mensagens internas de pacote.
-
-**Acao futura:**
-
-- configurar `FlutterError.onError` e `PlatformDispatcher.instance.onError`;
-- registrar/logar erros tecnicos em canal apropriado;
-- exibir mensagem amigavel generica na UI;
-- manter mapeamentos locais para erros esperados de Auth/Supabase.
+**Concluido:** `runZonedGuarded`, `FlutterError.onError` e
+`PlatformDispatcher.instance.onError` encaminham falhas nao tratadas ao log
+global; erros esperados continuam mapeados nas camadas de apresentacao.
 
 ---
 
 ## P-15 - Reenviar confirmacao de e-mail
 
-**Pendencia:** a tela pos-cadastro com convite orienta o usuario a confirmar o
-e-mail, mas ainda nao oferece botao para reenviar confirmacao.
-
-**Acao futura:** avaliar suporte via Supabase Auth/SMTP e adicionar acao
-`Reenviar confirmacao` sem salvar senha localmente.
+**Estado parcial:** a tela e o ViewModel oferecem a acao sem salvar senha, mas
+o repositorio ainda retorna indisponibilidade amigavel porque a versao atual do
+SDK nao expoe o reenvio usado pelo projeto. A integracao real depende de SDK
+compativel ou Edge Function/RPC.
 
 ---
 
 ## P-16 - Perfil empresa editavel e nome da empresa
 
-**Pendencia observada na validacao Sprint 8.5:** `Meu perfil` permite trocar
-senha, mas ainda nao permite editar dados do proprio usuario, como nome.
+**Concluido:** `Meu perfil` permite editar o nome exibido via
+`update_own_display_name`.
 
-**Tambem observado:** o campo empresa mostra apenas `Vinculada`, sem exibir o
-nome da empresa.
+**Pendencia residual:** confirmar em UAT que o nome da empresa e exibido em
+todos os pontos esperados do perfil remoto.
 
-**Acao futura:** permitir edicao segura do proprio nome e exibir nome da empresa
-quando a sessao remota possuir esse dado ou quando o app puder consulta-lo sem
-quebrar RLS.
+**Acao futura:** corrigir apenas os pontos de exibicao que o UAT identificar,
+sem ampliar a RLS.
 
 ---
 
@@ -281,5 +253,52 @@ publica, atrasando testes do modo empresa.
 **Acao futura:** mapear onde `RemoteEndpointRepository` persiste URL/chave,
 testar `flutter run` vs reinstall limpo, e decidir se configuracao de servidor
 deve ter backup/import ou modo dev mais estavel.
+
+---
+
+## P-19 — Alinhar RLS com a matriz final de papeis
+
+**Decisao fechada:** todo membro cria RAT propria; gerente/admin_empresa podem
+corrigir RAT de terceiro da mesma empresa sem alterar o dono; tecnico ve apenas
+as proprias; app_admin nao acessa RAT.
+
+**Concluido em 2026-08-10:** migrations `0025` e `0026`, protecao de campos
+estruturais, guards Flutter e testes positivos/negativos por papel e empresa.
+
+---
+
+## P-20 — Auditoria e lixeira de RAT
+
+**Decisao fechada:** auditoria server-side por campo; tecnico ve historico
+proprio; gerente/admin_empresa veem historico da empresa. Tecnico usa lixeira e
+restaura somente RAT propria; gerente/admin_empresa usam a lixeira e restauram
+qualquer RAT da mesma empresa. Restaurar preserva proprietario, status,
+assinatura e demais dados e gera auditoria.
+
+**Concluido em 2026-08-10:** migration `0027`, trigger server-side, repositorio
+somente leitura, timeline de auditoria, lixeiras por escopo e restore estreito
+local/remoto.
+
+---
+
+## P-21 — Remover PIN e biometria do modo local
+
+**Decisao fechada:** modo local nao tera PIN, biometria nem tela de desbloqueio.
+SQLite continua criptografado com chave automatica.
+
+**Concluido em 2026-08-10:** onboarding/bootstrap nao exigem PIN ou biometria e
+a administracao local oferece perfil, RATs, lixeira, tema, backup/restauracao e
+informacoes dos dados. Classes legadas de PIN podem permanecer internamente,
+mas nao fazem parte do fluxo navegavel.
+
+---
+
+## P-22 — Impedir dupla identidade
+
+**Problema confirmado em desenvolvimento:** existe historico de usuario ativo
+simultaneamente em `app_admins` e `tecnicos`.
+
+**Concluido em 2026-08-10:** migration `0025` impede dupla identidade ativa em
+ambos os sentidos e os testes de banco validam convites/aceites conflitantes.
 
 ---

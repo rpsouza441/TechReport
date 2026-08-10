@@ -24,12 +24,13 @@ Legenda de status: **Implementado** | **Parcial** | **Pendente**
 | ID | Requisito | Status |
 | --- | --- | --- |
 | RF-02.1 | Onboarding inicial do tecnico local | Implementado |
-| RF-02.2 | PIN local com bloqueio/desbloqueio | Implementado |
+| RF-02.2 | Remover PIN, biometria e bloqueio do modo local | Implementado |
 | RF-02.3 | CRUD de RAT local | Implementado |
 | RF-02.4 | Assinatura em RAT local | Implementado |
 | RF-02.5 | Compartilhamento textual e PDF da RAT | Implementado |
 | RF-02.6 | Exportacao e importacao de backup local (JSON) | Implementado |
 | RF-02.7 | Troca para modo empresa sem apagar dados locais | Implementado |
+| RF-02.8 | Area local para perfil, RATs, lixeira, tema, backup e dados | Implementado |
 
 **Confirmado:** modulos `local_auth`, `rat`, `signature`.
 
@@ -62,6 +63,8 @@ vinculada.
 | RF-04.5 | Assinatura vinculada a RAT | Implementado |
 | RF-04.6 | PDF e share com dados da RAT | Implementado |
 | RF-04.7 | Pesquisa/filtros por texto e status na lista | Implementado |
+| RF-04.8 | Auditoria imutavel por campo em alteracoes remotas | Implementado |
+| RF-04.9 | Lixeira pessoal do tecnico e lixeira da empresa para gerente/admin, com restauracao | Implementado |
 
 **RF-04.4 — detalhe Sprint 8.2:**
 
@@ -80,7 +83,7 @@ vinculada.
 | RF-05.5 | Retry manual de itens com falha | Implementado |
 | RF-05.6 | Central de sincronizacao observavel | Implementado |
 | RF-05.7 | Logout com aviso quando ha pendencias | Implementado |
-| RF-05.8 | Sync remoto de assinatura | Pendente |
+| RF-05.8 | Sync remoto de assinatura | Implementado |
 
 **Confirmado:** `sync/`, `SyncCenterScreen`, dialogo em `company_shell.dart`.
 
@@ -96,14 +99,24 @@ vinculada.
 | RF-06.6 | Area equipe (`admin_empresa`) — listagens e convites | Implementado |
 | RF-06.7 | Fluxo de convite/cadastro de tecnico por app | Implementado |
 | RF-06.8 | Gerente gerencia tecnicos em equipe limitada | Implementado |
+| RF-06.9 | Todo membro da empresa pode criar RAT propria | Implementado |
+| RF-06.10 | Tecnico visualiza somente RATs proprias | Implementado |
+| RF-06.11 | Gerente/admin_empresa visualizam e corrigem RATs da mesma empresa sem trocar o dono | Implementado |
+| RF-06.12 | Tecnico ve auditoria propria; gerente/admin ve auditoria da empresa | Implementado |
+| RF-06.13 | Tecnico exclui/restaura RAT propria; gerente/admin excluem/restauram na empresa | Implementado |
+| RF-06.14 | app_admin nao acessa RAT e nao acumula perfil de empresa | Implementado |
 
 **Confirmado:** migration `0006_admin_roles_base.sql`, telas em
 `company_admin/`.
 
 **Confirmado:** Sprint 8.5 possui migrations `0009` a `0014`, RPCs, telas e
 use cases para equipe/convites. Foi validado que conta criada em `auth.users`
-sem convite pendente nao vira membro automaticamente. O fechamento exige QA
-manual/RLS e testes.
+sem convite pendente nao vira membro automaticamente. A matriz final foi
+validada pelas migrations `0025`-`0027`, por 67 testes pgTAP no Supabase
+self-hosted e pela suite Flutter.
+
+As regras de papeis consolidadas em 2026-08-09 estao detalhadas em
+[13-permissoes-auditoria-e-modo-offline.md](./13-permissoes-auditoria-e-modo-offline.md).
 
 ## RF-07 — Interface e idioma
 

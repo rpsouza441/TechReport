@@ -30,6 +30,7 @@ versionados).
 | [10-pendencias-e-perguntas-abertas.md](./10-pendencias-e-perguntas-abertas.md) | Lacunas, duvidas e proximos passos |
 | [11-sprint-testes-automatizados.md](./11-sprint-testes-automatizados.md) | Sprint proposta para cobrir funcionalidades ja implementadas com testes |
 | [12-qa-android-fisico.md](./12-qa-android-fisico.md) | Achados de QA em Android fisico convertidos em requisitos e criterios de aceite |
+| [13-permissoes-auditoria-e-modo-offline.md](./13-permissoes-auditoria-e-modo-offline.md) | Decisoes vigentes de papeis, auditoria, lixeira e modo offline sem PIN |
 
 ## Relacao com outras pastas
 

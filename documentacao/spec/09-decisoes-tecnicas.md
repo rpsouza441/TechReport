@@ -155,6 +155,61 @@ sem exigencia para assinatura.
 Transferidas para [10-pendencias-e-perguntas-abertas.md](./10-pendencias-e-perguntas-abertas.md):
 
 - numeracao automatica de RAT;
-- sync remoto de assinatura;
-- escopo final de admin_empresa / convites (Sprint 8.5);
 - hardening local residual/reset, sem migracao de banco legado nesta fase (Sprint 11).
+
+---
+
+## DEC-13 — Matriz final de papeis da RAT
+
+**Decisao:** todo membro de empresa pode criar RAT propria. Tecnico ve apenas
+as proprias; gerente/admin_empresa veem e podem corrigir RATs da mesma empresa,
+sem alterar criador ou dono. app_admin nao acessa RAT.
+
+**Status:** Implementado nas migrations `0025` e `0026` e nos guards Flutter;
+validado por testes de papel/empresa.
+
+---
+
+## DEC-14 — Auditoria server-side por campo
+
+**Decisao:** toda alteracao remota de RAT gera historico imutavel atribuido
+pelo servidor, com ator, instante e diff old/new. Tecnico ve historico proprio;
+gerente/admin_empresa veem historico da empresa.
+
+**Status:** Implementado pela migration `0027`, repositorio somente leitura e
+tela de historico.
+
+---
+
+## DEC-15 — Soft delete e lixeira empresarial
+
+**Decisao:** tecnico aplica soft delete proprio; gerente/admin_empresa podem
+aplicar na mesma empresa. Tecnico consulta/restaura somente as proprias RATs;
+gerente/admin_empresa consultam/restauram as RATs deletadas da empresa. A
+restauracao preserva proprietario, status, assinatura e demais dados. Soft
+delete e restauracao geram auditoria; delete fisico permanece proibido.
+
+**Status:** Implementado no dominio, fila de sync e telas de lixeira
+pessoal/empresarial.
+
+---
+
+## DEC-16 — Modo offline sem PIN ou biometria
+
+**Decisao:** remover PIN, biometria e tela de desbloqueio do modo local,
+preservando SQLite criptografado com chave automatica e criando area de
+administracao pessoal.
+
+**Status:** Implementado no onboarding/bootstrap e na administracao local; a
+criptografia automatica permanece ativa.
+
+---
+
+## DEC-17 — Evolucao segura de migrations
+
+**Decisao:** depois do reset de desenvolvimento, migrations aplicadas nao sao
+reescritas. Mudancas usam novas versoes sequenciais, testes de RLS, historico
+de aplicacao e backup antes de operacoes destrutivas.
+
+**Status:** Confirmado e aplicado no reset controlado de desenvolvimento, com
+backup, replay assinado das migrations e postflight.

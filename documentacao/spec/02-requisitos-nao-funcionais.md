@@ -13,8 +13,10 @@
 | RNF-01.2 | Nunca embutir `SERVICE_ROLE_KEY` ou senha de banco | Confirmado — ausente no codigo |
 | RNF-01.3 | Tokens de acesso/refresh apenas em secure storage | Confirmado — `FlutterSecureTokenStore` |
 | RNF-01.4 | Dominio nao expoe tokens puros | Confirmado — `SessaoRemota` usa refs |
-| RNF-01.5 | Isolamento remoto via RLS em todas as tabelas privadas | Confirmado — migrations 0001–0007 |
+| RNF-01.5 | Isolamento remoto via RLS em todas as tabelas privadas | Confirmado — migrations 0001–0027 aplicaveis |
 | RNF-01.6 | Operacoes admin pelo app usam usuario autenticado + RLS | Confirmado — `0006_admin_roles_base.sql` |
+| RNF-01.7 | app_admin ativo nao pode acumular perfil ativo de empresa | Confirmado — migration `0025` |
+| RNF-01.8 | Ator e horario da auditoria de RAT sao atribuidos pelo servidor | Confirmado — migration `0027` |
 
 ## RNF-02 — Disponibilidade offline (local-first)
 
@@ -30,9 +32,12 @@
 | ID | Requisito | Evidencia |
 | --- | --- | --- |
 | RNF-03.1 | Soft delete de RAT local e flag remota `deletado` | Confirmado |
-| RNF-03.2 | Migrations Drift versionadas (`schemaVersion`) | Confirmado — v7 atual |
+| RNF-03.2 | Migrations Drift versionadas (`schemaVersion`) | Confirmado — v9 atual |
 | RNF-03.3 | Migrations Supabase versionadas fora do app | Confirmado — `supabase/migrations/` |
 | RNF-03.4 | Checkpoint de download por escopo de visibilidade | Implementado — `sync_checkpoint` |
+| RNF-03.5 | Alteracoes remotas de RAT geram diff imutavel em `rat_audit_log` | Confirmado — trigger server-side `0027` |
+| RNF-03.6 | Migration aplicada nao e reescrita; mudanca nova usa versao sequencial | Decisao confirmada |
+| RNF-03.7 | Mudanca destrutiva exige backup e validacao previa | Decisao confirmada |
 
 ## RNF-04 — Manutenibilidade
 
@@ -64,11 +69,12 @@
 | ID | Requisito | Evidencia |
 | --- | --- | --- |
 | RNF-07.1 | Projeto Flutter multi-plataforma | Confirmado — pastas android, ios, web, etc. |
-| RNF-07.2 | Release candidate Android | Pendente — Sprint 10, com validacao em device fisico no Sprint 12 |
+| RNF-07.2 | Release candidate Android | Parcial — APK release gerado; aprovacao depende de QA em aparelho fisico |
 
 ## RNF-08 — Privacidade local
 
 | ID | Requisito | Status |
 | --- | --- | --- |
-| RNF-08.1 | SQLite local sem criptografia nativa no MVP | Confirmado |
-| RNF-08.2 | Criptografia de banco local | Parcialmente antecipada no Sprint 9; hardening futuro em `docs/sprint11/` |
+| RNF-08.1 | SQLite local permanece criptografado | Confirmado |
+| RNF-08.2 | Chave de criptografia e gerenciada automaticamente e nao exposta na UI | Confirmado |
+| RNF-08.3 | Modo local nao exige PIN, biometria ou tela de desbloqueio | Confirmado |
