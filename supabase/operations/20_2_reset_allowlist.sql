@@ -20,10 +20,13 @@
 
 select
   current_database() = 'postgres'
-  and current_user = 'postgres'
+  and current_user = 'supabase_admin'
+  and session_user = 'supabase_admin'
+  and (select rolsuper from pg_roles where rolname = current_user)
   and system_identifier::text = :'expected_system_identifier' as identity_ok,
   current_database() as actual_database,
   current_user as actual_user,
+  session_user as actual_session_user,
   system_identifier::text as actual_system_identifier
 from pg_control_system()
 \gset
@@ -34,6 +37,7 @@ from pg_control_system()
   \echo 'BLOCK: database name, role, or system identifier mismatch'
   \echo 'actual_database=' :actual_database
   \echo 'actual_user=' :actual_user
+  \echo 'actual_session_user=' :actual_session_user
   \echo 'actual_system_identifier=' :actual_system_identifier
   \quit 65
 \endif
@@ -202,30 +206,22 @@ begin
 end
 $safety$;
 
--- The self-hosted Supabase public application surface is intentionally owned
--- by supabase_admin, while the SSH/operator connection enters as postgres.
--- Prove the exact ownership boundary and SET ROLE capability before mutation.
+-- The destructive psql session must connect directly as the exact public owner
+-- and a verified superuser. No SET ROLE path is accepted: the wrapper and this
+-- transaction independently prove the session principal before mutation.
 do $owner_gate$
 declare
   v_relation_owners text[];
   v_function_owners text[];
-  v_session_superuser boolean;
+  v_storage_relation_owners text[];
 begin
-  if not exists (select 1 from pg_roles where rolname = 'supabase_admin') then
-    raise exception 'BLOCK: required owner role supabase_admin is absent';
-  end if;
-
-  select r.rolsuper
-  into v_session_superuser
-  from pg_roles r
-  where r.rolname = current_user;
-
-  if not (
-    coalesce(v_session_superuser, false)
-    or pg_has_role(current_user, 'supabase_admin', 'MEMBER')
-  ) then
-    raise exception 'BLOCK: role % is neither superuser nor member of supabase_admin',
-      current_user;
+  if current_user <> 'supabase_admin'
+     or session_user <> 'supabase_admin'
+     or not coalesce((
+       select r.rolsuper from pg_roles r where r.rolname = current_user
+     ), false) then
+    raise exception 'BLOCK: reset requires direct supabase_admin superuser session; current_user=% session_user=%',
+      current_user, session_user;
   end if;
 
   select coalesce(array_agg(distinct pg_get_userbyid(c.relowner)::text order by pg_get_userbyid(c.relowner)::text), array[]::text[])
@@ -250,37 +246,22 @@ begin
     raise exception 'BLOCK: public function owners differ from supabase_admin: %',
       v_function_owners;
   end if;
+
+  select coalesce(array_agg(distinct pg_get_userbyid(c.relowner)::text order by pg_get_userbyid(c.relowner)::text), array[]::text[])
+  into v_storage_relation_owners
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'storage'
+    and c.relname in ('buckets', 'objects');
+
+  if v_storage_relation_owners <> array['supabase_storage_admin']::text[] then
+    raise exception 'BLOCK: Storage relation owners differ from supabase_storage_admin: %',
+      v_storage_relation_owners;
+  end if;
 end
 $owner_gate$;
 
-\echo 'TECHREPORT_RESET_OWNER_GATE=PASS relation_owner=supabase_admin function_owner=supabase_admin capability=superuser_or_member'
-
--- Definitive, non-destructive capability probe. PostgreSQL superusers may SET
--- ROLE without explicit membership, so pg_has_role(..., MEMBER) alone is too
--- narrow. The actual transition and restoration must both succeed before any
--- policy/object mutation is attempted.
-set local role supabase_admin;
-
-do $owner_role_probe$
-begin
-  if current_user <> 'supabase_admin' or session_user <> 'postgres' then
-    raise exception 'BLOCK: SET LOCAL ROLE probe produced current_user=% session_user=%',
-      current_user, session_user;
-  end if;
-end
-$owner_role_probe$;
-
-reset role;
-
-do $owner_role_probe_restored$
-begin
-  if current_user <> 'postgres' or session_user <> 'postgres' then
-    raise exception 'BLOCK: owner-role probe failed to restore postgres';
-  end if;
-end
-$owner_role_probe_restored$;
-
-\echo 'TECHREPORT_RESET_OWNER_ROLE_PROBE=PASS set_local_role=supabase_admin restored=postgres'
+\echo 'TECHREPORT_RESET_OWNER_GATE=PASS relation_owner=supabase_admin function_owner=supabase_admin storage_relation_owner=supabase_storage_admin current_user=supabase_admin session_user=supabase_admin rolsuper=true'
 
 -- Exact destructive pre-state from the definitive read-only inventory. This
 -- catches any write or catalog drift that happened after the backup/Storage
@@ -388,20 +369,20 @@ drop policy if exists "rat_signatures_insert_membros" on storage.objects;
 drop policy if exists "rat_signatures_update_membros" on storage.objects;
 drop policy if exists "rat_signatures_delete_membros" on storage.objects;
 
--- Narrow privilege transition: public relations/functions are owned by this
--- verified role. SET LOCAL keeps the change transaction-scoped even on error.
-set local role supabase_admin;
-
 do $active_owner_role$
 begin
-  if current_user <> 'supabase_admin' or session_user <> 'postgres' then
-    raise exception 'BLOCK: unexpected role transition current_user=% session_user=%',
+  if current_user <> 'supabase_admin'
+     or session_user <> 'supabase_admin'
+     or not coalesce((
+       select r.rolsuper from pg_roles r where r.rolname = current_user
+     ), false) then
+    raise exception 'BLOCK: direct owner session changed before public reset current_user=% session_user=%',
       current_user, session_user;
   end if;
 end
 $active_owner_role$;
 
-\echo 'TECHREPORT_RESET_ACTIVE_ROLE=PASS current_user=supabase_admin session_user=postgres'
+\echo 'TECHREPORT_RESET_ACTIVE_ROLE=PASS current_user=supabase_admin session_user=supabase_admin rolsuper=true'
 
 -- Remove every exact public policy from the approved inventory so function
 -- dependencies can be dropped explicitly without CASCADE.
@@ -496,19 +477,21 @@ where version in (
   '0026', '0027'
 );
 
--- Return to the connection role for platform-preservation checks. The public
--- destructive work above remains inside the same all-or-nothing transaction.
-reset role;
-
-do $restored_session_role$
+-- Re-prove that the direct session principal remained unchanged throughout the
+-- destructive section before running platform-preservation checks.
+do $unchanged_session_role$
 begin
-  if current_user <> 'postgres' or session_user <> 'postgres' then
-    raise exception 'BLOCK: failed to restore postgres role after public reset';
+  if current_user <> 'supabase_admin'
+     or session_user <> 'supabase_admin'
+     or not coalesce((
+       select r.rolsuper from pg_roles r where r.rolname = current_user
+     ), false) then
+    raise exception 'BLOCK: direct reset principal changed during transaction';
   end if;
 end
-$restored_session_role$;
+$unchanged_session_role$;
 
-\echo 'TECHREPORT_RESET_SESSION_ROLE_RESTORED=PASS current_user=postgres'
+\echo 'TECHREPORT_RESET_SESSION_ROLE_UNCHANGED=PASS current_user=supabase_admin session_user=supabase_admin rolsuper=true'
 
 do $post_reset$
 begin
