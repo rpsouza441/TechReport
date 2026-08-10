@@ -202,6 +202,49 @@ begin
 end
 $safety$;
 
+-- The self-hosted Supabase public application surface is intentionally owned
+-- by supabase_admin, while the SSH/operator connection enters as postgres.
+-- Prove the exact ownership boundary and SET ROLE capability before mutation.
+do $owner_gate$
+declare
+  v_relation_owners text[];
+  v_function_owners text[];
+begin
+  if not exists (select 1 from pg_roles where rolname = 'supabase_admin') then
+    raise exception 'BLOCK: required owner role supabase_admin is absent';
+  end if;
+
+  if not pg_has_role(current_user, 'supabase_admin', 'MEMBER') then
+    raise exception 'BLOCK: role % cannot SET ROLE supabase_admin', current_user;
+  end if;
+
+  select coalesce(array_agg(distinct pg_get_userbyid(c.relowner)::text order by pg_get_userbyid(c.relowner)::text), array[]::text[])
+  into v_relation_owners
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relkind in ('r', 'p', 'v', 'm', 'S', 'f');
+
+  if v_relation_owners <> array['supabase_admin']::text[] then
+    raise exception 'BLOCK: public relation owners differ from supabase_admin: %',
+      v_relation_owners;
+  end if;
+
+  select coalesce(array_agg(distinct pg_get_userbyid(p.proowner)::text order by pg_get_userbyid(p.proowner)::text), array[]::text[])
+  into v_function_owners
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public';
+
+  if v_function_owners <> array['supabase_admin']::text[] then
+    raise exception 'BLOCK: public function owners differ from supabase_admin: %',
+      v_function_owners;
+  end if;
+end
+$owner_gate$;
+
+\echo 'TECHREPORT_RESET_OWNER_GATE=PASS relation_owner=supabase_admin function_owner=supabase_admin set_role=PASS'
+
 -- Exact destructive pre-state from the definitive read-only inventory. This
 -- catches any write or catalog drift that happened after the backup/Storage
 -- gates and before the reset transaction acquired its locks.
@@ -308,6 +351,21 @@ drop policy if exists "rat_signatures_insert_membros" on storage.objects;
 drop policy if exists "rat_signatures_update_membros" on storage.objects;
 drop policy if exists "rat_signatures_delete_membros" on storage.objects;
 
+-- Narrow privilege transition: public relations/functions are owned by this
+-- verified role. SET LOCAL keeps the change transaction-scoped even on error.
+set local role supabase_admin;
+
+do $active_owner_role$
+begin
+  if current_user <> 'supabase_admin' or session_user <> 'postgres' then
+    raise exception 'BLOCK: unexpected role transition current_user=% session_user=%',
+      current_user, session_user;
+  end if;
+end
+$active_owner_role$;
+
+\echo 'TECHREPORT_RESET_ACTIVE_ROLE=PASS current_user=supabase_admin session_user=postgres'
+
 -- Remove every exact public policy from the approved inventory so function
 -- dependencies can be dropped explicitly without CASCADE.
 drop policy if exists app_admins_select_self on public.app_admins;
@@ -400,6 +458,20 @@ where version in (
   '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025',
   '0026', '0027'
 );
+
+-- Return to the connection role for platform-preservation checks. The public
+-- destructive work above remains inside the same all-or-nothing transaction.
+reset role;
+
+do $restored_session_role$
+begin
+  if current_user <> 'postgres' or session_user <> 'postgres' then
+    raise exception 'BLOCK: failed to restore postgres role after public reset';
+  end if;
+end
+$restored_session_role$;
+
+\echo 'TECHREPORT_RESET_SESSION_ROLE_RESTORED=PASS current_user=postgres'
 
 do $post_reset$
 begin
