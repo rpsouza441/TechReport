@@ -351,6 +351,21 @@ class DriftRatRepository implements RatRepository {
         .insertOnConflictUpdate(_toCompanion(rat));
   }
 
+  @override
+  Future<void> restore({
+    required String id,
+    required RatSyncStatus syncStatus,
+  }) async {
+    await (_database.update(
+      _database.rats,
+    )..where((tbl) => tbl.id.equals(id))).write(
+      database.RatsCompanion(
+        deletedAt: const Value(null),
+        syncStatus: Value(syncStatus.name),
+      ),
+    );
+  }
+
   domain.Rat _toEntity(database.Rat row) {
     return domain.Rat(
       id: row.id,

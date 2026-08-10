@@ -72,4 +72,6 @@ abstract class RatRepository {
   Future<void> save(Rat rat);
 
   Future<void> update(Rat rat);
+
+  Future<void> restore({required String id, required RatSyncStatus syncStatus});
 }
