@@ -9,6 +9,17 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+function Get-Sha256Hex {
+  param([Parameter(Mandatory = $true)][byte[]]$Bytes)
+
+  $sha256 = [Security.Cryptography.SHA256]::Create()
+  try {
+    return (($sha256.ComputeHash($Bytes) | ForEach-Object { $_.ToString('x2') }) -join '')
+  } finally {
+    $sha256.Dispose()
+  }
+}
+
 if ([string]::IsNullOrWhiteSpace($MigrationDirectory)) {
   $MigrationDirectory = Join-Path $PSScriptRoot '..\migrations'
 }
@@ -80,14 +91,28 @@ if (Test-Path -LiteralPath $outputRoot) {
 }
 
 $utf8NoBom = [Text.UTF8Encoding]::new($false)
+$utf8Strict = [Text.UTF8Encoding]::new($false, $true)
 $stagedManifest = [Collections.Generic.List[object]]::new()
+$approvedVersions = @($manifest | ForEach-Object { $_.Substring(0, 4) })
 
-foreach ($fileName in $manifest) {
+for ($manifestIndex = 0; $manifestIndex -lt $manifest.Count; $manifestIndex++) {
+  $fileName = $manifest[$manifestIndex]
   $sourcePath = Join-Path $migrationRoot $fileName
-  $sourceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $sourcePath).Hash.ToLowerInvariant()
-  $raw = [IO.File]::ReadAllText($sourcePath, [Text.Encoding]::UTF8)
+  $sourceBytes = [IO.File]::ReadAllBytes($sourcePath)
+  if ($sourceBytes.Length -ge 3 -and
+      $sourceBytes[0] -eq 0xEF -and
+      $sourceBytes[1] -eq 0xBB -and
+      $sourceBytes[2] -eq 0xBF) {
+    throw "UTF-8 BOM is not allowed in authoritative migration $fileName"
+  }
+  $raw = $utf8Strict.GetString($sourceBytes)
+  if ($raw.IndexOf([char]0) -ge 0) {
+    throw "NUL byte is not allowed in authoritative migration $fileName"
+  }
+  $canonicalSource = $raw -replace "`r`n?", "`n"
+  $sourceHash = Get-Sha256Hex -Bytes $utf8NoBom.GetBytes($canonicalSource)
   $lines = [Collections.Generic.List[string]]::new()
-  foreach ($line in ($raw -split "`r?`n", 0, 'RegexMatch')) {
+  foreach ($line in ($canonicalSource -split "`n", 0, 'SimpleMatch')) {
     $lines.Add($line)
   }
 
@@ -127,15 +152,68 @@ foreach ($fileName in $manifest) {
   $name = [IO.Path]::GetFileNameWithoutExtension($fileName).Substring(5)
   $body = $lines -join "`n"
   $escapedName = $name.Replace("'", "''")
+  $priorVersions = @($approvedVersions | Select-Object -First $manifestIndex)
+  if ($priorVersions.Count -eq 0) {
+    $expectedPriorSql = 'array[]::text[]'
+  } else {
+    $expectedPriorSql = "array['$(($priorVersions -join "','"))']::text[]"
+  }
   $payload = @"
 \set ON_ERROR_STOP on
 \pset pager off
+
+\if :{?expected_system_identifier}
+\else
+  \echo 'BLOCK: expected_system_identifier is required'
+  \quit 64
+\endif
+
+select
+  current_database() = 'postgres'
+  and current_user = 'supabase_admin'
+  and session_user = 'supabase_admin'
+  and (select rolsuper from pg_roles where rolname = current_user)
+  and system_identifier::text = :'expected_system_identifier' as replay_identity_ok
+from pg_control_system()
+\gset
+
+\if :replay_identity_ok
+\else
+  \echo 'BLOCK: migration replay database, principal, or system identifier mismatch'
+  \quit 65
+\endif
+
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '120s';
 
+do `$migration_guard`$
+declare
+  v_history_versions text[];
+begin
+  if to_regclass('supabase_migrations.schema_migrations') is null then
+    raise exception 'BLOCK: migration history table is absent';
+  end if;
+
+  if exists (
+    select 1 from supabase_migrations.schema_migrations where version = '$version'
+  ) then
+    raise exception 'BLOCK: migration $version is already recorded';
+  end if;
+
+  select coalesce(array_agg(version order by version), array[]::text[])
+  into v_history_versions
+  from supabase_migrations.schema_migrations;
+
+  if v_history_versions <> $expectedPriorSql then
+    raise exception 'BLOCK: history prefix before $version is unexpected: %',
+      v_history_versions;
+  end if;
+end
+`$migration_guard`$;
+
 -- Authoritative source: $fileName
--- Source SHA-256: $sourceHash
+-- Canonical LF source SHA-256: $sourceHash
 $body
 
 insert into supabase_migrations.schema_migrations(version, statements, name)
@@ -146,26 +224,45 @@ values (
 );
 
 commit;
-\echo 'MIGRATION_REPLAYED=$version'
+\echo 'MIGRATION_REPLAYED=$version source_sha256=$sourceHash'
 "@
+
+  $payload = $payload -replace "`r`n?", "`n"
+  if (-not $payload.EndsWith("`n", [StringComparison]::Ordinal)) {
+    $payload += "`n"
+  }
+  if ($payload.Contains("`r")) {
+    throw "CR byte remains in staged migration $fileName"
+  }
 
   $stagedPath = Join-Path $outputRoot $fileName
   [IO.File]::WriteAllText($stagedPath, $payload, $utf8NoBom)
-  $stagedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $stagedPath).Hash.ToLowerInvariant()
+  $stagedBytes = [IO.File]::ReadAllBytes($stagedPath)
+  $stagedHash = Get-Sha256Hex -Bytes $stagedBytes
 
   $stagedManifest.Add([pscustomobject]@{
     version = $version
     source = $fileName
     source_sha256 = $sourceHash
     staged_sha256 = $stagedHash
+    staged_bytes = $stagedBytes.Length
   })
 }
 
 $manifestPath = Join-Path $outputRoot 'replay-manifest.json'
-$manifestJson = $stagedManifest | ConvertTo-Json -Depth 4
+$manifestDocument = [ordered]@{
+  schema_version = 1
+  migration_count = $manifest.Count
+  approved_sequence = $approvedVersions
+  historical_absent = '0017'
+  migrations = $stagedManifest
+}
+$manifestJson = ($manifestDocument | ConvertTo-Json -Depth 6) -replace "`r`n?", "`n"
 [IO.File]::WriteAllText($manifestPath, $manifestJson + "`n", $utf8NoBom)
+$manifestHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $manifestPath).Hash.ToLowerInvariant()
 
 Write-Output "STAGED_MIGRATIONS=$($manifest.Count)"
 Write-Output 'APPROVED_SEQUENCE=0001-0016,0018-0027'
 Write-Output 'HISTORICAL_0017=ABSENT'
 Write-Output "MANIFEST=$manifestPath"
+Write-Output "MANIFEST_SHA256=$manifestHash"
