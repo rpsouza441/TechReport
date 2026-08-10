@@ -209,13 +209,23 @@ do $owner_gate$
 declare
   v_relation_owners text[];
   v_function_owners text[];
+  v_session_superuser boolean;
 begin
   if not exists (select 1 from pg_roles where rolname = 'supabase_admin') then
     raise exception 'BLOCK: required owner role supabase_admin is absent';
   end if;
 
-  if not pg_has_role(current_user, 'supabase_admin', 'MEMBER') then
-    raise exception 'BLOCK: role % cannot SET ROLE supabase_admin', current_user;
+  select r.rolsuper
+  into v_session_superuser
+  from pg_roles r
+  where r.rolname = current_user;
+
+  if not (
+    coalesce(v_session_superuser, false)
+    or pg_has_role(current_user, 'supabase_admin', 'MEMBER')
+  ) then
+    raise exception 'BLOCK: role % is neither superuser nor member of supabase_admin',
+      current_user;
   end if;
 
   select coalesce(array_agg(distinct pg_get_userbyid(c.relowner)::text order by pg_get_userbyid(c.relowner)::text), array[]::text[])
@@ -243,7 +253,34 @@ begin
 end
 $owner_gate$;
 
-\echo 'TECHREPORT_RESET_OWNER_GATE=PASS relation_owner=supabase_admin function_owner=supabase_admin set_role=PASS'
+\echo 'TECHREPORT_RESET_OWNER_GATE=PASS relation_owner=supabase_admin function_owner=supabase_admin capability=superuser_or_member'
+
+-- Definitive, non-destructive capability probe. PostgreSQL superusers may SET
+-- ROLE without explicit membership, so pg_has_role(..., MEMBER) alone is too
+-- narrow. The actual transition and restoration must both succeed before any
+-- policy/object mutation is attempted.
+set local role supabase_admin;
+
+do $owner_role_probe$
+begin
+  if current_user <> 'supabase_admin' or session_user <> 'postgres' then
+    raise exception 'BLOCK: SET LOCAL ROLE probe produced current_user=% session_user=%',
+      current_user, session_user;
+  end if;
+end
+$owner_role_probe$;
+
+reset role;
+
+do $owner_role_probe_restored$
+begin
+  if current_user <> 'postgres' or session_user <> 'postgres' then
+    raise exception 'BLOCK: owner-role probe failed to restore postgres';
+  end if;
+end
+$owner_role_probe_restored$;
+
+\echo 'TECHREPORT_RESET_OWNER_ROLE_PROBE=PASS set_local_role=supabase_admin restored=postgres'
 
 -- Exact destructive pre-state from the definitive read-only inventory. This
 -- catches any write or catalog drift that happened after the backup/Storage

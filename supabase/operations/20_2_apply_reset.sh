@@ -123,7 +123,7 @@ prestate=$(psql_query "select concat_ws('|',
   (to_regclass('supabase_migrations.schema_migrations') is null)::int,
   (select string_agg(distinct pg_get_userbyid(c.relowner)::text,',' order by pg_get_userbyid(c.relowner)::text) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','p','v','m','S','f')),
   (select string_agg(distinct pg_get_userbyid(p.proowner)::text,',' order by pg_get_userbyid(p.proowner)::text) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'),
-  pg_has_role(current_user,'supabase_admin','MEMBER')::int
+  ((select rolsuper from pg_roles where rolname=current_user) or pg_has_role(current_user,'supabase_admin','MEMBER'))::int
 )")
 expected_prestate='8|13|1|15|70|0|42|14|1|0|0|0|0|7|13|19|4|1|1|supabase_admin|supabase_admin|1'
 [ "$prestate" = "$expected_prestate" ] || {
@@ -135,7 +135,7 @@ platform_schemas_before=$(psql_query "select string_agg(nspname,',' order by nsp
 extensions_before=$(psql_query "select string_agg(e.extname || ':' || n.nspname,',' order by e.extname) from pg_extension e join pg_namespace n on n.oid=e.extnamespace")
 
 echo "TECHREPORT_RESET_HOST_PRECHECK=PASS backup_sha256=$actual_backup_sha sql_sha256=$actual_sql_sha toc_entries=$toc_entries"
-echo 'TECHREPORT_RESET_LIVE_PRESTATE=PASS empresas=8 tecnicos=13 app_admins=1 convites=15 rats=70 audit=0 signature_metadata=42 auth_users=14 dual_identity=1 storage_buckets=0 storage_objects=0 public_relations=7 public_functions=13 public_policies=19 storage_policies=4 public_triggers=1 history_absent=1 relation_owner=supabase_admin function_owner=supabase_admin set_role=PASS'
+echo 'TECHREPORT_RESET_LIVE_PRESTATE=PASS empresas=8 tecnicos=13 app_admins=1 convites=15 rats=70 audit=0 signature_metadata=42 auth_users=14 dual_identity=1 storage_buckets=0 storage_objects=0 public_relations=7 public_functions=13 public_policies=19 storage_policies=4 public_triggers=1 history_absent=1 relation_owner=supabase_admin function_owner=supabase_admin role_capability=superuser_or_member'
 
 docker exec -i "$db_container" \
   psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 \
