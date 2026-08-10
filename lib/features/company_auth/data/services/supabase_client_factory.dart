@@ -1,16 +1,28 @@
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:techreport/features/company_auth/data/services/flutter_secure_pkce_storage.dart';
 import 'package:techreport/features/company_auth/data/services/secure_token_store.dart';
 import 'package:techreport/features/company_auth/domain/repositories/remote_endpoint_repository.dart';
+
+typedef PkceStorageFactory = GotrueAsyncStorage Function(String endpointId);
 
 class SupabaseClientFactory {
   SupabaseClientFactory({
     required RemoteEndpointRepository endpointRepository,
     required SecureTokenStore tokenStore,
+    PkceStorageFactory? pkceStorageFactory,
+    http.Client? httpClient,
   }) : _endpointRepository = endpointRepository,
-       _tokenStore = tokenStore;
+       _tokenStore = tokenStore,
+       _pkceStorageFactory =
+           pkceStorageFactory ??
+           ((endpointId) => FlutterSecurePkceStorage(endpointId: endpointId)),
+       _httpClient = httpClient;
 
   final RemoteEndpointRepository _endpointRepository;
   final SecureTokenStore _tokenStore;
+  final PkceStorageFactory _pkceStorageFactory;
+  final http.Client? _httpClient;
 
   Future<SupabaseClient?> tryCreateClient() async {
     return _createClient();
@@ -60,7 +72,11 @@ class SupabaseClientFactory {
     return SupabaseClient(
       endpoint.supabaseUrl,
       publicKey,
-      authOptions: const AuthClientOptions(authFlowType: AuthFlowType.pkce),
+      authOptions: AuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        pkceAsyncStorage: _pkceStorageFactory(endpoint.id),
+      ),
+      httpClient: _httpClient,
     );
   }
 }
