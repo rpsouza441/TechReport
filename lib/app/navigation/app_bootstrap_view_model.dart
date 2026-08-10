@@ -11,7 +11,6 @@ enum AppBootstrapStatus {
   failed,
   modeChoiceRequired,
   localOnboarding,
-  localLocked,
   localUnlocked,
   remoteEndpointRequired,
   remoteLoginRequired,
@@ -143,9 +142,7 @@ class AppBootstrapViewModel extends ChangeNotifier {
     switch (_localSessionViewModel.status) {
       case AppSessionStatus.onboardingRequired:
         status = AppBootstrapStatus.localOnboarding;
-      case AppSessionStatus.locked:
-        status = AppBootstrapStatus.localLocked;
-      case AppSessionStatus.unlocked:
+      case AppSessionStatus.ready:
         status = AppBootstrapStatus.localUnlocked;
     }
 

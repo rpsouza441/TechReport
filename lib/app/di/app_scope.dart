@@ -68,10 +68,7 @@ import 'package:techreport/features/company_auth/domain/usecases/sign_out_compan
 import '../../features/local_auth/domain/repositories/sessao_local_repository.dart';
 import '../../features/local_auth/domain/repositories/tecnico_local_repository.dart';
 import '../../features/local_auth/domain/usecases/bootstrap_local_session.dart';
-import '../../features/local_auth/domain/usecases/change_local_pin.dart';
 import '../../features/local_auth/domain/usecases/complete_local_onboarding.dart';
-import '../../features/local_auth/domain/usecases/lock_local_session.dart';
-import '../../features/local_auth/domain/usecases/unlock_local_session.dart';
 import '../../features/local_auth/presentation/view_models/app_session_view_model.dart';
 import '../../shared/infra/database/tech_report_local_database.dart';
 
@@ -292,21 +289,13 @@ class AppScope {
         updateTecnicoLocal: updateTecnicoLocal,
         ratRepository: ratRepository,
         appSessionViewModel: AppSessionViewModel(
-          bootstrapLocalSession: BootstrapLocalSession(sessaoLocalRepository),
-          changeLocalPin: ChangeLocalPin(
-            pinSecretRepository: pinSecretRepository,
-            sessaoLocalRepository: sessaoLocalRepository,
-            tecnicoLocalRepository: tecnicoLocalRepository,
-          ),
-          completeLocalOnboarding: CompleteLocalOnboarding(
-            pinSecretRepository: pinSecretRepository,
-            tecnicoLocalRepository: tecnicoLocalRepository,
-            sessaoLocalRepository: sessaoLocalRepository,
-          ),
-          lockLocalSession: LockLocalSession(sessaoLocalRepository),
-          unlockLocalSession: UnlockLocalSession(
+          bootstrapLocalSession: BootstrapLocalSession(
             sessaoLocalRepository,
             pinSecretRepository: pinSecretRepository,
+          ),
+          completeLocalOnboarding: CompleteLocalOnboarding(
+            tecnicoLocalRepository: tecnicoLocalRepository,
+            sessaoLocalRepository: sessaoLocalRepository,
           ),
         ),
         remoteEndpointRepository: remoteEndpointRepository,
