@@ -107,12 +107,12 @@ Rat _sampleRat() {
 }
 
 class _StubRatRepository implements RatRepository {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-
   _StubRatRepository(this.rats);
 
   List<Rat> rats;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 
   @override
   Future<List<Rat>> listLocal() async => rats;
@@ -137,9 +137,6 @@ class _StubRatRepository implements RatRepository {
     if (start < 0 || start >= rats.length) return [];
     return rats.skip(start).take(limit).toList();
   }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _StubAssinaturaRepository implements AssinaturaRepository {

@@ -156,7 +156,11 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
     );
   }
 
-  Widget _buildSection(String title, List<SyncItem> items, SyncCenterViewModel vm) {
+  Widget _buildSection(
+    String title,
+    List<SyncItem> items,
+    SyncCenterViewModel vm,
+  ) {
     if (items.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
@@ -178,7 +182,10 @@ class _SyncCenterScreenState extends State<SyncCenterScreen> {
               padding: EdgeInsets.zero,
             );
           }
-          return _SyncItemCard(item: items[index - 1], getRatInfo: vm.getRatInfo);
+          return _SyncItemCard(
+            item: items[index - 1],
+            getRatInfo: vm.getRatInfo,
+          );
         },
       ),
     );
@@ -215,10 +222,7 @@ class _SyncItemCard extends StatelessWidget {
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: MetricSlateSpacing.xxs),
-                    Text(
-                      _itemSubtitle(item),
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    Text(_itemSubtitle(item), style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -272,6 +276,7 @@ String? _operationLabel(SyncOperation op) {
   return switch (op) {
     SyncOperation.upsert => null,
     SyncOperation.delete => 'exclusão',
+    SyncOperation.restore => 'restauração',
   };
 }
 

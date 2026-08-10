@@ -531,14 +531,12 @@ class _CompanyShellState extends State<CompanyShell> {
         child: Text('Você não tem permissão para acessar este conteúdo.'),
       );
     }
-    if (_trashViewModel == null) {
-      _trashViewModel = TrashViewModel(
-        ratRepository: widget.scope.ratRepository,
-        syncCoordinator: widget.scope.ratSyncCoordinator,
-        scope: scope,
-        session: currentSession,
-      );
-    }
+    _trashViewModel ??= TrashViewModel(
+      ratRepository: widget.scope.ratRepository,
+      syncCoordinator: widget.scope.ratSyncCoordinator,
+      scope: scope,
+      session: currentSession,
+    );
     return TrashScreen(
       viewModel: _trashViewModel!,
       hasSignature: (rat) => _ratListViewModel?.hasSignature(rat.id) ?? false,
