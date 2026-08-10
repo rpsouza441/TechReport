@@ -318,10 +318,9 @@ void main() {
       addTearDown(viewModel.dispose);
       await pumpForm(tester, viewModel);
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Cliente'),
-        'Texto ainda não salvo',
-      );
+      final clientField = find.byType(EditableText).first;
+      await tester.ensureVisible(clientField);
+      await tester.enterText(clientField, 'Texto ainda não salvo');
       viewModel.updateRemoteSession(
         _session(
           tecnicoId: 'gerente-1',
@@ -419,7 +418,9 @@ void main() {
       addTearDown(viewModel.dispose);
       await pumpRoutedForm(tester, viewModel);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Salvar alterações'));
+      final saveButton = find.widgetWithText(FilledButton, 'Salvar alterações');
+      await tester.ensureVisible(saveButton);
+      await tester.tap(saveButton);
       await tester.pumpAndSettle();
 
       expect(
@@ -452,7 +453,9 @@ void main() {
       addTearDown(viewModel.dispose);
       await pumpRoutedForm(tester, viewModel);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Salvar alterações'));
+      final saveButton = find.widgetWithText(FilledButton, 'Salvar alterações');
+      await tester.ensureVisible(saveButton);
+      await tester.tap(saveButton);
       await tester.pumpAndSettle();
 
       expect(
@@ -584,9 +587,6 @@ class _StubRatPdfShareService implements RatPdfShareService {
 }
 
 class _StubRatRepository implements RatRepository {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-
   final List<Rat> savedRats = [];
 
   @override

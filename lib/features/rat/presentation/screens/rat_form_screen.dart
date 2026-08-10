@@ -8,9 +8,11 @@ import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/features/rat/presentation/rat_ui_labels.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_pdf_preview_screen.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_reopen_reason_screen.dart';
+import 'package:techreport/features/rat/presentation/widgets/correction_attribution_banner.dart';
 import 'package:techreport/features/signature/presentation/screens/signature_capture_screen.dart';
 import 'package:techreport/shared/presentation/widgets/metric_slate_text_field.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
+import 'package:techreport/shared/presentation/widgets/tech_report_confirmation_dialog.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_discard_dialog.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
@@ -19,9 +21,14 @@ import '../../domain/entities/rat.dart';
 import '../view_models/rat_form_view_model.dart';
 
 class RatFormScreen extends StatefulWidget {
-  const RatFormScreen({super.key, required this.viewModel});
+  const RatFormScreen({
+    super.key,
+    required this.viewModel,
+    this.auditScreenBuilder,
+  });
 
   final RatFormViewModel viewModel;
+  final WidgetBuilder? auditScreenBuilder;
 
   @override
   State<RatFormScreen> createState() => _RatFormScreenState();
@@ -127,6 +134,12 @@ class _RatFormScreenState extends State<RatFormScreen> {
                 vm.isEditing || vm.isSaved ? 'Editar RAT' : 'Novo RAT',
               ),
               actions: [
+                if (vm.canViewAudit && widget.auditScreenBuilder != null)
+                  IconButton(
+                    onPressed: isBusy ? null : _openAudit,
+                    icon: const Icon(Icons.history),
+                    tooltip: 'Ver histórico da RAT',
+                  ),
                 if (vm.canDelete)
                   IconButton(
                     onPressed: isBusy ? null : _handleDelete,
@@ -141,6 +154,26 @@ class _RatFormScreenState extends State<RatFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (vm.isCorrectingOtherOwner) ...[
+                      CorrectionAttributionBanner(
+                        ownerName: vm.ownerDisplayName,
+                      ),
+                      const SizedBox(height: MetricSlateSpacing.md),
+                      TechReportCard(
+                        child: Row(
+                          children: [
+                            const Expanded(child: Text('Proprietário')),
+                            Flexible(
+                              child: Text(
+                                vm.ownerDisplayName,
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: MetricSlateSpacing.md),
+                    ],
                     if (vm.isReadOnly)
                       Container(
                         margin: const EdgeInsets.only(
@@ -393,7 +426,11 @@ class _RatFormScreenState extends State<RatFormScreen> {
                             )
                           : const Icon(Icons.save_outlined, size: 20),
                       label: Text(
-                        vm.isSubmitting ? 'Salvando...' : 'Salvar RAT',
+                        vm.isSubmitting
+                            ? 'Salvando...'
+                            : vm.isEditing
+                            ? 'Salvar alterações'
+                            : 'Salvar RAT',
                       ),
                     ),
                   ],
@@ -414,6 +451,12 @@ class _RatFormScreenState extends State<RatFormScreen> {
     }
 
     if (widget.viewModel.errorMessage == null) {
+      final message = widget.viewModel.feedbackMessage;
+      if (message != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
       setState(() => _hasUnsavedChanges = false);
       _closeForm(result: true);
     }
@@ -561,34 +604,34 @@ class _RatFormScreenState extends State<RatFormScreen> {
     }
 
     if (deleted) {
+      final message = widget.viewModel.feedbackMessage;
+      if (message != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+      setState(() => _hasUnsavedChanges = false);
       _closeForm(result: true);
     }
   }
 
   Future<bool> _confirmDeleteRat() async {
-    final result = await showDialog<bool>(
+    return showTechReportConfirmationDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Excluir RAT?'),
-          content: const Text(
-            'Este RAT será removido da lista. Em modo empresa, a exclusão será sincronizada.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
-      },
+      title: 'Mover RAT para a lixeira?',
+      message:
+          'A RAT sairá da lista principal e poderá ser restaurada depois. '
+          'Nenhum dado será apagado permanentemente.',
+      confirmLabel: 'Mover para a lixeira',
+      cancelLabel: 'Manter RAT',
+      isDangerous: true,
     );
+  }
 
-    return result ?? false;
+  void _openAudit() {
+    final builder = widget.auditScreenBuilder;
+    if (builder == null) return;
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: builder));
   }
 
   void _closeForm({bool? result}) async {
