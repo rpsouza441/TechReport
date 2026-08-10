@@ -16,6 +16,8 @@ class PreviewLocalBackup {
     const duplicateRats = 0;
     const conflictingRats = 0;
     var invalidItems = 0;
+    var ratsActive = 0;
+    var ratsTrash = 0;
 
     if (rats.isEmpty && assinaturas.isEmpty) {
       invalidItems = 1;
@@ -29,6 +31,11 @@ class PreviewLocalBackup {
         continue;
       }
       newRats++;
+      if (item['deletedAt'] == null) {
+        ratsActive++;
+      } else {
+        ratsTrash++;
+      }
     }
 
     return LocalBackupPreview(
@@ -43,6 +50,8 @@ class PreviewLocalBackup {
       appVersion: manifest.appVersion,
       databaseSchemaVersion: manifest.databaseSchemaVersion,
       checksumsValid: checksumsValid,
+      ratsActive: ratsActive,
+      ratsTrash: ratsTrash,
     );
   }
 }

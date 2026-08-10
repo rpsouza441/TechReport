@@ -29,7 +29,7 @@ class LocalBackupService {
   final LocalSignatureAssetStore _localSignatureAssetStore;
 
   Future<Uint8List> exportBackup() async {
-    final rats = await _ratRepository.listLocal();
+    final rats = await _ratRepository.listAllLocalForBackup();
     final allAssinaturas = <Assinatura>[];
 
     for (final rat in rats) {
@@ -54,7 +54,12 @@ class LocalBackupService {
       createdAt: DateTime.now(),
       appVersion: packageInfo.version,
       databaseSchemaVersion: dbSchemaVersion,
-      counts: Counts(rats: rats.length, assinaturas: allAssinaturas.length),
+      counts: Counts(
+        rats: rats.length,
+        assinaturas: allAssinaturas.length,
+        ratsActive: rats.where((rat) => !rat.isDeleted).length,
+        ratsTrash: rats.where((rat) => rat.isDeleted).length,
+      ),
       checksums: {
         'data/rats.json': ratsChecksum,
         'data/assinaturas.json': assinaturasChecksum,

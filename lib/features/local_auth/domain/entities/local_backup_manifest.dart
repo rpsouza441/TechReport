@@ -40,19 +40,49 @@ class LocalBackupManifest {
 }
 
 class Counts {
-  const Counts({required this.rats, required this.assinaturas});
+  const Counts({
+    required this.rats,
+    required this.assinaturas,
+    this.ratsActive,
+    this.ratsTrash,
+  });
 
   final int rats;
   final int assinaturas;
+  final int? ratsActive;
+  final int? ratsTrash;
 
   factory Counts.fromJson(Map<String, dynamic> json) {
+    final rats = json['rats'];
+    final assinaturas = json['assinaturas'];
+    final ratsActive = json['ratsActive'];
+    final ratsTrash = json['ratsTrash'];
+    if (rats is! int || rats < 0 || assinaturas is! int || assinaturas < 0) {
+      throw const FormatException('Contagens de backup invalidas.');
+    }
+    final hasAnySplit = ratsActive != null || ratsTrash != null;
+    if (hasAnySplit &&
+        (ratsActive is! int ||
+            ratsActive < 0 ||
+            ratsTrash is! int ||
+            ratsTrash < 0 ||
+            ratsActive + ratsTrash != rats)) {
+      throw const FormatException('Contagens ativa/lixeira inconsistentes.');
+    }
     return Counts(
-      rats: json['rats'] as int,
-      assinaturas: json['assinaturas'] as int,
+      rats: rats,
+      assinaturas: assinaturas,
+      ratsActive: ratsActive as int?,
+      ratsTrash: ratsTrash as int?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{'rats': rats, 'assinaturas': assinaturas};
+    return <String, dynamic>{
+      'rats': rats,
+      'assinaturas': assinaturas,
+      if (ratsActive != null) 'ratsActive': ratsActive,
+      if (ratsTrash != null) 'ratsTrash': ratsTrash,
+    };
   }
 }

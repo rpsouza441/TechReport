@@ -13,11 +13,15 @@ class LocalBackupPreview extends LocalImportPreview {
     required this.appVersion,
     required this.databaseSchemaVersion,
     required this.checksumsValid,
+    required this.ratsActive,
+    required this.ratsTrash,
   });
 
   final String appVersion;
   final int databaseSchemaVersion;
   final bool checksumsValid;
+  final int ratsActive;
+  final int ratsTrash;
 
   @override
   bool get canApply => checksumsValid && super.canApply;
