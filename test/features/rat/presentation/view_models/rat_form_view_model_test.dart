@@ -206,6 +206,12 @@ class _StubRatSyncCoordinator implements RatSyncCoordinator {
   final List<Assinatura> savedAssinaturas = [];
 
   @override
+  Future<RatRestoreSyncResult> restore({
+    required Rat rat,
+    required SessaoRemota? session,
+  }) async => RatRestoreSyncResult.localCompleted;
+
+  @override
   Future<void> syncAfterSave({
     required Rat rat,
     required String empresaId,

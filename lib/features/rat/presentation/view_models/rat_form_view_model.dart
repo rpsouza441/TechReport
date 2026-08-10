@@ -42,10 +42,12 @@ class RatFormViewModel extends ChangeNotifier {
     RatSyncCoordinator? syncCoordinator,
     DownloadRemoteRats? downloadRemoteRats,
     SupabaseClientFactory? supabaseClientFactory,
+    String? ownerDisplayName,
   }) : _ratRepository = ratRepository,
        _ratPdfShareService = ratPdfShareService,
        _shareRatLocally = shareRatLocally,
        _initialRat = initialRat,
+       _ownerDisplayName = ownerDisplayName,
        ratId = initialRat?.id ?? _newRatId(),
        numero = initialRat?.numero ?? _newRatNumber(),
        _remoteSession = remoteSession,
@@ -98,7 +100,8 @@ class RatFormViewModel extends ChangeNotifier {
   final RatPdfShareService _ratPdfShareService;
   final ShareRatLocally _shareRatLocally;
   final Rat? _initialRat;
-  final SessaoRemota? _remoteSession;
+  SessaoRemota? _remoteSession;
+  final String? _ownerDisplayName;
   final String ratId;
   final String numero;
 
@@ -112,6 +115,8 @@ class RatFormViewModel extends ChangeNotifier {
   bool _isSharing = false;
   bool _isSaved;
   String? _errorMessage;
+  String? _feedbackMessage;
+  bool _permissionChanged = false;
 
   // Audit fields (managed directly for simplicity)
   String? _ultimoAlteradorUserId;
@@ -161,6 +166,7 @@ class RatFormViewModel extends ChangeNotifier {
   bool get isLoadingSignature => _signatureManager.isLoadingSignature;
   bool get isSavingSignature => _signatureManager.isSavingSignature;
   String? get errorMessage => _errorMessage;
+  String? get feedbackMessage => _feedbackMessage;
   bool get isEditing => _initialRat != null;
   bool get shouldReloadOnClose => _isSaved;
   Uint8List? get signaturePreviewBytes =>
@@ -204,10 +210,57 @@ class RatFormViewModel extends ChangeNotifier {
     return _permissions.canDelete(initialRat, _remoteSession);
   }
 
+  bool get canViewAudit {
+    final initialRat = _initialRat;
+    return initialRat != null &&
+        _remoteSession != null &&
+        _permissions.canViewAudit(initialRat, _remoteSession);
+  }
+
+  String get ownerDisplayName {
+    final configured = _ownerDisplayName?.trim();
+    if (configured != null && configured.isNotEmpty) return configured;
+    final tecnicoId = _initialRat?.tecnicoId;
+    if (tecnicoId == null || tecnicoId.isEmpty) {
+      return 'Proprietário não identificado';
+    }
+    return 'Técnico · ${tecnicoId.length <= 8 ? tecnicoId : tecnicoId.substring(0, 8)}';
+  }
+
+  bool get isCorrectingOtherOwner {
+    final rat = _initialRat;
+    final current = _remoteSession;
+    return rat != null &&
+        current != null &&
+        _permissions.isManagerOrAdmin(rat, current) &&
+        !_permissions.isOwner(rat, current);
+  }
+
+  bool get permissionChanged => _permissionChanged;
+
   bool get canEdit {
     final initialRat = _initialRat;
-    if (initialRat == null) return true;
+    if (initialRat == null) return _canCreateWithCurrentSession;
     return _permissions.canEdit(initialRat, _remoteSession);
+  }
+
+  bool get _canCreateWithCurrentSession {
+    final current = _remoteSession;
+    if (current == null) return true;
+    return current.hasCompanyContext &&
+        !current.isAppAdmin &&
+        (current.isTecnico || current.isGerente || current.isAdminEmpresa);
+  }
+
+  void updateRemoteSession(SessaoRemota? session) {
+    final previouslyAllowed = canEdit;
+    _remoteSession = session;
+    if (previouslyAllowed && !canEdit) {
+      _permissionChanged = true;
+      _errorMessage =
+          'Sua permissão para editar esta RAT mudou. Copie o que precisar e volte para a lista.';
+    }
+    notifyListeners();
   }
 
   bool get canReopenForCorrection {
@@ -317,7 +370,9 @@ class RatFormViewModel extends ChangeNotifier {
     required bool requireEditable,
   }) async {
     if (requireEditable && !canEditFields) {
-      _errorMessage = isLockedUntilReopen
+      _errorMessage = _permissionChanged
+          ? 'Sua permissão para editar esta RAT mudou. Copie o que precisar e volte para a lista.'
+          : isLockedUntilReopen
           ? 'Reabra este RAT para correcao antes de editar.'
           : 'Este RAT pertence a outro tecnico.';
       notifyListeners();
@@ -336,6 +391,7 @@ class RatFormViewModel extends ChangeNotifier {
 
     _isSubmitting = true;
     _errorMessage = null;
+    _feedbackMessage = null;
     notifyListeners();
 
     final now = DateTime.now();
@@ -347,9 +403,6 @@ class RatFormViewModel extends ChangeNotifier {
 
     try {
       await _ratRepository.save(rat);
-      if (enqueueSync && isCompanyMode) {
-        await _syncHandler.syncAfterSave(rat);
-      }
     } catch (e, st) {
       debugPrint("Error: $e$st");
       _isSubmitting = false;
@@ -358,11 +411,26 @@ class RatFormViewModel extends ChangeNotifier {
       return false;
     }
 
+    var syncQueued = false;
+    if (enqueueSync && isCompanyMode) {
+      try {
+        await _syncHandler.syncAfterSave(rat);
+      } catch (error, stackTrace) {
+        debugPrint('Sync pendente após salvar RAT: $error\n$stackTrace');
+        syncQueued = true;
+      }
+    }
+
     _isSubmitting = false;
     _isSaved = true;
     _ultimoAlteradorUserId = rat.ultimoAlteradorUserId;
     _ultimaAlteracaoEm = rat.ultimaAlteracaoEm;
     _formState.markClean();
+    if (isCorrectingOtherOwner) {
+      _feedbackMessage = syncQueued
+          ? 'Alterações salvas neste dispositivo. O histórico será atualizado após a sincronização.'
+          : 'Alterações salvas e registradas no histórico.';
+    }
     notifyListeners();
     return true;
   }
@@ -484,6 +552,7 @@ class RatFormViewModel extends ChangeNotifier {
 
     _isSubmitting = true;
     _errorMessage = null;
+    _feedbackMessage = null;
     notifyListeners();
 
     final now = DateTime.now();
@@ -499,9 +568,6 @@ class RatFormViewModel extends ChangeNotifier {
 
     try {
       await _ratRepository.save(deletedRat);
-      if (isCompanyMode) {
-        await _syncHandler.syncAfterDelete(deletedRat);
-      }
     } catch (e, st) {
       debugPrint("Error: $e$st");
       _isSubmitting = false;
@@ -510,13 +576,37 @@ class RatFormViewModel extends ChangeNotifier {
       return false;
     }
 
+    var syncQueued = false;
+    if (isCompanyMode) {
+      try {
+        await _syncHandler.syncAfterDelete(deletedRat);
+      } catch (error, stackTrace) {
+        debugPrint('Sync pendente após mover RAT: $error\n$stackTrace');
+        syncQueued = true;
+      }
+    }
+
     _isSubmitting = false;
     _isSaved = true;
+    _feedbackMessage = syncQueued
+        ? 'RAT movida para a lixeira neste dispositivo. A sincronização será feita quando houver conexão.'
+        : 'RAT movida para a lixeira.';
     notifyListeners();
     return true;
   }
 
   Future<bool> saveSignature(Uint8List bytes) async {
+    final lockedWithOperationalChanges =
+        isLockedUntilReopen && _formState.isDirty;
+    if (!canEdit || lockedWithOperationalChanges) {
+      _errorMessage = _permissionChanged
+          ? 'Sua permissão para editar esta RAT mudou. Copie o que precisar e volte para a lista.'
+          : lockedWithOperationalChanges
+          ? 'Reabra esta RAT antes de alterar dados e substituir a assinatura.'
+          : 'Você não tem permissão para alterar esta RAT.';
+      notifyListeners();
+      return false;
+    }
     final remoteSession = _remoteSession;
     final isCompanyMode = remoteSession?.hasCompanyContext ?? false;
     final previousStatus = _formState.status;
