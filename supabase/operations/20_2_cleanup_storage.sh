@@ -2,11 +2,11 @@
 set -euo pipefail
 
 if [ "$#" -ne 9 ]; then
-  echo "usage: $0 <env-file|auto> <api-base-url> <expected-db-container-id> <expected-system-id> <expected-object-count> <backup-file> <expected-backup-bytes> <expected-backup-sha256> <expected-pg-restore-toc-entries>" >&2
+  echo "usage: $0 <env-file|auto|container-env:supabase-storage:SERVICE_KEY> <api-base-url> <expected-db-container-id> <expected-system-id> <expected-object-count> <backup-file> <expected-backup-bytes> <expected-backup-sha256> <expected-pg-restore-toc-entries>" >&2
   exit 64
 fi
 
-env_file=$1
+credential_source=$1
 api_base=${2%/}
 expected_container_id=$3
 expected_system_id=$4
@@ -124,42 +124,79 @@ target_bucket_count=$(docker exec "$db_container" psql -U postgres -d postgres -
   exit 67
 }
 
-if [ "$env_file" = 'auto' ]; then
-  mapfile -d '' env_candidates < <(
-    find /srv/DATA/supabase -maxdepth 3 -type f -name .env -print0
-  )
-  [ "${#env_candidates[@]}" -eq 1 ] || {
-    echo 'BLOCK: expected exactly one self-hosted Supabase .env file' >&2
-    exit 68
-  }
-  env_file=${env_candidates[0]}
-fi
-requested_env_file=$env_file
-[ -f "$requested_env_file" ] && [ ! -L "$requested_env_file" ] || {
-  echo 'BLOCK: self-hosted Supabase env file is missing, non-regular, or a symlink' >&2
-  exit 68
-}
-env_file=$(readlink -f -- "$env_file")
-case "$env_file" in
-  /srv/DATA/supabase/*) ;;
+set +x
+case "$credential_source" in
+  container-env:supabase-storage:SERVICE_KEY)
+    storage_container=supabase-storage
+    docker inspect "$storage_container" >/dev/null
+    storage_running=$(docker inspect --format '{{.State.Running}}' "$storage_container")
+    [ "$storage_running" = 'true' ] || {
+      echo 'BLOCK: supabase-storage container is not running' >&2
+      exit 68
+    }
+    storage_image=$(docker inspect --format '{{.Config.Image}}' "$storage_container")
+    case "$storage_image" in
+      *supabase/storage-api*) ;;
+      *)
+        echo 'BLOCK: supabase-storage does not use a Supabase Storage API image' >&2
+        exit 68
+        ;;
+    esac
+    mapfile -t service_key_values < <(
+      docker inspect --format '{{json .Config.Env}}' "$storage_container" |
+        jq -r '.[] | select(startswith("SERVICE_KEY=")) | sub("^SERVICE_KEY="; "")'
+    )
+    [ "${#service_key_values[@]}" -eq 1 ] || {
+      echo 'BLOCK: expected exactly one SERVICE_KEY in supabase-storage environment' >&2
+      exit 69
+    }
+    service_key=${service_key_values[0]}
+    unset service_key_values
+    [ -n "$service_key" ] || {
+      echo 'BLOCK: SERVICE_KEY in supabase-storage environment is empty' >&2
+      exit 69
+    }
+    echo 'CREDENTIAL_SOURCE=PASS mode=container-env container=supabase-storage variable=SERVICE_KEY'
+    ;;
   *)
-    echo 'BLOCK: env file is outside the self-hosted Supabase directory' >&2
-    exit 68
+    env_file=$credential_source
+    if [ "$env_file" = 'auto' ]; then
+      mapfile -d '' env_candidates < <(
+        find /srv/DATA/supabase -maxdepth 3 -type f -name .env -print0
+      )
+      [ "${#env_candidates[@]}" -eq 1 ] || {
+        echo 'BLOCK: expected exactly one self-hosted Supabase .env file' >&2
+        exit 68
+      }
+      env_file=${env_candidates[0]}
+    fi
+    requested_env_file=$env_file
+    [ -f "$requested_env_file" ] && [ ! -L "$requested_env_file" ] || {
+      echo 'BLOCK: self-hosted Supabase env file is missing, non-regular, or a symlink' >&2
+      exit 68
+    }
+    env_file=$(readlink -f -- "$env_file")
+    case "$env_file" in
+      /srv/DATA/supabase/*) ;;
+      *)
+        echo 'BLOCK: env file is outside the self-hosted Supabase directory' >&2
+        exit 68
+        ;;
+    esac
+    [ -r "$env_file" ] || {
+      echo 'BLOCK: self-hosted Supabase env file is not readable' >&2
+      exit 68
+    }
+    # shellcheck disable=SC1090
+    . "$env_file"
+    service_key=${SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE_KEY:-}}
+    [ -n "$service_key" ] || {
+      echo 'BLOCK: service-role key variable not found in env file' >&2
+      exit 69
+    }
+    echo 'CREDENTIAL_SOURCE=PASS mode=env-file'
     ;;
 esac
-[ -r "$env_file" ] || {
-  echo 'BLOCK: self-hosted Supabase env file is not readable' >&2
-  exit 68
-}
-
-set +x
-# shellcheck disable=SC1090
-. "$env_file"
-service_key=${SERVICE_ROLE_KEY:-${SUPABASE_SERVICE_ROLE_KEY:-}}
-[ -n "$service_key" ] || {
-  echo 'BLOCK: service-role key variable not found in env file' >&2
-  exit 69
-}
 
 curl_config=$(mktemp)
 api_buckets_before=$(mktemp)
@@ -175,7 +212,7 @@ chmod 600 "$curl_config" "$api_buckets_before" "$api_buckets_after" \
   printf 'header = "Authorization: Bearer %s"\n' "$service_key"
   printf 'header = "Content-Type: application/json"\n'
 } >"$curl_config"
-unset service_key SERVICE_ROLE_KEY SUPABASE_SERVICE_ROLE_KEY
+unset service_key SERVICE_KEY SERVICE_ROLE_KEY SUPABASE_SERVICE_ROLE_KEY
 
 inventory_sql="select jsonb_build_object(
   'buckets', coalesce((select jsonb_agg(to_jsonb(b) order by b.id) from storage.buckets b where b.id <> 'rat-signatures'), '[]'::jsonb),
