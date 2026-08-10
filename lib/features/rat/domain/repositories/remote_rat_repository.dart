@@ -5,6 +5,8 @@ abstract class RemoteRatRepository {
 
   Future<void> softDeleteFromPayload(String payload);
 
+  Future<void> restoreFromPayload(String payload);
+
   Future<List<RatRemoteSnapshot>> fetchUpdatedSince({
     required String empresaId,
     required DateTime? since,

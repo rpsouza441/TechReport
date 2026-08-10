@@ -237,6 +237,9 @@ class MockSyncQueueRepository implements SyncQueueRepository {
 }
 
 class MockRemoteRatRepository implements RemoteRatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final List<String> upsertedPayloads = [];
   final List<String> deletedPayloads = [];
   final Set<String> failUpsertEntityIds = {};

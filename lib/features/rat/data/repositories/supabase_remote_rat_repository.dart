@@ -34,6 +34,26 @@ class SupabaseRemoteRatRepository implements RemoteRatRepository {
   }
 
   @override
+  Future<void> restoreFromPayload(String payload) async {
+    final client = await _requireClient();
+    final data = _decodePayload(payload);
+    final id = data['id'];
+
+    if (id is! String || id.isEmpty) {
+      throw const FormatException('Payload de RAT sem id.');
+    }
+
+    final rows = await client
+        .from('rats')
+        .update({'deletado': false})
+        .eq('id', id)
+        .select('id');
+    if (rows.isEmpty) {
+      throw StateError('RAT nao restaurada pelo servidor.');
+    }
+  }
+
+  @override
   Future<List<RatRemoteSnapshot>> fetchUpdatedSince({
     required String empresaId,
     required DateTime? since,

@@ -79,8 +79,6 @@ class RatRemoteDto {
       'criado_em_dispositivo': criadoEmDispositivo.toIso8601String(),
     };
 
-    _addIfNotNull(data, 'ultimo_alterador_user_id', ultimoAlteradorUserId);
-    _addIfNotNull(data, 'ultima_alteracao_em', _dateTime(ultimaAlteracaoEm));
     _addIfNotNull(
       data,
       'reaberta_para_correcao_em',
