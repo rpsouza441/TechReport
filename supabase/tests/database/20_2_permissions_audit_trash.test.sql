@@ -4,9 +4,36 @@
 -- against an isolated database containing the repository migrations. Every
 -- fixture and test-local object is enclosed by this transaction and rolled back.
 
+\set ON_ERROR_STOP on
+\pset pager off
+
+\if :{?expected_system_identifier}
+\else
+  \echo 'BLOCK: expected_system_identifier is required'
+  \quit 64
+\endif
+
+select
+  current_database() = 'postgres'
+  and current_user = 'supabase_admin'
+  and session_user = 'supabase_admin'
+  and (select rolsuper from pg_roles where rolname = current_user)
+  and system_identifier::text = :'expected_system_identifier' as pgtap_identity_ok
+from pg_control_system()
+\gset
+
+\if :pgtap_identity_ok
+\else
+  \echo 'BLOCK: pgTAP database, principal, or system identifier mismatch'
+  \quit 65
+\endif
+
 begin;
 
 create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions, pg_catalog;
+
+\echo 'TECHREPORT_PGTAP_TRANSACTION=BEGIN rollback_required=true'
 
 select plan(67);
 
@@ -267,3 +294,5 @@ select ok(to_regprocedure('public.audit_rat_change()') is not null, 'server audi
 
 select * from finish();
 rollback;
+
+\echo 'TECHREPORT_PGTAP_ROLLBACK=PASS tests=67'

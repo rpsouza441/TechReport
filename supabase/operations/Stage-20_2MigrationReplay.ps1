@@ -264,5 +264,6 @@ $manifestHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $manifestPath).Hash
 Write-Output "STAGED_MIGRATIONS=$($manifest.Count)"
 Write-Output 'APPROVED_SEQUENCE=0001-0016,0018-0027'
 Write-Output 'HISTORICAL_0017=ABSENT'
+Write-Output 'REMOTE_MODE_REQUIREMENT=directory:0700,files:0600'
 Write-Output "MANIFEST=$manifestPath"
 Write-Output "MANIFEST_SHA256=$manifestHash"
