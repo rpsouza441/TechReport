@@ -29,7 +29,7 @@ class ProcessSyncQueue {
 
   static const int maxAttempts = 5;
 
-  Future<void> call({
+  Future<bool> call({
     required String empresaId,
     required String usuarioId,
     bool retryFailed = false,
@@ -40,8 +40,10 @@ class ProcessSyncQueue {
       includeFailed: retryFailed,
     );
 
+    var allSucceeded = true;
     for (final item in items) {
       if (item.attempts >= maxAttempts) {
+        allSucceeded = false;
         await _queueRepository.markFailed(
           id: item.id,
           errorMessage: 'Limite de tentativas excedido',
@@ -51,7 +53,10 @@ class ProcessSyncQueue {
       }
 
       final locked = await _queueRepository.tryMarkProcessing(item.id);
-      if (!locked) continue; // já está sendo processado por outro
+      if (!locked) {
+        allSucceeded = false;
+        continue;
+      }
 
       try {
         switch (item.entityType) {
@@ -63,6 +68,7 @@ class ProcessSyncQueue {
 
         await _queueRepository.markSynced(item.id);
       } catch (e) {
+        allSucceeded = false;
         await _queueRepository.markFailed(
           id: item.id,
           errorMessage: e.toString(),
@@ -70,6 +76,7 @@ class ProcessSyncQueue {
         );
       }
     }
+    return allSucceeded;
   }
 
   Future<void> _processRat(SyncItem item) async {
