@@ -30,9 +30,14 @@ import 'package:techreport/features/local_auth/domain/usecases/apply_local_backu
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_data_import.dart';
 import 'package:techreport/features/local_auth/domain/usecases/preview_local_backup.dart';
 import 'package:techreport/features/rat/data/repositories/drift_rat_repository.dart';
+import 'package:techreport/features/rat/data/repositories/supabase_rat_audit_repository.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/repositories/rat_repository.dart';
 import 'package:techreport/features/rat/domain/repositories/remote_rat_repository.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_audit_repository.dart';
+import 'package:techreport/features/rat/domain/permissions/rat_permissions.dart';
+import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dart';
+import 'package:techreport/features/rat/domain/usecases/restore_rat.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/repositories/drift_assinatura_repository.dart';
 import 'package:techreport/features/signature/data/repositories/supabase_remote_assinatura_repository.dart';
@@ -126,6 +131,8 @@ class AppScope {
     required this.appThemeViewModel,
     required this.companySessionNotifier,
     required this.getAdminEmpresa,
+    required this.ratAuditRepository,
+    required this.ratSyncCoordinator,
   });
 
   static Future<AppScope> create() async {
@@ -227,6 +234,18 @@ class AppScope {
         ratRepository: ratRepository,
         assinaturaRepository: assinaturaRepository,
         remoteAssinaturaRepository: remoteAssinaturaRepository,
+      );
+      final ratAuditRepository = SupabaseRatAuditRepository(
+        clientFactory: supabaseClientFactory,
+      );
+      final ratSyncCoordinator = RatSyncCoordinator(
+        enqueueRatSync: enqueueRatSync,
+        enqueueAssinaturaSync: enqueueAssinaturaSync,
+        processSyncQueue: processSyncQueue,
+        restoreRat: RestoreRat(
+          ratRepository: ratRepository,
+          permissions: const RatPermissions(),
+        ),
       );
       final remoteSessionRepository = LocalRemoteSessionRepository();
       final authRepository = SupabaseAuthRepository(
@@ -336,6 +355,8 @@ class AppScope {
         appThemeViewModel: appThemeViewModel,
         companySessionNotifier: companySessionNotifier,
         getAdminEmpresa: getAdminEmpresa,
+        ratAuditRepository: ratAuditRepository,
+        ratSyncCoordinator: ratSyncCoordinator,
       );
 
       LocalDatabaseDebugLog.info('appScope.create.done');
@@ -402,6 +423,8 @@ class AppScope {
   final AppThemeViewModel appThemeViewModel;
   final ValueNotifier<SessaoRemota?> companySessionNotifier;
   final GetAdminEmpresa getAdminEmpresa;
+  final RatAuditRepository ratAuditRepository;
+  final RatSyncCoordinator ratSyncCoordinator;
 
   Future<void> dispose() async {
     companySessionNotifier.dispose();

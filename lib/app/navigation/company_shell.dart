@@ -11,14 +11,17 @@ import 'package:techreport/features/company_auth/data/services/secure_token_stor
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/company_auth/presentation/screens/company_home_screen.dart';
 import 'package:techreport/features/rat/presentation/screens/rat_list_screen.dart';
+import 'package:techreport/features/rat/presentation/screens/trash_screen.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_scope.dart';
 import 'package:techreport/features/rat/presentation/view_models/rat_list_view_model.dart';
+import 'package:techreport/features/rat/presentation/view_models/trash_scope.dart';
+import 'package:techreport/features/rat/presentation/view_models/trash_view_model.dart';
 import 'package:techreport/features/sync/presentation/screens/sync_center_screen.dart';
 import 'package:techreport/features/sync/presentation/view_models/sync_center_view_model.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_mode_title.dart';
 import 'package:techreport/shared/presentation/widgets/hierarchical_background.dart';
 
-enum CompanyArea { rats, profile, adminEmpresa, appAdmin }
+enum CompanyArea { rats, trash, profile, adminEmpresa, appAdmin }
 
 enum LogoutPendingDecision { syncBeforeExit, exitAnyway, cancel }
 
@@ -26,6 +29,8 @@ String _companyAreaLabel(CompanyArea area) {
   switch (area) {
     case CompanyArea.rats:
       return 'RATs';
+    case CompanyArea.trash:
+      return 'Lixeira';
     case CompanyArea.profile:
       return 'Meu perfil';
     case CompanyArea.adminEmpresa:
@@ -39,6 +44,8 @@ IconData _companyAreaIcon(CompanyArea area) {
   switch (area) {
     case CompanyArea.rats:
       return Icons.assignment_outlined;
+    case CompanyArea.trash:
+      return Icons.delete_outline;
     case CompanyArea.profile:
       return Icons.person_outline;
     case CompanyArea.adminEmpresa:
@@ -69,6 +76,7 @@ class _CompanyShellState extends State<CompanyShell> {
 
   late CompanyArea _selectedArea;
   RatListViewModel? _ratListViewModel;
+  TrashViewModel? _trashViewModel;
   AdminEmpresaViewModel? _adminEmpresaViewModel;
   AppAdminViewModel? _appAdminViewModel;
   bool _isSyncing = false;
@@ -263,9 +271,11 @@ class _CompanyShellState extends State<CompanyShell> {
       widget.sessionNotifier.addListener(_onSessionChanged);
     }
     _ratListViewModel?.dispose();
+    _trashViewModel?.dispose();
     _adminEmpresaViewModel?.dispose();
     _appAdminViewModel?.dispose();
     _ratListViewModel = null;
+    _trashViewModel = null;
     _adminEmpresaViewModel = null;
     _appAdminViewModel = null;
     final currentSession = session;
@@ -279,12 +289,26 @@ class _CompanyShellState extends State<CompanyShell> {
   void dispose() {
     widget.sessionNotifier.removeListener(_onSessionChanged);
     _ratListViewModel?.dispose();
+    _trashViewModel?.dispose();
     _adminEmpresaViewModel?.dispose();
     _appAdminViewModel?.dispose();
     super.dispose();
   }
 
   void _onSessionChanged() {
+    _ratListViewModel?.dispose();
+    _trashViewModel?.dispose();
+    _adminEmpresaViewModel?.dispose();
+    _appAdminViewModel?.dispose();
+    _ratListViewModel = null;
+    _trashViewModel = null;
+    _adminEmpresaViewModel = null;
+    _appAdminViewModel = null;
+    final current = session;
+    if (current != null) {
+      _selectedArea = _initialArea(current);
+      _ratListViewModel = _createRatListViewModel(current);
+    }
     setState(() {});
   }
 
@@ -379,6 +403,7 @@ class _CompanyShellState extends State<CompanyShell> {
   List<CompanyArea> _areasFor(SessaoRemota session) {
     return [
       if (session.hasCompanyContext) CompanyArea.rats,
+      if (session.hasCompanyContext) CompanyArea.trash,
       if (session.hasCompanyContext &&
           (session.isAdminEmpresa || session.isGerente))
         CompanyArea.adminEmpresa,
@@ -391,6 +416,8 @@ class _CompanyShellState extends State<CompanyShell> {
     switch (area) {
       case CompanyArea.rats:
         return _buildRatsArea(currentSession);
+      case CompanyArea.trash:
+        return _buildTrashArea(currentSession);
       case CompanyArea.profile:
         return Column(
           children: [
@@ -477,8 +504,47 @@ class _CompanyShellState extends State<CompanyShell> {
         processSyncQueue: widget.scope.processSyncQueue,
         downloadRemoteRats: widget.scope.downloadRemoteRats,
         supabaseClientFactory: widget.scope.supabaseClientFactory,
+        ratAuditRepository: widget.scope.ratAuditRepository,
+        syncCoordinator: widget.scope.ratSyncCoordinator,
         embedded: true,
       ),
+    );
+  }
+
+  Widget _buildTrashArea(SessaoRemota currentSession) {
+    if (!currentSession.hasCompanyContext || currentSession.isAppAdmin) {
+      return const Center(
+        child: Text('Você não tem permissão para acessar este conteúdo.'),
+      );
+    }
+    final empresaId = currentSession.empresaId!;
+    final scope = currentSession.isGerente || currentSession.isAdminEmpresa
+        ? CompanyManagerTrashScope(empresaId: empresaId)
+        : currentSession.tecnicoId == null
+        ? null
+        : CompanyTechnicianTrashScope(
+            empresaId: empresaId,
+            tecnicoId: currentSession.tecnicoId!,
+          );
+    if (scope == null) {
+      return const Center(
+        child: Text('Você não tem permissão para acessar este conteúdo.'),
+      );
+    }
+    if (_trashViewModel == null) {
+      _trashViewModel = TrashViewModel(
+        ratRepository: widget.scope.ratRepository,
+        syncCoordinator: widget.scope.ratSyncCoordinator,
+        scope: scope,
+        session: currentSession,
+      );
+    }
+    return TrashScreen(
+      viewModel: _trashViewModel!,
+      hasSignature: (rat) => _ratListViewModel?.hasSignature(rat.id) ?? false,
+      ownerName: (rat) => rat.tecnicoId == currentSession.tecnicoId
+          ? currentSession.nome
+          : null,
     );
   }
 

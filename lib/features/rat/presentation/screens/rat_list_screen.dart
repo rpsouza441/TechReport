@@ -4,6 +4,7 @@ import 'package:techreport/features/company_auth/data/services/supabase_client_f
 import 'package:techreport/features/company_auth/domain/entities/sessao_remota.dart';
 import 'package:techreport/features/rat/data/services/rat_pdf_share_service.dart';
 import 'package:techreport/features/rat/domain/entities/rat.dart';
+import 'package:techreport/features/rat/domain/repositories/rat_audit_repository.dart';
 import 'package:techreport/features/rat/domain/services/rat_sync_coordinator.dart';
 import 'package:techreport/features/rat/domain/usecases/share_rat_locally.dart';
 import 'package:techreport/features/signature/data/services/local_signature_asset_store.dart';
@@ -16,10 +17,12 @@ import 'package:techreport/shared/presentation/widgets/tech_report_state_view.da
 
 import '../../domain/repositories/rat_repository.dart';
 import '../../presentation/view_models/rat_form_view_model.dart';
+import '../../presentation/view_models/rat_audit_view_model.dart';
 import '../../presentation/view_models/rat_list_view_model.dart';
 import '../widgets/rat_list_item_card.dart';
 import '../widgets/rat_list_filter_bar.dart';
 import 'rat_form_screen.dart';
+import 'rat_audit_screen.dart';
 import 'rat_pdf_preview_screen.dart';
 
 class RatListScreen extends StatefulWidget {
@@ -37,6 +40,8 @@ class RatListScreen extends StatefulWidget {
     this.processSyncQueue,
     this.downloadRemoteRats,
     this.supabaseClientFactory,
+    this.ratAuditRepository,
+    this.syncCoordinator,
     this.embedded = false,
   });
 
@@ -52,6 +57,8 @@ class RatListScreen extends StatefulWidget {
   final ProcessSyncQueue? processSyncQueue;
   final DownloadRemoteRats? downloadRemoteRats;
   final SupabaseClientFactory? supabaseClientFactory;
+  final RatAuditRepository? ratAuditRepository;
+  final RatSyncCoordinator? syncCoordinator;
   final bool embedded;
 
   @override
@@ -233,24 +240,9 @@ class _RatListScreenState extends State<RatListScreen> {
   }
 
   Future<void> _openCreate() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => RatFormScreen(
-          viewModel: RatFormViewModel(
-            assinaturaRepository: widget.assinaturaRepository,
-            localSignatureAssetStore: widget.localSignatureAssetStore,
-            ratPdfShareService: widget.ratPdfShareService,
-            ratRepository: widget.ratRepository,
-            shareRatLocally: widget.shareRatLocally,
-            remoteSession: widget.remoteSession,
-            enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
-            syncCoordinator: _syncCoordinator(),
-            downloadRemoteRats: widget.downloadRemoteRats,
-            supabaseClientFactory: widget.supabaseClientFactory,
-          ),
-        ),
-      ),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => _buildFormScreen()));
 
     if (result == true) {
       await widget.viewModel.load();
@@ -258,25 +250,9 @@ class _RatListScreenState extends State<RatListScreen> {
   }
 
   Future<void> _openEdit(Rat rat) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => RatFormScreen(
-          viewModel: RatFormViewModel(
-            assinaturaRepository: widget.assinaturaRepository,
-            localSignatureAssetStore: widget.localSignatureAssetStore,
-            ratPdfShareService: widget.ratPdfShareService,
-            ratRepository: widget.ratRepository,
-            shareRatLocally: widget.shareRatLocally,
-            initialRat: rat,
-            remoteSession: widget.remoteSession,
-            enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
-            syncCoordinator: _syncCoordinator(),
-            downloadRemoteRats: widget.downloadRemoteRats,
-            supabaseClientFactory: widget.supabaseClientFactory,
-          ),
-        ),
-      ),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => _buildFormScreen(rat: rat)));
 
     if (result == true) {
       await widget.viewModel.load();
@@ -378,6 +354,7 @@ class _RatListScreenState extends State<RatListScreen> {
   }
 
   RatSyncCoordinator? _syncCoordinator() {
+    if (widget.syncCoordinator != null) return widget.syncCoordinator;
     final enqueueRatSync = widget.enqueueRatSync;
     final enqueueAssinaturaSync = widget.enqueueAssinaturaSync;
     final processSyncQueue = widget.processSyncQueue;
@@ -393,5 +370,50 @@ class _RatListScreenState extends State<RatListScreen> {
       enqueueAssinaturaSync: enqueueAssinaturaSync,
       processSyncQueue: processSyncQueue,
     );
+  }
+
+  RatFormScreen _buildFormScreen({Rat? rat}) {
+    final session = widget.remoteSession;
+    final ownerName = rat == null
+        ? null
+        : rat.tecnicoId == session?.tecnicoId
+        ? session?.nome
+        : _fallbackOwnerName(rat);
+    final viewModel = RatFormViewModel(
+      assinaturaRepository: widget.assinaturaRepository,
+      localSignatureAssetStore: widget.localSignatureAssetStore,
+      ratPdfShareService: widget.ratPdfShareService,
+      ratRepository: widget.ratRepository,
+      shareRatLocally: widget.shareRatLocally,
+      initialRat: rat,
+      remoteSession: session,
+      enqueueAssinaturaSync: widget.enqueueAssinaturaSync,
+      syncCoordinator: _syncCoordinator(),
+      downloadRemoteRats: widget.downloadRemoteRats,
+      supabaseClientFactory: widget.supabaseClientFactory,
+      ownerDisplayName: ownerName,
+    );
+    final auditRepository = widget.ratAuditRepository;
+    return RatFormScreen(
+      viewModel: viewModel,
+      auditScreenBuilder: rat == null || auditRepository == null
+          ? null
+          : (_) => RatAuditScreen(
+              viewModel: RatAuditViewModel(
+                repository: auditRepository,
+                ratId: rat.id,
+              ),
+              rat: rat,
+              ownerName: ownerName ?? _fallbackOwnerName(rat),
+              hasSignature: widget.viewModel.hasSignature(rat.id),
+              currentUserId: session?.usuarioId,
+            ),
+    );
+  }
+
+  String _fallbackOwnerName(Rat rat) {
+    final id = rat.tecnicoId;
+    if (id == null || id.isEmpty) return 'Proprietário não identificado';
+    return 'Técnico · ${id.length <= 8 ? id : id.substring(0, 8)}';
   }
 }
