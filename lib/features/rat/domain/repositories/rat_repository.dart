@@ -46,6 +46,29 @@ abstract class RatRepository {
     String? lastId,
   });
 
+  Future<List<Rat>> listDeletedLocalCursor({
+    required int limit,
+    DateTime? lastDeletedAt,
+    String? lastId,
+  });
+
+  Future<List<Rat>> listDeletedCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    DateTime? lastDeletedAt,
+    String? lastId,
+  });
+
+  Future<List<Rat>> listDeletedCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    DateTime? lastDeletedAt,
+    String? lastId,
+  });
+
+  Future<List<Rat>> listAllLocalForBackup();
+
   Future<void> save(Rat rat);
 
   Future<void> update(Rat rat);

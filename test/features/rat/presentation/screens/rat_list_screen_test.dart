@@ -107,6 +107,9 @@ Rat _sampleRat() {
 }
 
 class _StubRatRepository implements RatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   _StubRatRepository(this.rats);
 
   List<Rat> rats;
@@ -115,7 +118,10 @@ class _StubRatRepository implements RatRepository {
   Future<List<Rat>> listLocal() async => rats;
 
   @override
-  Future<List<Rat>> listLocalPage({required int limit, required int offset}) async {
+  Future<List<Rat>> listLocalPage({
+    required int limit,
+    required int offset,
+  }) async {
     if (offset >= rats.length) return [];
     return rats.skip(offset).take(limit).toList();
   }
@@ -141,7 +147,9 @@ class _StubAssinaturaRepository implements AssinaturaRepository {
   Future<List<Assinatura>> listByRatId(String ratId) async => [];
 
   @override
-  Future<Map<String, List<Assinatura>>> listByRatIds(List<String> ratIds) async => {};
+  Future<Map<String, List<Assinatura>>> listByRatIds(
+    List<String> ratIds,
+  ) async => {};
 
   @override
   Future<Uint8List?> readBytes(String id) async => null;

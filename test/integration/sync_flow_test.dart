@@ -279,6 +279,9 @@ class MockRemoteRatRepository implements RemoteRatRepository {
 }
 
 class MockRatRepository implements RatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final Map<String, Rat> _rats = {};
 
   @override

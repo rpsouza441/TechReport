@@ -9,6 +9,9 @@ import 'package:techreport/features/signature/domain/entities/assinatura.dart';
 import 'package:techreport/features/signature/domain/repositories/assinatura_repository.dart';
 
 class _StubRatRepository implements RatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final List<Rat> rats = [];
   bool shouldThrowOnList = false;
   int listLocalPageCallCount = 0;

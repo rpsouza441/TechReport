@@ -245,6 +245,99 @@ class DriftRatRepository implements RatRepository {
   }
 
   @override
+  Future<List<domain.Rat>> listDeletedLocalCursor({
+    required int limit,
+    DateTime? lastDeletedAt,
+    String? lastId,
+  }) {
+    return _listDeletedCursor(
+      limit: limit,
+      lastDeletedAt: lastDeletedAt,
+      lastId: lastId,
+      scope: (tbl) => tbl.ownerType.equals(RatOwnerType.localTecnico.name),
+    );
+  }
+
+  @override
+  Future<List<domain.Rat>> listDeletedCompanyForTechnicianCursor({
+    required String empresaId,
+    required String tecnicoId,
+    required int limit,
+    DateTime? lastDeletedAt,
+    String? lastId,
+  }) {
+    return _listDeletedCursor(
+      limit: limit,
+      lastDeletedAt: lastDeletedAt,
+      lastId: lastId,
+      scope: (tbl) =>
+          tbl.ownerType.equals(RatOwnerType.companyTecnico.name) &
+          tbl.empresaId.equals(empresaId) &
+          tbl.tecnicoId.equals(tecnicoId),
+    );
+  }
+
+  @override
+  Future<List<domain.Rat>> listDeletedCompanyForManagerCursor({
+    required String empresaId,
+    required int limit,
+    DateTime? lastDeletedAt,
+    String? lastId,
+  }) {
+    return _listDeletedCursor(
+      limit: limit,
+      lastDeletedAt: lastDeletedAt,
+      lastId: lastId,
+      scope: (tbl) =>
+          tbl.ownerType.equals(RatOwnerType.companyTecnico.name) &
+          tbl.empresaId.equals(empresaId),
+    );
+  }
+
+  Future<List<domain.Rat>> _listDeletedCursor({
+    required int limit,
+    required DateTime? lastDeletedAt,
+    required String? lastId,
+    required Expression<bool> Function(database.Rats tbl) scope,
+  }) async {
+    final query = _database.select(_database.rats)
+      ..where((tbl) => tbl.deletedAt.isNotNull() & scope(tbl))
+      ..orderBy([
+        (tbl) => OrderingTerm.desc(tbl.deletedAt),
+        (tbl) => OrderingTerm.desc(tbl.id),
+      ])
+      ..limit(limit);
+
+    if (lastDeletedAt != null && lastId != null) {
+      query.where(
+        (tbl) =>
+            tbl.deletedAt.isSmallerThanValue(lastDeletedAt) |
+            (tbl.deletedAt.equals(lastDeletedAt) &
+                tbl.id.isSmallerThanValue(lastId)),
+      );
+    }
+
+    final rows = await query.get();
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
+  Future<List<domain.Rat>> listAllLocalForBackup() async {
+    final rows =
+        await (_database.select(_database.rats)
+              ..where(
+                (tbl) => tbl.ownerType.equals(RatOwnerType.localTecnico.name),
+              )
+              ..orderBy([
+                (tbl) => OrderingTerm.desc(tbl.updatedAt),
+                (tbl) => OrderingTerm.desc(tbl.id),
+              ]))
+            .get();
+
+    return rows.map(_toEntity).toList();
+  }
+
+  @override
   Future<void> save(domain.Rat rat) async {
     await _database
         .into(_database.rats)

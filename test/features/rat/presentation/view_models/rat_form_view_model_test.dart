@@ -109,6 +109,9 @@ class _StubRatPdfShareService implements RatPdfShareService {
 }
 
 class _StubRatRepository implements RatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   Rat? savedRat;
   bool shouldThrowOnSave = false;
 

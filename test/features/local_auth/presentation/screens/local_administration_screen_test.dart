@@ -249,6 +249,9 @@ class _MemoryThemeRepository extends AppThemeRepository {
 }
 
 class _LocalRatRepository implements RatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   _LocalRatRepository(this.rats);
 
   final List<Rat> rats;

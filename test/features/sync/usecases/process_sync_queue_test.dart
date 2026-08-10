@@ -144,6 +144,9 @@ class _StubRemoteRatRepository implements RemoteRatRepository {
 }
 
 class _StubRatRepository implements RatRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   Rat? savedRat;
   bool shouldThrowOnGetById = false;
   int saveCallCount = 0;
