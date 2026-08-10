@@ -70,6 +70,10 @@ class LocalDataImportScreen extends StatelessWidget {
                         ],
                         if (result != null) ...[
                           const SizedBox(height: MetricSlateSpacing.lg),
+                          TechReportCard(
+                            child: Text(viewModel.successMessage!),
+                          ),
+                          const SizedBox(height: MetricSlateSpacing.md),
                           _ImportResultSection(result: result),
                           const SizedBox(height: MetricSlateSpacing.lg),
                           FilledButton(
@@ -81,6 +85,8 @@ class LocalDataImportScreen extends StatelessWidget {
                           _ImportPreviewSection(
                             preview: preview,
                             isLegacy: viewModel.isLegacy,
+                            ratsActive: viewModel.ratsActive,
+                            ratsTrash: viewModel.ratsTrash,
                           ),
                           const SizedBox(height: MetricSlateSpacing.lg),
                           FilledButton.icon(
@@ -147,7 +153,8 @@ class LocalDataImportScreen extends StatelessWidget {
     final confirmed = await showTechReportConfirmationDialog(
       context: context,
       title: 'Substituir conflitos?',
-      message: 'RATs com o mesmo ID e conteúdo diferente serão substituídas pelos dados do backup.',
+      message:
+          'RATs com o mesmo ID e conteúdo diferente serão substituídas pelos dados do backup.',
       confirmLabel: 'Substituir',
       cancelLabel: 'Cancelar',
     );
@@ -161,10 +168,17 @@ class LocalDataImportScreen extends StatelessWidget {
 }
 
 class _ImportPreviewSection extends StatelessWidget {
-  const _ImportPreviewSection({required this.preview, required this.isLegacy});
+  const _ImportPreviewSection({
+    required this.preview,
+    required this.isLegacy,
+    required this.ratsActive,
+    required this.ratsTrash,
+  });
 
   final LocalImportPreview preview;
   final bool isLegacy;
+  final int? ratsActive;
+  final int? ratsTrash;
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +215,18 @@ class _ImportPreviewSection extends StatelessWidget {
             value: '${preview.totalRats}',
             dense: true,
           ),
+          if (ratsActive != null)
+            TechReportInfoRow(
+              label: 'RATs ativas',
+              value: '$ratsActive',
+              dense: true,
+            ),
+          if (ratsTrash != null)
+            TechReportInfoRow(
+              label: 'Na lixeira',
+              value: '$ratsTrash',
+              dense: true,
+            ),
           TechReportInfoRow(
             label: 'Assinaturas no arquivo',
             value: '${preview.totalAssinaturas}',

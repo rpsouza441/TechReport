@@ -33,9 +33,16 @@ class LocalDataImportViewModel extends ChangeNotifier {
   List<int>? _backupBytes;
   Map<String, dynamic>? _legacyPayload;
   bool _isLegacy = false;
+  int? _ratsActive;
+  int? _ratsTrash;
 
   bool get isLegacy => _isLegacy;
   bool get hasSelection => _backupBytes != null || _legacyPayload != null;
+  int? get ratsActive => _ratsActive;
+  int? get ratsTrash => _ratsTrash;
+  String? get successMessage => result == null
+      ? null
+      : 'Backup restaurado. RATs ativas e itens da lixeira foram atualizados.';
 
   Future<void> loadBackup(List<int> bytes) async {
     isLoading = true;
@@ -45,10 +52,15 @@ class LocalDataImportViewModel extends ChangeNotifier {
     _backupBytes = null;
     _legacyPayload = null;
     _isLegacy = false;
+    _ratsActive = null;
+    _ratsTrash = null;
     notifyListeners();
 
     try {
-      preview = await _previewLocalBackup(bytes);
+      final backupPreview = await _previewLocalBackup(bytes);
+      preview = backupPreview;
+      _ratsActive = backupPreview.ratsActive;
+      _ratsTrash = backupPreview.ratsTrash;
       _backupBytes = bytes;
     } on FormatException {
       // Não é ZIP — tenta legado
@@ -57,6 +69,9 @@ class LocalDataImportViewModel extends ChangeNotifier {
           String.fromCharCodes(bytes),
         );
         preview = await _previewLocalDataImport(_legacyPayload!);
+        final rats = _legacyPayload!['rats'] as List;
+        _ratsActive = rats.where(_isActiveRatPayload).length;
+        _ratsTrash = rats.length - _ratsActive!;
         _isLegacy = true;
       } on FormatException catch (e) {
         errorMessage = _cleanError(e);
@@ -119,11 +134,17 @@ class LocalDataImportViewModel extends ChangeNotifier {
     _backupBytes = null;
     _legacyPayload = null;
     _isLegacy = false;
+    _ratsActive = null;
+    _ratsTrash = null;
     notifyListeners();
   }
 
   String _cleanError(Object error) {
     final message = error.toString();
     return message.replaceFirst('FormatException: ', '');
+  }
+
+  bool _isActiveRatPayload(Object? item) {
+    return item is Map<String, dynamic> && item['deletedAt'] == null;
   }
 } // end of LocalDataImportViewModel
