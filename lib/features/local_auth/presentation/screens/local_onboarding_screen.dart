@@ -3,7 +3,6 @@ import 'package:techreport/app/theme/metric_slate_spacing.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_card.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_error_banner.dart';
 import 'package:techreport/shared/presentation/widgets/tech_report_form_header.dart';
-import 'package:techreport/shared/presentation/widgets/tech_report_section_header.dart';
 
 import '../view_models/app_session_view_model.dart';
 
@@ -29,9 +28,6 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
   final _emailController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _empresaController = TextEditingController();
-  final _pinController = TextEditingController();
-  final _pinConfirmationController = TextEditingController();
-  bool _usePin = false;
 
   @override
   void dispose() {
@@ -39,8 +35,6 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
     _emailController.dispose();
     _telefoneController.dispose();
     _empresaController.dispose();
-    _pinController.dispose();
-    _pinConfirmationController.dispose();
     super.dispose();
   }
 
@@ -67,16 +61,11 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
                         children: [
                           const TechReportFormHeader(
                             icon: Icons.person_add_outlined,
-                            title: 'Primeiro acesso local',
+                            title: 'Perfil do técnico',
                             subtitle:
-                                'Configure o perfil do técnico neste dispositivo. '
-                                'Nada aqui depende de backend nesta sprint.',
+                                'Configure o perfil usado nos RATs deste dispositivo.',
                           ),
                           const SizedBox(height: MetricSlateSpacing.lg),
-                          const TechReportSectionHeader(
-                            title: 'Perfil do técnico',
-                            padding: EdgeInsets.zero,
-                          ),
                           TextFormField(
                             controller: _nomeController,
                             enabled: !isLoading,
@@ -113,53 +102,6 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
                               prefixIcon: Icon(Icons.business_outlined),
                             ),
                           ),
-                          const SizedBox(height: MetricSlateSpacing.lg),
-                          const TechReportSectionHeader(
-                            title: 'Segurança',
-                            subtitle:
-                                'Nesta base local o PIN é opcional e fica fora do domínio.',
-                            padding: EdgeInsets.zero,
-                          ),
-                          SwitchListTile.adaptive(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Proteger app com PIN'),
-                            value: _usePin,
-                            onChanged: isLoading
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      _usePin = value;
-                                    });
-                                  },
-                          ),
-                          if (_usePin) ...[
-                            const SizedBox(height: MetricSlateSpacing.sm),
-                            TextFormField(
-                              controller: _pinController,
-                              enabled: !isLoading,
-                              keyboardType: TextInputType.number,
-                              obscureText: true,
-                              maxLength: 8,
-                              decoration: const InputDecoration(
-                                labelText: 'PIN com 4 a 8 dígitos',
-                                prefixIcon: Icon(Icons.pin_outlined),
-                                counterText: '',
-                              ),
-                            ),
-                            const SizedBox(height: MetricSlateSpacing.md),
-                            TextFormField(
-                              controller: _pinConfirmationController,
-                              enabled: !isLoading,
-                              keyboardType: TextInputType.number,
-                              obscureText: true,
-                              maxLength: 8,
-                              decoration: const InputDecoration(
-                                labelText: 'Confirmação do PIN',
-                                prefixIcon: Icon(Icons.pin_outlined),
-                                counterText: '',
-                              ),
-                            ),
-                          ],
                           if (widget.viewModel.errorMessage != null) ...[
                             const SizedBox(height: MetricSlateSpacing.md),
                             TechReportErrorBanner(
@@ -182,7 +124,7 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
                                     size: 20,
                                   ),
                             label: Text(
-                              isLoading ? 'Salvando...' : 'Concluir onboarding',
+                              isLoading ? 'Salvando...' : 'Começar a usar',
                             ),
                           ),
                           if (widget.onBackToModeChoice != null) ...[
@@ -217,12 +159,9 @@ class _LocalOnboardingScreenState extends State<LocalOnboardingScreen> {
       email: _emailController.text,
       telefone: _telefoneController.text,
       empresaNome: _empresaController.text,
-      usePin: _usePin,
-      pin: _pinController.text,
-      pinConfirmation: _pinConfirmationController.text,
     );
 
-    if (!mounted || widget.viewModel.status != AppSessionStatus.unlocked) {
+    if (!mounted || widget.viewModel.status != AppSessionStatus.ready) {
       return;
     }
 

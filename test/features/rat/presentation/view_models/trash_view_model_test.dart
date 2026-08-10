@@ -266,9 +266,6 @@ TrashViewModel _viewModel({
 }
 
 class _FakeRatRepository implements RatRepository {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-
   final List<List<Rat>> pages = [];
   final List<String> calls = [];
   final List<(DateTime?, String?)?> cursors = [];
