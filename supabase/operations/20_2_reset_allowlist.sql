@@ -43,11 +43,29 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 
+-- Freeze the destructive boundary before rechecking its exact contents. A
+-- concurrent application/Auth/Storage write either finishes before these
+-- locks and is detected by the pre-state gates, or blocks until commit.
+lock table
+  public.app_admins,
+  public.empresas,
+  public.rat_audit_log,
+  public.rat_signature_attachments,
+  public.rats,
+  public.tecnico_convites,
+  public.tecnicos
+in access exclusive mode;
+lock table auth.users in share mode;
+lock table storage.buckets in share mode;
+lock table storage.objects in access exclusive mode;
+
 do $safety$
 declare
   v_relations text[];
-  v_unexpected_functions text[];
-  v_unexpected_storage_policies text[];
+  v_functions text[];
+  v_public_policies text[];
+  v_storage_policies text[];
+  v_triggers text[];
   v_pgcrypto_schema text;
 begin
   if to_regclass('auth.users') is null
@@ -82,47 +100,71 @@ begin
     'rats',
     'tecnico_convites',
     'tecnicos'
-  ]::text[]
-  and v_relations <> array[]::text[] then
+  ]::text[] then
     raise exception 'BLOCK: public relation inventory is outside the TechReport allowlist: %',
       v_relations;
   end if;
 
-  select array_agg(
+  select coalesce(array_agg(
     p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')'
     order by p.proname, pg_get_function_identity_arguments(p.oid)
-  )
-  into v_unexpected_functions
+  ), array[]::text[])
+  into v_functions
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'public'
-    and (p.proname, pg_get_function_identity_arguments(p.oid)) not in (
-      ('accept_tecnico_convite', 'p_codigo text'),
-      ('audit_rat_change', ''),
-      ('cancel_tecnico_convite', 'p_convite_id uuid'),
-      ('create_empresa_convite', 'p_empresa_id uuid, p_email text, p_nome text, p_papel text'),
-      ('create_tecnico_convite', 'p_email text, p_nome text, p_papel text'),
-      ('current_tecnico_empresa_id', ''),
-      ('current_tecnico_papel', ''),
-      ('guard_app_admin_company_identity', ''),
-      ('guard_tecnico_app_admin_identity', ''),
-      ('is_admin_empresa_of', 'p_empresa_id uuid'),
-      ('is_app_admin', ''),
-      ('is_equipe_viewer_of', 'p_empresa_id uuid'),
-      ('rats_guard_update', ''),
-      ('set_server_updated_at', ''),
-      ('update_own_display_name', 'p_nome text'),
-      ('update_tecnico_equipe', 'p_tecnico_id uuid, p_ativo boolean, p_must_change_password boolean'),
-      ('validate_tecnico_convite', 'p_email text, p_codigo text')
-    );
+  where n.nspname = 'public';
 
-  if v_unexpected_functions is not null then
-    raise exception 'BLOCK: public function inventory is outside the TechReport allowlist: %',
-      v_unexpected_functions;
+  if v_functions <> array[
+    'accept_tecnico_convite(p_codigo text)',
+    'cancel_tecnico_convite(p_convite_id uuid)',
+    'create_empresa_convite(p_empresa_id uuid, p_email text, p_nome text, p_papel text)',
+    'create_tecnico_convite(p_email text, p_nome text, p_papel text)',
+    'current_tecnico_empresa_id()',
+    'current_tecnico_papel()',
+    'is_admin_empresa_of(p_empresa_id uuid)',
+    'is_app_admin()',
+    'is_equipe_viewer_of(p_empresa_id uuid)',
+    'set_server_updated_at()',
+    'update_own_display_name(p_nome text)',
+    'update_tecnico_equipe(p_tecnico_id uuid, p_ativo boolean, p_must_change_password boolean)',
+    'validate_tecnico_convite(p_email text, p_codigo text)'
+  ]::text[] then
+    raise exception 'BLOCK: public function inventory differs from the 13-function baseline: %',
+      v_functions;
   end if;
 
-  select array_agg(policyname order by policyname)
-  into v_unexpected_storage_policies
+  select coalesce(array_agg(tablename || '.' || policyname order by tablename, policyname), array[]::text[])
+  into v_public_policies
+  from pg_policies
+  where schemaname = 'public';
+
+  if v_public_policies <> array[
+    'app_admins.app_admins_select_self',
+    'app_admins.app_admins_update_own_nome',
+    'empresas.empresas_insert_app_admin',
+    'empresas.empresas_select_own_or_app_admin',
+    'empresas.empresas_update_authenticated',
+    'rat_audit_log.rat_audit_log_insert_authorized',
+    'rat_audit_log.rat_audit_log_no_delete',
+    'rat_audit_log.rat_audit_log_select_manager',
+    'rat_signature_attachments.rat_signature_attachments_insert_membros',
+    'rat_signature_attachments.rat_signature_attachments_select_membros',
+    'rat_signature_attachments.rat_signature_attachments_update_membros',
+    'rats.rats_delete_none',
+    'rats.rats_insert_company_member',
+    'rats.rats_select_own_or_manager',
+    'rats.rats_update_company_member',
+    'tecnico_convites.tecnico_convites_select_admin',
+    'tecnicos.tecnicos_insert_by_admin',
+    'tecnicos.tecnicos_select_allowed',
+    'tecnicos.tecnicos_update'
+  ]::text[] then
+    raise exception 'BLOCK: public policy inventory differs from the 19-policy baseline: %',
+      v_public_policies;
+  end if;
+
+  select coalesce(array_agg(policyname order by policyname), array[]::text[])
+  into v_storage_policies
   from pg_policies
   where schemaname = 'storage'
     and tablename = 'objects'
@@ -133,27 +175,100 @@ begin
       or coalesce(qual, '') ilike '%from tecnicos%'
       or coalesce(with_check, '') ilike '%public.tecnicos%'
       or coalesce(with_check, '') ilike '%from tecnicos%'
-    )
-    and policyname not in (
-      'admins_empresa acessam storage rat-signatures',
-      'gerentes acessam storage rat-signatures',
-      'tecnicos acessam storage rat-signatures',
-      'admins_empresa fazem upload em rat-signatures',
-      'gerentes fazem upload em rat-signatures',
-      'tecnicos fazem upload em rat-signatures',
-      'membros atualizam objeto em rat-signatures',
-      'rat_signatures_select_membros',
-      'rat_signatures_insert_membros',
-      'rat_signatures_update_membros',
-      'rat_signatures_delete_membros'
     );
 
-  if v_unexpected_storage_policies is not null then
-    raise exception 'BLOCK: storage policy inventory is outside the TechReport allowlist: %',
-      v_unexpected_storage_policies;
+  if v_storage_policies <> array[
+    'rat_signatures_delete_membros',
+    'rat_signatures_insert_membros',
+    'rat_signatures_select_membros',
+    'rat_signatures_update_membros'
+  ]::text[] then
+    raise exception 'BLOCK: Storage policy inventory differs from the four-policy baseline: %',
+      v_storage_policies;
+  end if;
+
+  select coalesce(array_agg(c.relname || '.' || t.tgname order by c.relname, t.tgname), array[]::text[])
+  into v_triggers
+  from pg_trigger t
+  join pg_class c on c.oid = t.tgrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  where not t.tgisinternal
+    and n.nspname = 'public';
+
+  if v_triggers <> array['rats.rats_set_server_updated_at']::text[] then
+    raise exception 'BLOCK: public trigger inventory differs from the one-trigger baseline: %',
+      v_triggers;
   end if;
 end
 $safety$;
+
+-- Exact destructive pre-state from the definitive read-only inventory. This
+-- catches any write or catalog drift that happened after the backup/Storage
+-- gates and before the reset transaction acquired its locks.
+do $prestate$
+declare
+  v_empresas bigint;
+  v_tecnicos bigint;
+  v_app_admins bigint;
+  v_convites bigint;
+  v_rats bigint;
+  v_audit bigint;
+  v_signature_metadata bigint;
+  v_auth_users bigint;
+  v_dual_identity bigint;
+  v_storage_buckets bigint;
+  v_storage_objects bigint;
+  v_public_extensions bigint;
+  v_relevant_publications bigint;
+begin
+  select count(*) into v_empresas from public.empresas;
+  select count(*) into v_tecnicos from public.tecnicos;
+  select count(*) into v_app_admins from public.app_admins;
+  select count(*) into v_convites from public.tecnico_convites;
+  select count(*) into v_rats from public.rats;
+  select count(*) into v_audit from public.rat_audit_log;
+  select count(*) into v_signature_metadata from public.rat_signature_attachments;
+  select count(*) into v_auth_users from auth.users;
+  select count(*) into v_dual_identity
+  from public.tecnicos t
+  join public.app_admins a on a.user_id = t.user_id
+  where t.ativo = true and a.ativo = true;
+  select count(*) into v_storage_buckets from storage.buckets;
+  select count(*) into v_storage_objects from storage.objects;
+  select count(*) into v_public_extensions
+  from pg_extension e
+  join pg_namespace n on n.oid = e.extnamespace
+  where n.nspname = 'public';
+  select count(*) into v_relevant_publications
+  from pg_publication_tables
+  where schemaname in ('public', 'storage');
+
+  if (v_empresas, v_tecnicos, v_app_admins, v_convites, v_rats, v_audit,
+      v_signature_metadata, v_auth_users, v_dual_identity,
+      v_storage_buckets, v_storage_objects, v_public_extensions,
+      v_relevant_publications)
+     is distinct from
+     (8::bigint, 13::bigint, 1::bigint, 15::bigint, 70::bigint, 0::bigint,
+      42::bigint, 14::bigint, 1::bigint,
+      0::bigint, 0::bigint, 0::bigint,
+      0::bigint) then
+    raise exception using
+      message = format(
+        'BLOCK: destructive pre-state drift empresas=%s tecnicos=%s app_admins=%s convites=%s rats=%s audit=%s signature_metadata=%s auth_users=%s dual_identity=%s storage_buckets=%s storage_objects=%s public_extensions=%s relevant_publications=%s',
+        v_empresas, v_tecnicos, v_app_admins, v_convites, v_rats, v_audit,
+        v_signature_metadata, v_auth_users, v_dual_identity,
+        v_storage_buckets, v_storage_objects, v_public_extensions,
+        v_relevant_publications
+      );
+  end if;
+
+  if to_regclass('supabase_migrations.schema_migrations') is not null then
+    raise exception 'BLOCK: migration history appeared after the definitive inventory';
+  end if;
+end
+$prestate$;
+
+\echo 'TECHREPORT_RESET_PRESTATE=PASS'
 
 -- Storage object bytes and bucket metadata must already have been removed by
 -- the supported Storage API. Refuse to create service/filesystem divergence.
@@ -193,16 +308,29 @@ drop policy if exists "rat_signatures_insert_membros" on storage.objects;
 drop policy if exists "rat_signatures_update_membros" on storage.objects;
 drop policy if exists "rat_signatures_delete_membros" on storage.objects;
 
--- All seven TechReport tables are one DROP target set so inter-table foreign
--- keys resolve without CASCADE. Any external dependency blocks the transaction.
-drop table if exists
-  public.rat_audit_log,
-  public.rat_signature_attachments,
-  public.tecnico_convites,
-  public.rats,
-  public.app_admins,
-  public.tecnicos,
-  public.empresas;
+-- Remove every exact public policy from the approved inventory so function
+-- dependencies can be dropped explicitly without CASCADE.
+drop policy if exists app_admins_select_self on public.app_admins;
+drop policy if exists app_admins_update_own_nome on public.app_admins;
+drop policy if exists empresas_insert_app_admin on public.empresas;
+drop policy if exists empresas_select_own_or_app_admin on public.empresas;
+drop policy if exists empresas_update_authenticated on public.empresas;
+drop policy if exists rat_audit_log_insert_authorized on public.rat_audit_log;
+drop policy if exists rat_audit_log_no_delete on public.rat_audit_log;
+drop policy if exists rat_audit_log_select_manager on public.rat_audit_log;
+drop policy if exists rat_signature_attachments_insert_membros on public.rat_signature_attachments;
+drop policy if exists rat_signature_attachments_select_membros on public.rat_signature_attachments;
+drop policy if exists rat_signature_attachments_update_membros on public.rat_signature_attachments;
+drop policy if exists rats_delete_none on public.rats;
+drop policy if exists rats_insert_company_member on public.rats;
+drop policy if exists rats_select_own_or_manager on public.rats;
+drop policy if exists rats_update_company_member on public.rats;
+drop policy if exists tecnico_convites_select_admin on public.tecnico_convites;
+drop policy if exists tecnicos_insert_by_admin on public.tecnicos;
+drop policy if exists tecnicos_select_allowed on public.tecnicos;
+drop policy if exists tecnicos_update on public.tecnicos;
+
+drop trigger if exists rats_set_server_updated_at on public.rats;
 
 drop function if exists public.accept_tecnico_convite(text);
 drop function if exists public.audit_rat_change();
@@ -221,6 +349,17 @@ drop function if exists public.set_server_updated_at();
 drop function if exists public.update_own_display_name(text);
 drop function if exists public.update_tecnico_equipe(uuid, boolean, boolean);
 drop function if exists public.validate_tecnico_convite(text, text);
+
+-- All seven TechReport tables are one DROP target set so inter-table foreign
+-- keys resolve without CASCADE. Any unapproved external dependency blocks.
+drop table if exists
+  public.rat_audit_log,
+  public.rat_signature_attachments,
+  public.tecnico_convites,
+  public.rats,
+  public.app_admins,
+  public.tecnicos,
+  public.empresas;
 
 -- Bootstrap only the trace table required for authoritative replay. Never drop
 -- this platform schema/table; remove only the explicitly replayed versions.
@@ -281,6 +420,31 @@ begin
     where n.nspname = 'public'
   ) then
     raise exception 'BLOCK: public TechReport functions remain after reset';
+  end if;
+
+  if (select count(*) from auth.users) <> 14 then
+    raise exception 'BLOCK: Auth users changed during public reset';
+  end if;
+
+  if (select count(*) from storage.buckets) <> 0
+     or (select count(*) from storage.objects) <> 0 then
+    raise exception 'BLOCK: Storage metadata changed during public reset';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_extension e
+    join pg_namespace n on n.oid = e.extnamespace
+    where e.extname = 'pgcrypto' and n.nspname = 'extensions'
+  ) then
+    raise exception 'BLOCK: pgcrypto platform extension changed during reset';
+  end if;
+
+  if not exists (select 1 from pg_namespace where nspname = 'auth')
+     or not exists (select 1 from pg_namespace where nspname = 'storage')
+     or not exists (select 1 from pg_namespace where nspname = 'extensions')
+     or not exists (select 1 from pg_namespace where nspname = 'supabase_migrations') then
+    raise exception 'BLOCK: required Supabase platform schema missing after reset';
   end if;
 end
 $post_reset$;
