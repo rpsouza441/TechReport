@@ -26,6 +26,10 @@ class EnqueueRatSync {
     await _enqueue(rat, session: session, operation: SyncOperation.delete);
   }
 
+  Future<void> restore(Rat rat, {required SyncSessionContext session}) async {
+    await _enqueue(rat, session: session, operation: SyncOperation.restore);
+  }
+
   Future<void> _enqueue(
     Rat rat, {
     required SyncSessionContext session,
@@ -35,11 +39,13 @@ class EnqueueRatSync {
     _validateSession(session: session, context: context);
 
     final now = DateTime.now();
-    final payload = _buildPayload(
-      rat,
-      context: context,
-      deletado: operation == SyncOperation.delete,
-    );
+    final payload = operation == SyncOperation.restore
+        ? jsonEncode({'id': rat.id})
+        : _buildPayload(
+            rat,
+            context: context,
+            deletado: operation == SyncOperation.delete,
+          );
 
     // RF-09: no maximo uma operacao pendente por RAT. Uma edicao posterior
     // (de qualquer usuario autorizado) assume o item existente, transferindo o

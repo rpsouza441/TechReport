@@ -346,6 +346,8 @@ class DriftSyncQueueRepository implements SyncQueueRepository {
         return domain.SyncOperation.upsert;
       case 'delete':
         return domain.SyncOperation.delete;
+      case 'restore':
+        return domain.SyncOperation.restore;
       default:
         throw ArgumentError('SyncOperation invalido: $value');
     }

@@ -1,6 +1,6 @@
 enum SyncEntityType { rat, assinatura }
 
-enum SyncOperation { upsert, delete }
+enum SyncOperation { upsert, delete, restore }
 
 enum SyncItemStatus { pending, processing, synced, failed }
 

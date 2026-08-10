@@ -79,6 +79,9 @@ class ProcessSyncQueue {
         await _markRatSynced(item);
       case SyncOperation.delete:
         await _remoteRatRepository.softDeleteFromPayload(item.payload);
+      case SyncOperation.restore:
+        await _remoteRatRepository.restoreFromPayload(item.payload);
+        await _markRatSynced(item);
     }
   }
 
@@ -86,9 +89,7 @@ class ProcessSyncQueue {
     try {
       final rat = await _ratRepository.getById(item.entityId);
       if (rat != null) {
-        final synced = rat.copyWith(
-          syncStatus: RatSyncStatus.synced,
-        );
+        final synced = rat.copyWith(syncStatus: RatSyncStatus.synced);
         await _ratRepository.save(synced);
       }
     } catch (_) {
